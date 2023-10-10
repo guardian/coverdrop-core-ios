@@ -1,0 +1,46 @@
+// swift-tools-version: 5.7
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+
+import PackageDescription
+
+let package = Package(
+    name: "CoverDropCore",
+    platforms: [.iOS(.v15)],
+    products: [
+        // Products define the executables and libraries a package produces, and make them visible to other packages.
+        .library(
+            name: "CoverDropCore",
+            targets: ["CoverDropCore"]
+        )
+    ],
+
+    dependencies: [
+        // Dependencies declare other packages that this package depends on.
+        .package(url: "https://github.com/jedisct1/swift-sodium.git", from: "0.9.1"),
+        .package(url: "https://github.com/1024jp/GzipSwift", from: "5.2.0")
+    ],
+    targets: [
+        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
+        // Targets can depend on other targets in this package, and on products in packages this package depends on.
+        .target(
+            name: "CoverDropCore",
+            dependencies: [
+                .product(name: "Sodium", package: "swift-sodium"),
+                .product(name: "Gzip", package: "GzipSwift")
+            ],
+            resources: [
+                .copy("Resources/eff_large_wordlist.txt"),
+                .copy("Resources/vectors/"),
+                .copy("Resources/keys/"),
+                .copy("Resources/organization_keys/")
+            ]
+        ),
+        .testTarget(
+            name: "CoverDropCoreTests",
+            dependencies: ["CoverDropCore"],
+            resources: [
+                .copy("Resources/vectors/")
+            ]
+        )
+    ]
+)

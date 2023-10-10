@@ -1,0 +1,76 @@
+{
+  "org_pk": {
+    "type": "PublicSigningKey",
+    "key": "c2075fca5f93113f57027eb6e3c508e080e7a97cd90acc39fc02404755b942d0"
+  },
+  "covernode_keys": [
+    {
+      "id_pk": {
+        "type": "SignedPublicSigningKey",
+        "key": "672f2e041c4c121e07aef7139fe519f5631af611e6329f7e2b603df4a211be22",
+        "certificate": "e763db2ea364aa1d023f0bcb9b0620e161fae57f6df7f8313221d5e1a1d266f17a1055b4585e37b1649edebb0c89fc3091cbec21cd0c9efdf36f86fb80e63903"
+      },
+      "msg_pks": [
+        {
+          "type": "SignedPublicEncryptionKey",
+          "key": "803115a4dfb48baa9cd1f93d9860d48ebe51ebf14335fe217d14741439a51c4f",
+          "certificate": "44008acbb8cc094bc17924ec24cd4fee1a303ee8af46a5b7d95f2d2b34d12638f668234cda87f73abf5fb1f4808b7df272302a1b5efebbbfc0c7f1ddd9695202",
+          "not_valid_after": "2023-04-24T16:04:59.389866670Z"
+        }
+      ]
+    }
+  ],
+  "default_journalist_id": null,
+  "journalists": {
+    "additional_test_journalist_1": {
+      "id": "additional_test_journalist_1",
+      "display_name": "Additional Test Journalist 1",
+      "sort_name": "journalist additional test 1",
+      "description": "Additional Test Journalist 1",
+      "tag": "197118ad",
+      "is_desk": false,
+      "keys": [
+        {
+          "id_pk": {
+            "type": "SignedPublicSigningKey",
+            "key": "6914c410c189b5debf312e797a3b843e6246f29b4ab76d25d15e05c48bdd22b9",
+            "certificate": "97b05b3c9d450fe36b89447d777ead6c0b0e85dfa0c53a4b7767920da4859225d196104bef604d6efe41f7c0c70bce6ef671c3cd0c740b4131fa3fa803fa7505"
+          },
+          "msg_pks": [
+            {
+              "type": "SignedPublicEncryptionKey",
+              "key": "d69005d80147fd0f7776672b498725501db02bf2d5d390699cb788aa2209927a",
+              "certificate": "eef7ba6f55d786324818719010fa8b12a0b6be1ed05a54c8d576bd9f5b168a8964f277c11242e7c522bf5fb91283efa2e94ed1888af181e713d6d9947e1b760c",
+              "not_valid_after": "2023-04-08T12:00:00Z"
+            }
+          ]
+        }
+      ]
+    },
+    "static_test_journalist": {
+      "id": "static_test_journalist",
+      "display_name": "Static Test Journalist",
+      "sort_name": "journalist static test",
+      "description": "static test journalist",
+      "tag": "6a139e67",
+      "is_desk": false,
+      "keys": [
+        {
+          "id_pk": {
+            "type": "SignedPublicSigningKey",
+            "key": "e329c71b02c99c78b5b1d976224ea71f78b5d943eaaca238b5f8fc83d23cbee2",
+            "certificate": "ad949ab556aa10b4c1a6f398a0dcd3e1cf6cd9196ab9a2ed1b55aeda2904ebbba47da17d600dc2e48c3eec32ddfc7cb5b059dc341022660b9d6a2d6b09214705"
+          },
+          "msg_pks": [
+            {
+              "type": "SignedPublicEncryptionKey",
+              "key": "ebe4f338506dbc364c2bf323f9896843d480085b00adca4451b31cd8acec7323",
+              "certificate": "3de8fb801c30f0ea09221ac823faa93fc9eaa31d81272e52bb593c3c65aef3d27f9e429fc609fba7d11385c047213a2d9598603120159e64f58a0338a4420f08",
+              "not_valid_after": "2023-04-03T16:09:28.728312866Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

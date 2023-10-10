@@ -1,0 +1,107 @@
+{
+  "org_pk": {
+    "type": "PublicSigningKey",
+    "key": "c2075fca5f93113f57027eb6e3c508e080e7a97cd90acc39fc02404755b942d0"
+  },
+  "covernode_keys": [
+    {
+      "id_pk": {
+        "type": "SignedPublicSigningKey",
+        "key": "672f2e041c4c121e07aef7139fe519f5631af611e6329f7e2b603df4a211be22",
+        "certificate": "e763db2ea364aa1d023f0bcb9b0620e161fae57f6df7f8313221d5e1a1d266f17a1055b4585e37b1649edebb0c89fc3091cbec21cd0c9efdf36f86fb80e63903"
+      },
+      "msg_pks": [
+        {
+          "type": "SignedPublicEncryptionKey",
+          "key": "803115a4dfb48baa9cd1f93d9860d48ebe51ebf14335fe217d14741439a51c4f",
+          "certificate": "44008acbb8cc094bc17924ec24cd4fee1a303ee8af46a5b7d95f2d2b34d12638f668234cda87f73abf5fb1f4808b7df272302a1b5efebbbfc0c7f1ddd9695202",
+          "not_valid_after": "2023-04-24T16:04:59.389866670Z"
+        }
+      ]
+    }
+  ],
+  "default_journalist_id": null,
+  "journalists": {
+    "generated_test_journalist": {
+      "id": "generated_test_journalist",
+      "display_name": "Generated Test Journalist",
+      "sort_name": "journalist generated test",
+      "description": "This is a test journalist",
+      "tag": "ef13e353",
+      "is_desk": false,
+      "keys": [
+        {
+          "id_pk": {
+            "type": "SignedPublicSigningKey",
+            "key": "3c1ccbed8b0c3e27aba5623bc651c22f4c9e426c436dde47a288efbc8b331405",
+            "certificate": "4fb3bc2ad9a180074947744f5afab1b7b11ca0c64d265bde2532fe7c2cd49c0fc3871c98a9e1e9f7930a7bdf8ec7b24565f1eb1e9571cab068af880d3c1ca806"
+          },
+          "msg_pks": [
+            {
+              "type": "SignedPublicEncryptionKey",
+              "key": "7e648c9a223d383dbd294b1f8b71bd3eb1aa7c29808ddf0becfa68cd99d7fc5d",
+              "certificate": "ea03241d04c37fb3f2fec51d4a70ff07e862dfae0fbcb07ef67c7eb55e025a2468a66eee6b3a70034cab215c740196fc7d1250d969b32d25681efeb5cfbee809",
+              "not_valid_after": "2023-04-08T12:00:09.943633958Z"
+            },
+            {
+              "type": "SignedPublicEncryptionKey",
+              "key": "bbb81b92d294607ff692fa8c63ebe3be1f60ef941c1b0aa501155ed9d76d8708",
+              "certificate": "350d111475488621ff93d776c098fbcee357f82621f7ba096d392322aec0967081c7c31e3c0031a1565dbe8eacfb7a87d0a2a024b59cd796cef178bc273cf008",
+              "not_valid_after": "2023-04-08T12:00:08.101014833Z"
+            }
+          ]
+        }
+      ]
+    },
+    "static_test_journalist": {
+      "id": "static_test_journalist",
+      "display_name": "Static Test Journalist",
+      "sort_name": "journalist static test",
+      "description": "static test journalist",
+      "tag": "6a139e67",
+      "is_desk": false,
+      "keys": [
+        {
+          "id_pk": {
+            "type": "SignedPublicSigningKey",
+            "key": "e329c71b02c99c78b5b1d976224ea71f78b5d943eaaca238b5f8fc83d23cbee2",
+            "certificate": "ad949ab556aa10b4c1a6f398a0dcd3e1cf6cd9196ab9a2ed1b55aeda2904ebbba47da17d600dc2e48c3eec32ddfc7cb5b059dc341022660b9d6a2d6b09214705"
+          },
+          "msg_pks": [
+            {
+              "type": "SignedPublicEncryptionKey",
+              "key": "ebe4f338506dbc364c2bf323f9896843d480085b00adca4451b31cd8acec7323",
+              "certificate": "3de8fb801c30f0ea09221ac823faa93fc9eaa31d81272e52bb593c3c65aef3d27f9e429fc609fba7d11385c047213a2d9598603120159e64f58a0338a4420f08",
+              "not_valid_after": "2023-04-03T16:09:28.728312866Z"
+            }
+          ]
+        }
+      ]
+    },
+    "generated_test_desk": {
+      "id": "generated_test_desk",
+      "display_name": "Generated Test Desk",
+      "sort_name": "desk generated test",
+      "description": "This is a test desk",
+      "tag": "38322e85",
+      "is_desk": true,
+      "keys": [
+        {
+          "id_pk": {
+            "type": "SignedPublicSigningKey",
+            "key": "0e41c0d1f4ae1139f0c7b00a1d7f9f696a2c212df95354f6431c96567da7d1e0",
+            "certificate": "da1596a45d48c8a24de95186fa30aa0cb05111340a6069861c50b677fb14db5b755b5c290b792a400c02d4e1ead5c9209410b7abd2f5a45969dec3a83874b10a"
+          },
+          "msg_pks": [
+            {
+              "type": "SignedPublicEncryptionKey",
+              "key": "e0f798f5a960c3c74370ea5956619d9276b15f25cc54e7d863933fda73977a79",
+              "certificate": "65d0494f405e74e5382471eae1f94ddcd2147ce087b2e920588167ae03b89c81a55ba983997aac1f217a8da57d9bbd89c902d706c290267ebe9ef014df27b305",
+              "not_valid_after": "2023-04-08T12:00:08.345337083Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
