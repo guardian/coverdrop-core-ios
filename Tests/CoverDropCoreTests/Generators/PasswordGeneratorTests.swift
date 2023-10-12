@@ -43,7 +43,10 @@ final class PasswordGeneratorTests: XCTestCase {
 
     func testCheckHardcodedStringCaseInsensitive() throws {
         let password = "external jersey SQUEEZE luckiness collector"
-        let validated = try! PasswordGenerator.checkValid(passwordInput: password)
+        guard let validated = try? PasswordGenerator.checkValid(passwordInput: password) else {
+            XCTFail("Password in test was invalid")
+            return
+        }
 
         XCTAssertEqual("external jersey squeeze luckiness collector", "\(validated.password)")
     }

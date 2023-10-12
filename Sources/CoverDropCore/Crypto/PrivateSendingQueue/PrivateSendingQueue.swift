@@ -72,13 +72,13 @@ struct PrivateSendingQueue: Equatable {
     /// - Parameters:
     ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform serialization standard
     ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform serialization standard
-    init(totalQueueSize: Int32, messageSize: Int32) throws {
+    init(totalQueueSize: Int32, messageSize: Int32, coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) throws {
         self.totalQueueSize = totalQueueSize
         self.messageSize = messageSize
         initialMessagesAndHints = ([], [])
         // fill-up queue with cover messages
         while mStorage.count < totalQueueSize {
-            try addCoverMessageAndHint()
+            try addCoverMessageAndHint(coverMessage: coverMessage)
         }
         if !assertInvariants() {
             throw PrivateSendingQueueError.queueSizesVary
@@ -89,12 +89,12 @@ struct PrivateSendingQueue: Equatable {
     /// they would be at the front and returned before any cover messages. Afterwards the buffer
     /// is filled up to `self.size` again.
     @discardableResult
-    mutating func dequeue() throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let message = mStorage.removeFirst()
         _ = mHints.removeFirst()
 
         // and fill-up both
-        try addCoverMessageAndHint()
+        try addCoverMessageAndHint(coverMessage: coverMessage)
 
         if !assertInvariants() {
             throw PrivateSendingQueueError.queueSizesVary
@@ -267,35 +267,12 @@ struct PrivateSendingQueue: Equatable {
     }
 
     /// Adds random message and hints
-    private mutating func addCoverMessageAndHint() throws {
-        if let keys = PublicDataRepository.shared.verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies() {
-            let message = try createCoverMessageToCoverNode(coverNodesToMostRecentKey: keys)
-
-            try addMessageAndHint(
-                message: message,
-                hint: HintHmac(hint: Sodium().randomBytes.buf(length: Int(hintSizeBytes))!)
-            )
-        }
-    }
-
-    func createCoverMessageToCoverNode(coverNodesToMostRecentKey: [CoverNodeIdentity: CoverNodeMessagingPublicKey]) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        // create placeholder string instead of inner message
-        guard let innerEncryptedPlaceholder = Sodium().randomBytes.buf(length: Constants.userToJournalistEncryptedMessageLen) else {
-            throw EncryptionError.failedToDecrypt
-        }
-        precondition(innerEncryptedPlaceholder.count == Constants.userToJournalistEncryptedMessageLen)
-
-        let coverTrafficRecipientTag = Array(repeating: UInt8(0x00), count: 4)
-        // build payload of the outer message (to be read by the CoverNode after decryption)
-        let payloadForOuter = coverTrafficRecipientTag + innerEncryptedPlaceholder
-
-        precondition(payloadForOuter.count == Constants.userToCovernodeMessageLen)
-
-        // pick the coverNode keys to encrypt to
-        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: coverNodesToMostRecentKey)
-        // encrypt outer message to CoverNode
-        let outerEncryptedMessage = try MultiAnonymousBox<UserToCoverNodeMessageData>.encrypt(recipientPks: coverNodeKeys, data: payloadForOuter)
-        return outerEncryptedMessage
+    private mutating func addCoverMessageAndHint(coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) throws {
+        try addMessageAndHint(
+            message: coverMessage,
+            hint: HintHmac(hint: Sodium().randomBytes.buf(length: Int(hintSizeBytes))!)
+        )
+        // }
     }
 
     /// Adds message and hint to the internal storage

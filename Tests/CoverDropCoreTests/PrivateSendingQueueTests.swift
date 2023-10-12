@@ -4,6 +4,8 @@ import XCTest
 
 final class PrivateSendingQueueTests: XCTestCase {
     let secret = PrivateSendingQueueSecret(bytes: "secret__secret__".asBytes())
+    let allCoverNodes = PublicKeysHelper.shared.testKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+
     func message(message: String) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
 
@@ -27,8 +29,13 @@ final class PrivateSendingQueueTests: XCTestCase {
     }
 
     func emptyCoverdropQueue() throws -> PrivateSendingQueue {
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
+        guard let coverMessage = try? CoverMessage.getCoverMessage() else {
+            XCTFail("Failed to get cover message")
+            throw CoverMessageError.failedToCreateCoverMessage
+        }
         return try PrivateSendingQueue(totalQueueSize: PrivateSendingQueueConfiguration.default.totalQueueSize,
-                                       messageSize: PrivateSendingQueueConfiguration.default.messageSize)
+                                       messageSize: PrivateSendingQueueConfiguration.default.messageSize, coverMessage: coverMessage)
     }
 
     func testEnqueueWhenAddingMessageThenFillLevelIncreases() async throws {
@@ -80,7 +87,7 @@ final class PrivateSendingQueueTests: XCTestCase {
         try queue.enqueue(secret: differentSecret!, message: message3)
 
         // we would have otherwise expected message1 due to the FIFO nature of the queue
-        XCTAssertEqual(try queue.dequeue(), message3)
+        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message3)
     }
 
     func testDequeueWhenAddedMessagesThenPoppedInOrder() async throws {
@@ -91,8 +98,8 @@ final class PrivateSendingQueueTests: XCTestCase {
         try queue.enqueue(secret: secret!, message: message1)
         try queue.enqueue(secret: secret!, message: message2)
 
-        XCTAssertEqual(try queue.dequeue(), message1)
-        XCTAssertEqual(try queue.dequeue(), message2)
+        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message1)
+        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message2)
     }
 
     func testDequeueWhenPoppingMoreThanRealMessagesThenCoverMessagesReturned() async throws {
@@ -103,13 +110,13 @@ final class PrivateSendingQueueTests: XCTestCase {
         try queue.enqueue(secret: secret!, message: message1)
         try queue.enqueue(secret: secret!, message: message2)
 
-        XCTAssertEqual(try queue.dequeue(), message1)
-        XCTAssertEqual(try queue.dequeue(), message2)
+        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message1)
+        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message2)
 
-        _ = try queue.dequeue()
+        _ = try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage())
 
-        XCTAssertNotEqual(try queue.dequeue(), message1)
-        XCTAssertNotEqual(try queue.dequeue(), message2)
+        XCTAssertNotEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message1)
+        XCTAssertNotEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()), message2)
     }
 
     func testFromBytesWhenSerdeEmptyThenDeserializesSuccessfully() throws {
@@ -134,16 +141,16 @@ final class PrivateSendingQueueTests: XCTestCase {
         let fillLevel = copy.getFillLevel(secret: secret!)
         XCTAssertEqual(fillLevel, 2)
 
-        let actualMessage1 = try copy.dequeue()
+        let actualMessage1 = try copy.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage())
         XCTAssertEqual(actualMessage1, message1)
 
-        let actualMessage2 = try copy.dequeue()
+        let actualMessage2 = try copy.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage())
         XCTAssertEqual(actualMessage2, message2)
 
-        try original.dequeue() // message 1
-        try original.dequeue() // message 2
-        let originalCover1 = try original.dequeue()
-        let actualCover1 = try copy.dequeue()
+        try original.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()) // message 1
+        try original.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()) // message 2
+        let originalCover1 = try original.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage())
+        let actualCover1 = try copy.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage())
         XCTAssertEqual(originalCover1, actualCover1)
     }
 
@@ -159,8 +166,8 @@ final class PrivateSendingQueueTests: XCTestCase {
 
         XCTAssertTrue(isInQueue)
 
-        try original.dequeue() // message 1
-        try original.dequeue() // message 2
+        try original.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()) // message 1
+        try original.sendHeadMessageAndPushNewCoverMessage(coverMessage: CoverMessage.getCoverMessage()) // message 2
 
         let isStillInQueue = original.isMessageStillInQueue(hint: hint1)
 

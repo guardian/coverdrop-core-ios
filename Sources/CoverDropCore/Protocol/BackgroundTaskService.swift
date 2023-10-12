@@ -21,7 +21,7 @@ public enum BackgroundTaskService {
     static func handleAppRefresh(task: BGAppRefreshTask) {
         Task {
             do {
-                try await UserToJournalistMessageWebRepository().dequeueMessageAndSend()
+                try await PublicDataRepository.shared.dequeueMessageAndSend()
                 task.setTaskCompleted(success: true)
             } catch {
                 task.setTaskCompleted(success: false)

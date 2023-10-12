@@ -7,16 +7,9 @@ enum UserToJournalistMessagingError: Error {
     case failedToDequeue
 }
 
-// MARK: - Protocol
-
-protocol UserToJournalistMessaging: WebRepository {
-    func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws
-    func dequeueMessageAndSend(privateSendingQueue: PrivateSendingQueueRepository) async throws
-}
-
 // MARK: - Implementation
 
-public struct UserToJournalistMessageWebRepository: UserToJournalistMessaging {
+public struct UserToJournalistMessageWebRepository: WebRepository {
     let session: URLSession
     let baseURL: String
 
@@ -25,33 +18,8 @@ public struct UserToJournalistMessageWebRepository: UserToJournalistMessaging {
         baseURL = baseUrl
     }
 
-    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws {
-        if let data = message.asBytes().base64Encode() {
-            let jsonData: Data = try JSONEncoder().encode(data)
-            guard let postResponse = try? await post(endpoint: API.sendMessage, body: jsonData) else {
-                throw UserToJournalistMessagingError.failedToSendMessage
-            }
-        } else {
-            throw UserToJournalistMessagingError.unableToBase64Encode
-        }
-    }
-
-    /// This dequeues a message from the `PrivateSendingQueue` and sends it to the user to journalist
-    /// message api
-    /// 1. dequeue message from privateSendingQueue
-    /// 2. send to the api
-    public func dequeueMessageAndSend(privateSendingQueue: PrivateSendingQueueRepository = PrivateSendingQueueRepository.shared) async throws {
-        if let message = try? await privateSendingQueue.peek() {
-            if let messageResult = try? await sendMessage(message: message) {
-                guard let dequeueResult = try? await privateSendingQueue.dequeue() else {
-                    throw UserToJournalistMessagingError.failedToDequeue
-                }
-            } else {
-                throw UserToJournalistMessagingError.failedToSendMessage
-            }
-        } else {
-            throw UserToJournalistMessagingError.failedToPeekMessage
-        }
+    public func sendMessage(jsonData: Data) async throws {
+        try await post(endpoint: API.sendMessage, body: jsonData)
     }
 }
 

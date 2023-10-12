@@ -22,10 +22,10 @@ public actor PrivateSendingQueueRepository: ObservableObject {
 
     /// Starts the repository by creating the `PrivateSendingQueue` and storing it to disk. This method *must* be called once on app start before accessing any other actor methods to ensure setup is complete.
     /// - Parameter configuration: An optional configuration for setting up the managed`PrivateSendingQueue`.
-    public func start(with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default) async throws {
+    public func start(with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default, coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws {
         if queue == nil {
             queue = try PrivateSendingQueue(totalQueueSize: configuration.totalQueueSize,
-                                            messageSize: configuration.messageSize)
+                                            messageSize: configuration.messageSize, coverMessage: coverMessage)
         }
         try await dataStore.saveQueue(queue)
     }
@@ -33,9 +33,9 @@ public actor PrivateSendingQueueRepository: ObservableObject {
     /// Removes the current queue, by generating a new `PrivateSendingQueue` and storing to disk
     /// This is so we can remove any pending real messages from users if they choose to delete all messages.
     /// - Parameter configuration: An optional configuration for setting up the managed`PrivateSendingQueue`.
-    public func wipeQueue(with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default) async throws {
+    public func wipeQueue(with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default, coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws {
         queue = try PrivateSendingQueue(totalQueueSize: configuration.totalQueueSize,
-                                        messageSize: configuration.messageSize)
+                                        messageSize: configuration.messageSize, coverMessage: coverMessage)
         try await dataStore.saveQueue(queue)
     }
 
@@ -49,9 +49,9 @@ public actor PrivateSendingQueueRepository: ObservableObject {
     }
 
     /// Dequeues a message by calling the the `PrivateSendingQueue`'s `dequeue(..)` method and storing the changed state to disk.
-    func dequeue() async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    func dequeue(coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         precondition(queue != nil, "Private sending queue is nil. Ensure you are calling `start` before making this method call.")
-        let message = try queue!.dequeue()
+        let message = try queue!.sendHeadMessageAndPushNewCoverMessage(coverMessage: coverMessage)
         try await dataStore.saveQueue(queue!)
         lastUpdated = Date.now
         return message
@@ -83,7 +83,7 @@ protocol TestablePrivateSendingQueueRepository {
     /// - Parameters:
 
     static func createTestableInstance(dataStore: PrivateSendingQueueDataStoring,
-                                       queue: PrivateSendingQueue?) async throws -> PrivateSendingQueueRepository
+                                       queue: PrivateSendingQueue?, coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> PrivateSendingQueueRepository
 
     /// An unsafe accessor to the repository's private `PrivateSendingQueue`, for testing purposes only.
     var testableQueue: PrivateSendingQueue? { get async }
@@ -91,7 +91,7 @@ protocol TestablePrivateSendingQueueRepository {
 
 extension PrivateSendingQueueRepository: TestablePrivateSendingQueueRepository {
     static func createTestableInstance(dataStore: PrivateSendingQueueDataStoring = PrivateSendingQueueDataStore(),
-                                       queue: PrivateSendingQueue? = nil) async throws -> PrivateSendingQueueRepository
+                                       queue: PrivateSendingQueue? = nil, coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> PrivateSendingQueueRepository
     {
         let repo = PrivateSendingQueueRepository(dataStore: dataStore, queue: queue)
         return repo

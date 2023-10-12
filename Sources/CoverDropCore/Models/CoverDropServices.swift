@@ -1,6 +1,11 @@
 import CryptoKit
 import Foundation
 
+enum CoverDropServicesError: Error {
+    case coverNodeKeysNotAvailable
+    case failedToGenerateCoverMessage
+}
+
 public enum CoverDropServices {
     public static func didLaunch() throws {
         BackgroundTaskService.registerAppRefresh()
@@ -8,10 +13,16 @@ public enum CoverDropServices {
 
     public static func didLaunchAsync() async throws {
         PublicDataRepository.setup(ApplicationConfig.config)
-        _ = PublicDataRepository.shared
+        let publicDataRepository = PublicDataRepository.shared
         _ = SecretDataRepository.shared
 
-        try await PrivateSendingQueueRepository.shared.start()
+        try await publicDataRepository.pollDataSources()
+
+        guard let coverMessage = try? CoverMessage.getCoverMessage() else {
+            throw CoverDropServicesError.failedToGenerateCoverMessage
+        }
+
+        try await PrivateSendingQueueRepository.shared.start(coverMessage: coverMessage)
 
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart(withSecureEnclave: SecureEnclave.isAvailable)
@@ -43,7 +54,7 @@ public enum CoverDropServices {
         Task {
             try? await BackgroundLogoutService.logoutIfBackgroundedForTooLong()
             try? await PublicDataRepository.shared.pollDataSources()
-            try? await UserToJournalistMessageWebRepository().dequeueMessageAndSend()
+            try? await PublicDataRepository.shared.dequeueMessageAndSend()
         }
     }
 

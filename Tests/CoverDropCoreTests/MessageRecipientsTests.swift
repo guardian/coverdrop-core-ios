@@ -10,7 +10,7 @@ final class MessageRecipientsTests: XCTestCase {
     }
 
     let testKeys = PublicKeysHelper.shared.testKeys
-    static let sut = try! MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+    static let sut = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
 
     func testDefaultRecipient() {
         let expectedDefaultRecipientId = testKeys.defaultJournalistId
@@ -18,11 +18,11 @@ final class MessageRecipientsTests: XCTestCase {
     }
 
     func testDefaultRecipientExcluded() {
-        let journalistContains = MessageRecipientsTests.sut.journalists.contains(where: { $0 == MessageRecipientsTests.sut.defaultRecipient })
-        XCTAssertFalse(journalistContains)
+        let journalistContains = MessageRecipientsTests.sut?.journalists.contains(where: { $0 == MessageRecipientsTests.sut?.defaultRecipient })
+        XCTAssertFalse(journalistContains == nil)
 
-        let desksContains = MessageRecipientsTests.sut.desks.contains(where: { $0 == MessageRecipientsTests.sut.defaultRecipient })
-        XCTAssertFalse(desksContains)
+        let desksContains = MessageRecipientsTests.sut?.desks.contains(where: { $0 == MessageRecipientsTests.sut?.defaultRecipient })
+        XCTAssertFalse(desksContains == nil)
     }
 
     func testsWithUnavailableKeys() {
@@ -35,13 +35,19 @@ final class MessageRecipientsTests: XCTestCase {
 
     // tests MessageRecipients based on `001_journalist_with_multiple_messaging_keys.json`
     func testDesks() {
-        let sut = try! MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false)
+        guard let sut = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false) else {
+            XCTFail("Failed to get message recipients")
+            return
+        }
         let testDeskCount = 1
         XCTAssert(sut.desks.count == testDeskCount)
     }
 
     func testJournalists() {
-        let sut = try! MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false)
+        guard let sut = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false) else {
+            XCTFail("Failed to get message recipients")
+            return
+        }
         let testJournalistsCount = 2
         XCTAssert(sut.journalists.count == testJournalistsCount)
     }

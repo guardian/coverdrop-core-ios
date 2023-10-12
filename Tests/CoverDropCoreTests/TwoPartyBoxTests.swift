@@ -10,8 +10,12 @@ final class TwoPartyBoxTests: XCTestCase {
         let myKeypair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let recipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
-        let encrypted = try! TwoPartyBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, senderSk: myKeypair.secretKey, data: input)
-        let decrypted: String = try! TwoPartyBox<String>.decrypt(senderPk: recipientKeypair.publicKey, recipientSk: myKeypair.secretKey, data: encrypted)
+        guard let encrypted = try? TwoPartyBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, senderSk: myKeypair.secretKey, data: input),
+              let decrypted: String = try? TwoPartyBox<String>.decrypt(senderPk: recipientKeypair.publicKey, recipientSk: myKeypair.secretKey, data: encrypted)
+        else {
+            XCTFail("Failed to encrypt/decrypt two party box")
+            return
+        }
 
         XCTAssertEqual(input, decrypted)
     }
@@ -21,8 +25,12 @@ final class TwoPartyBoxTests: XCTestCase {
         let myKeypair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let recipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
-        let encrypted: TwoPartyBox<String> =
-            try! TwoPartyBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, senderSk: myKeypair.secretKey, data: input)
+        guard let encrypted: TwoPartyBox<String> =
+            try? TwoPartyBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, senderSk: myKeypair.secretKey, data: input)
+        else {
+            XCTFail("Failed to encrypt two party box")
+            return
+        }
 
         let rawBytes = encrypted.tagCiphertextAndNonce
 

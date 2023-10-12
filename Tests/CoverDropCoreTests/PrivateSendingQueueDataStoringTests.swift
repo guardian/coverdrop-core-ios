@@ -4,11 +4,17 @@ import XCTest
 
 final class PrivateSendingQueueDiskStoringTests: XCTestCase {
     func testSaving() async throws {
+        try await PublicDataRepository.shared.pollDataSources()
+        guard let coverMessage = try? CoverMessage.getCoverMessage() else {
+            XCTFail("Unable to make cover message")
+            return
+        }
+
         // GIVEN a PrivateSendingQueueDataStore and PrivateSendingQueue are initialized
         let sut = PrivateSendingQueueDataStore()
         let defaultConfig = PrivateSendingQueueConfiguration.default
         let queue = try PrivateSendingQueue(totalQueueSize: defaultConfig.totalQueueSize,
-                                            messageSize: defaultConfig.messageSize)
+                                            messageSize: defaultConfig.messageSize, coverMessage: coverMessage)
 
         // WHEN that queue is saved to the store
         try await sut.saveQueue(queue)
@@ -21,12 +27,17 @@ final class PrivateSendingQueueDiskStoringTests: XCTestCase {
     }
 
     func testLoading() async throws {
+        try await PublicDataRepository.shared.pollDataSources()
+        guard let coverMessage = try? CoverMessage.getCoverMessage() else {
+            XCTFail("Unable to make cover message")
+            return
+        }
         // GIVEN a PrivateSendingQueueDataStore and PrivateSendingQueue are initialized,
         // and a message is added to the queue, and then saved to disk
         let sut = PrivateSendingQueueDataStore()
         let defaultConfig = PrivateSendingQueueConfiguration.default
         var queue = try PrivateSendingQueue(totalQueueSize: defaultConfig.totalQueueSize,
-                                            messageSize: defaultConfig.messageSize)
+                                            messageSize: defaultConfig.messageSize, coverMessage: coverMessage)
         let message = try await PrivateSendingQueueTests().message1()
         try queue.enqueue(secret: PrivateSendingQueueTests().secret!,
                           message: message)

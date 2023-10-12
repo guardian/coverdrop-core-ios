@@ -1,7 +1,9 @@
 import Foundation
+import Sodium
 
 enum PublicDataRepositoryError: Error {
     case configNotAvailable
+    case failedToGenerateRandomBytes
 }
 
 public class PublicDataRepository: ObservableObject {
@@ -66,5 +68,57 @@ public class PublicDataRepository: ObservableObject {
                 areKeysAvailable = true
             }
         } catch {}
+    }
+
+    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws {
+        if let data = message.asBytes().base64Encode() {
+            let jsonData: Data = try JSONEncoder().encode(data)
+            guard let postResponse = try? await UserToJournalistMessageWebRepository().sendMessage(jsonData: jsonData) else {
+                throw UserToJournalistMessagingError.failedToSendMessage
+            }
+        } else {
+            throw UserToJournalistMessagingError.unableToBase64Encode
+        }
+    }
+
+    /// This dequeues a message from the `PrivateSendingQueue` and sends it to the user to journalist
+    /// message api
+    /// 1. dequeue message from privateSendingQueue
+    /// 2. send to the api
+    public func dequeueMessageAndSend(privateSendingQueue: PrivateSendingQueueRepository = PrivateSendingQueueRepository.shared) async throws {
+        if let message = try? await privateSendingQueue.peek(),
+           let allCoverNodes = try? verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+        {
+            if let messageResult = try? await sendMessage(message: message) {
+                let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
+                if let coverMessage = try? createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys) {
+                    guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessage: coverMessage) else {
+                        throw UserToJournalistMessagingError.failedToDequeue
+                    }
+                }
+            } else {
+                throw UserToJournalistMessagingError.failedToSendMessage
+            }
+        } else {
+            throw UserToJournalistMessagingError.failedToPeekMessage
+        }
+    }
+
+    public func createCoverMessageToCoverNode(coverNodeKeys: [PublicEncryptionKey<CoverNodeMessaging>]) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+        // create placeholder string instead of inner message
+        guard let innerEncryptedPlaceholder = Sodium().randomBytes.buf(length: Constants.userToJournalistEncryptedMessageLen) else {
+            throw PublicDataRepositoryError.failedToGenerateRandomBytes
+        }
+        precondition(innerEncryptedPlaceholder.count == Constants.userToJournalistEncryptedMessageLen)
+
+        let coverTrafficRecipientTag = Array(repeating: UInt8(0x00), count: Constants.recipientTagLen)
+        // build payload of the outer message (to be read by the CoverNode after decryption)
+        let payloadForOuter = coverTrafficRecipientTag + innerEncryptedPlaceholder
+
+        precondition(payloadForOuter.count == Constants.userToCovernodeMessageLen)
+
+        // encrypt outer message to CoverNode
+        let outerEncryptedMessage = try MultiAnonymousBox<UserToCoverNodeMessageData>.encrypt(recipientPks: coverNodeKeys, data: payloadForOuter)
+        return outerEncryptedMessage
     }
 }

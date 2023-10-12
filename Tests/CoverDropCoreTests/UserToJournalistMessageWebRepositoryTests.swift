@@ -11,9 +11,14 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
 
         let bytes = Sodium().randomBytes.buf(length: bytesLength)!
 
-        let testMessage = MultiAnonymousBox<UserToCoverNodeMessageData>(bytes: bytes)
+        let message = MultiAnonymousBox<UserToCoverNodeMessageData>(bytes: bytes)
+        guard let data = message.asBytes().base64Encode() else {
+            XCTFail("unable to encode data")
+            return
+        }
+        let jsonData: Data = try JSONEncoder().encode(data)
         do {
-            let results = try await UserToJournalistMessageWebRepository(session: urlSessionConfig).sendMessage(message: testMessage)
+            let results = try await UserToJournalistMessageWebRepository(session: urlSessionConfig).sendMessage(jsonData: jsonData)
             XCTFail("API error should have failed")
         } catch {}
     }
@@ -26,9 +31,14 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
 
         let bytes = Sodium().randomBytes.buf(length: bytesLength)!
 
-        let testMessage = MultiAnonymousBox<UserToCoverNodeMessageData>(bytes: bytes)
+        let message = MultiAnonymousBox<UserToCoverNodeMessageData>(bytes: bytes)
+        guard let data = message.asBytes().base64Encode() else {
+            XCTFail("unable to encode data")
+            return
+        }
+        let jsonData: Data = try JSONEncoder().encode(data)
         do {
-            let results = try await UserToJournalistMessageWebRepository(session: urlSessionConfig).sendMessage(message: testMessage)
+            let results = try await UserToJournalistMessageWebRepository(session: urlSessionConfig).sendMessage(jsonData: jsonData)
         } catch {
             XCTFail("API error should have failed")
         }

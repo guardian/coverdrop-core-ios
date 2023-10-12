@@ -9,8 +9,14 @@ final class AnonymouseBoxTests: XCTestCase {
         let input = "안녕하세요"
         let recipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
-        let encrypted: AnonymousBox<String> = try! AnonymousBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, data: input)
-        let decrypted = try! AnonymousBox<String>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: encrypted)
+        guard let encrypted: AnonymousBox<String> = try? AnonymousBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, data: input) else {
+            XCTFail("Failed to encrypt anonymous box")
+            return
+        }
+        guard let decrypted = try? AnonymousBox<String>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: encrypted) else {
+            XCTFail("Failed to decrypt anonymous box")
+            return
+        }
 
         XCTAssertEqual(input, decrypted)
     }
@@ -19,8 +25,14 @@ final class AnonymouseBoxTests: XCTestCase {
         let input: [UInt8] = [52, 32, 25, 27]
         let recipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
-        let encrypted: AnonymousBox<[UInt8]> = try! AnonymousBox<[UInt8]>.encrypt(recipientPk: recipientKeypair.publicKey, data: input)
-        let decrypted = try! AnonymousBox<[UInt8]>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: encrypted)
+        guard let encrypted: AnonymousBox<[UInt8]> = try? AnonymousBox<[UInt8]>.encrypt(recipientPk: recipientKeypair.publicKey, data: input) else {
+            XCTFail("Failed to encrypt anonymous box")
+            return
+        }
+        guard let decrypted = try? AnonymousBox<[UInt8]>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: encrypted) else {
+            XCTFail("Failed to decrypt anonymous box")
+            return
+        }
 
         XCTAssertEqual(input, decrypted)
     }
@@ -29,12 +41,18 @@ final class AnonymouseBoxTests: XCTestCase {
         let input = "안녕하세요"
         let recipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
-        let encrypted: AnonymousBox<String> = try! AnonymousBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, data: input)
+        guard let encrypted: AnonymousBox<String> = try? AnonymousBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, data: input) else {
+            XCTFail("Failed to encrypt anonymous box")
+            return
+        }
 
         let raw_bytes = encrypted.pkTagAndCiphertext
 
         let from_bytes = AnonymousBox<String>.fromVecUnchecked(bytes: raw_bytes)
-        let decrypted: String = try! AnonymousBox<String>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: from_bytes)
+        guard let decrypted: String = try? AnonymousBox<String>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: from_bytes) else {
+            XCTFail("Failed to decrypt anonymous box")
+            return
+        }
 
         XCTAssertEqual(input, decrypted)
     }
@@ -45,7 +63,10 @@ final class AnonymouseBoxTests: XCTestCase {
         let intendedRecipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
         let otherRecipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
-        let encrypted: AnonymousBox<String> = try! AnonymousBox<String>.encrypt(recipientPk: intendedRecipientKeypair.publicKey, data: input)
+        guard let encrypted: AnonymousBox<String> = try? AnonymousBox<String>.encrypt(recipientPk: intendedRecipientKeypair.publicKey, data: input) else {
+            XCTFail("Failed to encrypt anonymous box")
+            return
+        }
 
         XCTAssertThrowsError(try AnonymousBox<String>.decrypt(myPk: otherRecipientKeypair.publicKey, mySk: otherRecipientKeypair.secretKey, data: encrypted)) { error in
             XCTAssertEqual(error as! EncryptionError, EncryptionError.failedToDecrypt)

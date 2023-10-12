@@ -22,10 +22,16 @@ final class PassphraseKDFTests: XCTestCase {
 
     func testWillFailIfPasswordIsWrong() throws {
         let password_1 = "password"
-        let key_1 = try! PassphraseKDF.deriveKey(passphrase: password_1, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: COVERDROP_KDF_SALT)
+        guard let key_1 = try? PassphraseKDF.deriveKey(passphrase: password_1, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: COVERDROP_KDF_SALT) else {
+            XCTFail("Failed to derive key from password")
+            return
+        }
 
         let password_2 = "a different password"
-        let key_2 = try! PassphraseKDF.deriveKey(passphrase: password_2, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: COVERDROP_KDF_SALT)
+        guard let key_2 = try? PassphraseKDF.deriveKey(passphrase: password_2, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: COVERDROP_KDF_SALT) else {
+            XCTFail("Failed to derive key from password")
+            return
+        }
 
         XCTAssertNotEqual(key_1.key, key_2.key)
     }
@@ -36,8 +42,12 @@ final class PassphraseKDFTests: XCTestCase {
         let salt_1 = "COVERDROPKDFSALT"
         let salt_2 = "MOVERDROPKDFSALT"
 
-        let key_1 = try! PassphraseKDF.deriveKey(passphrase: password, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: salt_1.asBytes())
-        let key_2 = try! PassphraseKDF.deriveKey(passphrase: password, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: salt_2.asBytes())
+        guard let key_1 = try? PassphraseKDF.deriveKey(passphrase: password, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: salt_1.asBytes()),
+              let key_2 = try? PassphraseKDF.deriveKey(passphrase: password, keyLengthInBytes: KEY_LENGTH_IN_BYTES, salt: salt_2.asBytes())
+        else {
+            XCTFail("Failed to derive key from password")
+            return
+        }
 
         XCTAssertNotEqual(key_1.key, key_2.key)
     }

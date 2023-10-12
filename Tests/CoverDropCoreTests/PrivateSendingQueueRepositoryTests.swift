@@ -5,6 +5,7 @@ import XCTest
 final class PrivateSendingQueueRepositoryTests: XCTestCase {
     static let config = PrivateSendingQueueConfiguration.default
     private let testingSecret = PrivateSendingQueueTests().secret!
+    let allCoverNodes = PublicKeysHelper.shared.testKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
 
     override func setUp() {
         do {
@@ -25,12 +26,12 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
                                                                               recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey!,
                                                                               coverNodesToMostRecentMessagePublicKey: PublicKeysHelper.shared.testKeys,
                                                                               userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [1, 2, 3, 4]))
-
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         let queue = try PrivateSendingQueue(totalQueueSize: PrivateSendingQueueRepositoryTests.config.totalQueueSize,
-                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize)
+                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize, coverMessage: CoverMessage.getCoverMessage())
 
-        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue)
-        try await testableRepo.start()
+        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue, coverMessage: CoverMessage.getCoverMessage())
+        try await testableRepo.start(coverMessage: CoverMessage.getCoverMessage())
 
         let initialQueue = await testableRepo.testableQueue
 
@@ -44,10 +45,10 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
     func testAddingTwoMessagesWithinCapacity() async throws {
         let queue = try PrivateSendingQueue(totalQueueSize: PrivateSendingQueueRepositoryTests.config.totalQueueSize,
-                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize)
+                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize, coverMessage: CoverMessage.getCoverMessage())
 
-        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue)
-        try await testableRepo.start()
+        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue, coverMessage: CoverMessage.getCoverMessage())
+        try await testableRepo.start(coverMessage: CoverMessage.getCoverMessage())
 
         let message = try await PrivateSendingQueueTests().message1()
 
@@ -65,10 +66,10 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
     func testAddingOneMessageBeyondCapacity() async throws {
         let queue = try PrivateSendingQueue(totalQueueSize: PrivateSendingQueueRepositoryTests.config.totalQueueSize,
-                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize)
+                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize, coverMessage: CoverMessage.getCoverMessage())
 
-        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue)
-        try await testableRepo.start()
+        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue, coverMessage: CoverMessage.getCoverMessage())
+        try await testableRepo.start(coverMessage: CoverMessage.getCoverMessage())
 
         let message = try await PrivateSendingQueueTests().message1()
 
@@ -85,11 +86,12 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testAddingTwoMessagesBeyondCapacity() async throws {
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         let queue = try PrivateSendingQueue(totalQueueSize: PrivateSendingQueueRepositoryTests.config.totalQueueSize,
-                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize)
+                                            messageSize: PrivateSendingQueueRepositoryTests.config.messageSize, coverMessage: CoverMessage.getCoverMessage())
 
-        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue)
-        try await testableRepo.start()
+        let testableRepo = try await PrivateSendingQueueRepository.createTestableInstance(queue: queue, coverMessage: CoverMessage.getCoverMessage())
+        try await testableRepo.start(coverMessage: CoverMessage.getCoverMessage())
 
         let message = try await PrivateSendingQueueTests().message1()
 
@@ -137,10 +139,11 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testEnqueued() async throws {
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         // GIVEN an initialized empty queue
         let testableDataStore = PrivateSendingQueueDataStore()
-        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore)
-        try await sut.start()
+        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore, coverMessage: CoverMessage.getCoverMessage())
+        try await sut.start(coverMessage: CoverMessage.getCoverMessage())
 
         // THEN the queue should be empty initially
         let fillLevel = await sut.testableQueue?.getFillLevel(secret: testingSecret)
@@ -160,14 +163,15 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testDequeue() async throws {
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         // GIVEN an initialized queue with 2 messages
         let testableDataStore = PrivateSendingQueueDataStore()
-        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore)
-        try await sut.start()
+        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore, coverMessage: CoverMessage.getCoverMessage())
+        try await sut.start(coverMessage: CoverMessage.getCoverMessage())
         try await addTwoMessagesConcurrentlyReturningErrorCount(to: sut)
 
         // WHEN dequeue is called
-        _ = try await sut.dequeue()
+        _ = try await sut.dequeue(coverMessage: CoverMessage.getCoverMessage())
 
         // THEN the queue should have 1 message left
         let queue = await sut.testableQueue
@@ -180,10 +184,11 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testPeek() async throws {
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         // GIVEN an initialized queue with 2 messages
         let testableDataStore = PrivateSendingQueueDataStore()
-        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore)
-        try await sut.start()
+        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore, coverMessage: CoverMessage.getCoverMessage())
+        try await sut.start(coverMessage: CoverMessage.getCoverMessage())
         try await addTwoMessagesConcurrentlyReturningErrorCount(to: sut)
 
         // WHEN peek is called
@@ -199,6 +204,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testWipe() async throws {
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         let secret = PrivateSendingQueueSecret(bytes: "secret__secret__".asBytes())
 
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
@@ -209,8 +215,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         // GIVEN an initialized empty queue
         let testableDataStore = PrivateSendingQueueDataStore()
-        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore)
-        try await sut.start()
+        let sut = try await PrivateSendingQueueRepository.createTestableInstance(dataStore: testableDataStore, coverMessage: CoverMessage.getCoverMessage())
+        try await sut.start(coverMessage: CoverMessage.getCoverMessage())
         // WHEN a message is enqueue, then the queue is wiped
         let hmac = try await sut.enqueue(secret: secret!,
                                          message: encryptedMessage)
@@ -219,7 +225,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         XCTAssertTrue(inQueue)
 
-        try await sut.wipeQueue()
+        try await sut.wipeQueue(coverMessage: CoverMessage.getCoverMessage())
         // THEN a message is no longer in the queue
         let stillInQueue = await sut.isMessageInQueue(hint: hmac)
 
