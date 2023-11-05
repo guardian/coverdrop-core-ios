@@ -25,28 +25,28 @@
       "tag": "38322e85"
     }
   ],
-  "default_journalist_id": null,
+  "default_journalist_id": "generated_test_desk",
   "keys": [
     {
       "org_pk": {
-        "key": "f9162ddd3609f1985b9d00c1701c2dfa046c819eefc81d5b3a8b6799c27827ee",
-        "certificate": "a05beac4862a73bc56243c91686bad92bf209131d34d0225f1c7832c96931f3cdeed011203ffe95a9fea74428735c22f2f3a8092ca65f1521192b38be8060d0c",
-        "not_valid_after": "2024-09-02T17:16:49.896447Z"
+        "key": "73ee6a1a04bcb962b95feb5396932550de8ed29320103bd62356d482f6eb2d5c",
+        "certificate": "6a083e504c149df7bef6cd420ba13a2f7dcb6664d0dc5ade80121dcfa8311bd5cb8fe9accfb6cb07e0c1fac11c2dc621680a1accead5cd660759b7b7b015a400",
+        "not_valid_after": "2024-10-02T19:06:19.921207Z"
       },
       "covernodes": [
         {
           "provisioning_pk": {
-            "key": "33d96b11013c00c793a5dd10e1f95e196901a437e479ed21612005e95ca751de",
-            "certificate": "7687df2440106111ee01708a7da3dc66343c31e8bf22d2eb31ff13c8599a14be89affd81ad0da22c2190e4855866d7a5ac70093423eb2e273efa3c5f116f2e08",
-            "not_valid_after": "2024-02-19T17:16:51.668221Z"
+            "key": "1c704cad39284b8a9269a3d6357f21e596b2eeed820ba3524df2544174b4f70f",
+            "certificate": "3f9a8a7345dcd5ffe96beab355e3662a3da70d60bc70971f0f4e3ca312f211d99f95d9164ff668fd402df2baa508d0d7d4817c3692756d65b52cab296dc7c008",
+            "not_valid_after": "2024-03-20T19:06:21.272197Z"
           },
           "covernodes": {
             "covernode_001": [
               {
                 "id_pk": {
-                  "key": "91c6dcf45bc1eab14da9c7efb17f258c0cf7fc3790b323a99be4ce6c7c07807e",
-                  "certificate": "18bb5244c9097f2e7561e800971cd774a8852cb86024dad3ea8ac3966b19a3743657ad4beded89a3010a7a6b3374e335c43f23e993f8417abf9667cae0cdb700",
-                  "not_valid_after": "2023-10-02T17:16:52.522034Z"
+                  "key": "504560a698983c7864b20fc1d4ee115901a38e7d958f5e40accbed0497ecad17",
+                  "certificate": "a6d80476390948c98396fac7c401ffc6678065bb30e3e3ec3a58dc44982a742de0b06310303e3939dae0b428ed92d77bb61fb4d964d87b402fc4b1956c01310e",
+                  "not_valid_after": "2023-11-01T19:06:21.976033Z"
                 },
                 "msg_pks": []
               }
@@ -57,27 +57,17 @@
       "journalists": [
         {
           "provisioning_pk": {
-            "key": "452bd05993423cff2e63dc625885d230c9b9cdfb7e703bc7671875d4d0d39fe9",
-            "certificate": "3c19fa5031f50156029d3f4ec54cf547009300095cc4258a05f736f055ddabd224d5d60e253e2e04d4fbba9c885b5d160e6282911ab32c685b7a04f9d0d7390a",
-            "not_valid_after": "2024-02-19T17:16:50.908728Z"
+            "key": "947d712a3ce4758b6313630696d3d8e18d635a0ecfb64f8c4e90fbf8a339356d",
+            "certificate": "7fcbc31ff56e10c7515bf517763675a3df2079f3da62ee2e408fb4bb7174062bcc74a70df9102bf440a879c2f3f4c2c83f88226228d540fa09067911a2a11d00",
+            "not_valid_after": "2024-03-20T19:06:20.603185Z"
           },
           "journalists": {
-            "static_test_journalist": [
-              {
-                "id_pk": {
-                  "key": "a836d25394e1275fdb4256e9b37be79bd08fd68bf0ab07f573a9e8ae29681cef",
-                  "certificate": "f1ee98fdbb51c72e8eeb53de091bf14a03bc34214cc7a0ef84b0c24683a979a697608db5117854e7b7e451496e28495c64650ea511e48068635f06060ba4ce02",
-                  "not_valid_after": "2023-10-30T17:16:54.810680Z"
-                },
-                "msg_pks": []
-              }
-            ],
             "generated_test_desk": [
               {
                 "id_pk": {
-                  "key": "77a3e9cfa7fe5be721c59c24c180006104bde9cc4a25691d6e12e5eb8f8dbc4a",
-                  "certificate": "1978649aa7debcf50f11dc42ca30a54a23e91676f570044cd5746c2a5af02e665719bd8b12accd3a11964b88e20f3f85f47e3df2dc00118145838333d9a5aa08",
-                  "not_valid_after": "2023-10-30T17:16:57.351371458Z"
+                  "key": "79711b679b76fda97a5916769f7cc2682e373e160f24a9ef613310b3a06c7b64",
+                  "certificate": "b4cac58e36495791703767383dbbd82c608e93c5c863eb8c8f4cb9c78ad006a66e96c9070a50798389a5d7d663806e9ee6ad658fed4b4adb7b9658d8cd06150b",
+                  "not_valid_after": "2023-11-29T19:06:36.894481500Z"
                 },
                 "msg_pks": []
               }
@@ -85,9 +75,19 @@
             "generated_test_journalist": [
               {
                 "id_pk": {
-                  "key": "b702b25937a50d3d4b3625af5b2c4413e12dc592ebaacf7f8816209d74583e76",
-                  "certificate": "1b7f4db184c083bb810a5c2f2b517bfa281b5542acfbca0bf3fb86e6fd996d6338bc6778149f907af696f819094f4c00a7832ad3e179372adc6753c52d70b507",
-                  "not_valid_after": "2023-10-30T17:16:56.961367917Z"
+                  "key": "ffd16b053f775a22bdb85f1363bfcf3726fff815d3ad2a024d1a3d64300e9e7f",
+                  "certificate": "b74b7df86a7410c354b2b7049051a373b1a3a0e6ffebdc5b94d45cc7e396f3853440664ee45ad77c51cc5de0b2225c792a35634f1a3294bc0fbf6e079152080c",
+                  "not_valid_after": "2023-11-29T19:06:36.349819792Z"
+                },
+                "msg_pks": []
+              }
+            ],
+            "static_test_journalist": [
+              {
+                "id_pk": {
+                  "key": "e8f1603a7362f154e55e930091839a721f899b1878a7f11dff1256bfb3a45a7a",
+                  "certificate": "368f7b296718eda18cb5bf88e7d0124edd91aab58623f32f7e70ebbd2976abd20878020aa4048331a57878ae64ff3f275287b2f377fa4c7d9a110f6dadec420d",
+                  "not_valid_after": "2023-11-29T19:06:24.399522Z"
                 },
                 "msg_pks": []
               }

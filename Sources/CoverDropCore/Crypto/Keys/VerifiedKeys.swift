@@ -81,6 +81,17 @@ public struct VerifiedPublicKeys {
         return journalistPublicKeys
     }
 
+    public func allPublicKeysForJournalistId(journalistId: String) -> [VerifiedJournalistPublicKeysGroup]? {
+        if let journalistPublicKeys = self.allPublicKeysForJournalistsFromAllHierarchies()[journalistId],
+           journalistPublicKeys.isEmpty == false
+        {
+            return journalistPublicKeys
+
+        } else {
+            return nil
+        }
+    }
+
     /// This gets all the coverNode Id keys for each CoverNode instance regardless of the key hierarchy the keys are in.
     /// - Returns: An Dictionary of `CoverNodeInstanceId` -> `[CoverNodeIdPublicKey]` where string is the coverNode instance id.
     func getAllCoverNodeIdKeys() -> [CoverNodeIdentity: [CoverNodeIdPublicKey]] {

@@ -39,7 +39,7 @@ public struct UserToJournalistMessageData: Equatable, Encryptable {
 
     public static func fromUnencryptedBytes(bytes: [UInt8]) throws -> UserToJournalistMessageData {
         let publicKey = PublicEncryptionKey<User>(key: Array(bytes.prefix(Constants.x25519PublicKeyLen)))
-        let plainTextPaddedCompresssedStringBytes = Array(bytes.suffix(Constants.journalistToUserPaddedMessageLen))
+        let plainTextPaddedCompresssedStringBytes = Array(bytes.suffix(Constants.messagePaddingLen))
 
         let plainTextPaddedCompresssedString = try PaddedCompressedString.fromUncheckedBytes(bytes: plainTextPaddedCompresssedStringBytes)
         return UserToJournalistMessageData(publicKey: publicKey, paddedCompressedString: plainTextPaddedCompresssedString)

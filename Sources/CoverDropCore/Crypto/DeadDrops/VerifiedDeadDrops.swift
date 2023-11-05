@@ -1,7 +1,7 @@
 import Foundation
 import Sodium
 
-typealias JournalistToUserMessage = TwoPartyBox<PaddedCompressedString>
+typealias JournalistToUserMessage = TwoPartyBox<[UInt8]>
 
 enum VerificationDeadDropError: Error {
     case deadDropDataWrongSize

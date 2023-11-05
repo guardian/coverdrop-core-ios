@@ -24,11 +24,11 @@ import Foundation
 
             let realMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey outbound \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 12))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
 
-            let realReplyMessage = Message.incomingMessage(message: IncomingMessageData(sender: recipientUnwrapped, messageText: "hey user, from: \(recipientUnwrapped.displayName)", dateReceived: Date()))
+            let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: recipientUnwrapped, messageText: "hey user, from: \(recipientUnwrapped.displayName)", dateReceived: Date())))
 
             let inactiveMessage1 = Message.outboundMessage(message: OutboundMessageData(recipient: otherRecipientUnwrapped, messageText: "hey \(otherRecipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 13))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
 
-            let inactiveMessage2 = Message.incomingMessage(message: IncomingMessageData(sender: otherRecipientUnwrapped, messageText: "hey user from \(otherRecipientUnwrapped.displayName)", dateReceived: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 13)))))
+            let inactiveMessage2 = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: otherRecipientUnwrapped, messageText: "hey user from \(otherRecipientUnwrapped.displayName)", dateReceived: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 13))))))
             // add a message to the inbox
             messages.append(realMessage)
             messages.append(nonExpiredMessage)

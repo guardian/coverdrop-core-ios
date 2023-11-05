@@ -80,16 +80,34 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     /// we've been in converstations with.
     /// - Returns: A list of JournalistKeyData
     public func getMailboxRecipients() -> [JournalistKeyData] {
-        let recipients = messageMailbox.map { message in
+        let recipients = messageMailbox.compactMap { message in
             switch message {
                 case .outboundMessage(message: let message):
                     return message.recipient
-                case .incomingMessage(message: let message):
-                    return message.sender
+                case .incomingMessage(message: let messageType):
+                    switch messageType {
+                        case .textMessage(message: let message):
+                            return message.sender
+                        case .handoverMessage(message: let handover):
+                            return UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo)
+                    }
             }
         }
         let uniqueRecipients = Set(recipients)
         return Array(uniqueRecipients)
+    }
+
+    public static func getJournalistKeyDataForJournalistId(journalistId: String) -> JournalistKeyData? {
+        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData,
+              let journalistPublicKeyData = publicKeyData.allPublicKeysForJournalistId(journalistId: journalistId) else { return nil }
+
+        let recentKeys: [JournalistMessagingPublicKey] = journalistPublicKeyData.compactMap { keyData in
+            keyData.getMostRecentMessageKey()
+        }
+
+        guard let profileData = publicKeyData.journalistProfiles.first(where: { $0.id == journalistId }) else { return nil }
+
+        return JournalistKeyData(recipientId: journalistId, displayName: profileData.displayName, isDesk: profileData.isDesk, messageKeys: recentKeys, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes))
     }
 }
 
@@ -104,7 +122,12 @@ extension UnlockedSecretData: CustomStringConvertible {
     }
 }
 
-public struct JournalistKeyData: Hashable, Codable {
+public struct JournalistKeyData: Hashable, Codable, Comparable {
+    public static func < (lhs: JournalistKeyData, rhs: JournalistKeyData) -> Bool {
+        return lhs.recipientId == rhs.recipientId &&
+            lhs.tag == rhs.tag
+    }
+
     public static func == (lhs: JournalistKeyData, rhs: JournalistKeyData) -> Bool {
         return lhs.recipientId == rhs.recipientId
     }

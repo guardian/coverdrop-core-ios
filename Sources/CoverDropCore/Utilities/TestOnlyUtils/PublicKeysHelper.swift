@@ -3,6 +3,7 @@ import Sodium
 
 public enum KeysError: Error {
     case cannotFindFileError
+    case cannotFindKey
 }
 
 public enum MockDate {
@@ -66,11 +67,19 @@ public class PublicKeysHelper {
         }
     }
 
-    public static func readLocalSecretsFile(path: String) throws -> UnverifiedSignedPublicSigningKeyDataKeyAndType {
+    public static func readLocalKeypairFile(path: String) throws -> UnverifiedSignedPublicSigningKeyPairData {
         let name = path
-        guard let resourceUrl = Bundle.module.url(forResource: name, withExtension: ".json", subdirectory: "keys") else { throw KeysError.cannotFindFileError }
+        guard let resourceUrl = Bundle.module.url(forResource: name, withExtension: "keypair.json", subdirectory: "keys") else { throw KeysError.cannotFindFileError }
         let data = try Data(contentsOf: resourceUrl)
-        let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyDataKeyAndType.self, from: data)
+        let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyPairData.self, from: data)
+        return keyData
+    }
+
+    public static func readLocalKeypairKeyOnlyFile(path: String) throws -> UnverifiedSignedPublicSigningKeyPairDataKeyOnly {
+        let name = path
+        guard let resourceUrl = Bundle.module.url(forResource: name, withExtension: "keypair.json", subdirectory: "keys") else { throw KeysError.cannotFindFileError }
+        let data = try Data(contentsOf: resourceUrl)
+        let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyPairDataKeyOnly.self, from: data)
         return keyData
     }
 
@@ -131,25 +140,39 @@ public class PublicKeysHelper {
 
     public func getTestJournalistMessageSecretKey() throws -> SecretEncryptionKey<JournalistMessaging> {
         // this is the secret key for the default recipient
-        let data = try PublicKeysHelper.readLocalSecretsFile(path: "journalist_msg.sec")
-        return SecretEncryptionKey(key: Box.KeyPair.SecretKey(data.key.bytes))
+        guard let journalistKeys = testKeys.allPublicKeysForJournalistId(journalistId: "static_test_journalist"),
+              let messageKeys = journalistKeys.first,
+              let recentKey = messageKeys.getMostRecentMessageKey(),
+              let sha = recentKey.key.key.hexStr?.prefix(8)
+        else {
+            throw KeysError.cannotFindKey
+        }
+        let data = try PublicKeysHelper.readLocalKeypairFile(path: "journalist_msg-\(sha)")
+        return SecretEncryptionKey(key: Box.KeyPair.SecretKey(data.secretKey.bytes))
     }
 
     public func getTestCovernodeMessageSecretKey() throws -> SecretEncryptionKey<CoverNodeMessaging> {
         // this is the secret key for "covernode_message"
-        let data = try PublicKeysHelper.readLocalSecretsFile(path: "covernode_msg.sec")
-        return SecretEncryptionKey(key: Box.KeyPair.SecretKey(data.key.bytes))
+        let coverNodeKeys = testKeys.getAllCoverNodeMessagingKeys()
+        guard let coverNodeKey = coverNodeKeys.first(where: { $0.key == "covernode_001" }),
+              let recentKey = coverNodeKey.value.first,
+              let sha = recentKey.key.key.hexStr?.prefix(8)
+        else {
+            throw KeysError.cannotFindKey
+        }
+        let data = try PublicKeysHelper.readLocalKeypairFile(path: "covernode_msg-\(sha)")
+        return SecretEncryptionKey(key: Box.KeyPair.SecretKey(data.secretKey.bytes))
     }
 
     public func getTestUserMessageSecretKey() throws -> SecretEncryptionKey<User> {
         // this is the secret key for the default recipient
-        let data = try PublicKeysHelper.readLocalSecretsFile(path: "user.sec")
-        return SecretEncryptionKey(key: Box.KeyPair.SecretKey(data.key.bytes))
+        let data = try PublicKeysHelper.readLocalKeypairKeyOnlyFile(path: "user")
+        return SecretEncryptionKey(key: Box.KeyPair.SecretKey(data.secretKey.bytes))
     }
 
     public func getTestUserMessagePublicKey() throws -> PublicEncryptionKey<User> {
         // this is the secret key for the default recipient
-        let data = try PublicKeysHelper.readLocalSecretsFile(path: "user.pub")
-        return PublicEncryptionKey(key: Box.KeyPair.SecretKey(data.key.bytes))
+        let data = try PublicKeysHelper.readLocalKeypairKeyOnlyFile(path: "user")
+        return PublicEncryptionKey(key: Box.KeyPair.SecretKey(data.publicKey.key.bytes))
     }
 }

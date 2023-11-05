@@ -33,17 +33,18 @@ final class PaddiedCompressedStringTests: XCTestCase {
 
     func testWillErrorIfStringIsTooLong() {
         let message = """
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Donec hendrerit mauris nibh, et blandit ex venenatis ut. Nullam nec lorem enim.
-        Nam dignissim, metus in pulvinar luctus, eros mi congue libero, non dignissim nisi nunc vitae mi.
-        Proin sagittis diam quis est posuere luctus. Vivamus vitae lectus neque.
-        Morbi et mollis libero, vitae vestibulum lorem.
-        Etiam ornare enim vel sem placerat, nec tempus massa fringilla. Nam eu nibh at nulla aliquet mattis.
-        Praesent hendrerit lacinia tempus. Vivamus molestie diam nisi, in finibus libero dictum et.
-        Quisque condimentum consequat elit, in tempor augue posuere non.
-        Nunc porttitor, leo eu mollis tincidunt, libero nisi fermentum libero, sed feugiat sem purus a ante.
-        Donec condimentum aliquam augue, sit amet aliquet felis vehicula non.
-        Quisque urna dolor, accumsan non ullamcorper sodales, fermentum ac mi.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer dolor
+            nulla, ornare et tristique imperdiet, dictum sit amet velit. Curabitur pharetra erat sed
+            neque interdum, non mattis tortor auctor. Curabitur eu ipsum ac neque semper eleifend.
+            Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+            Integer erat mi, ultrices nec arcu ut, sagittis sollicitudin est. In hac habitasse
+            platea dictumst. Sed in efficitur elit. Curabitur nec commodo elit. Aliquam tincidunt
+            rutrum nisl ut facilisis. Aenean ornare ut mauris eget lacinia. Mauris a felis quis orci
+            auctor varius sit amet eget est. Curabitur a urna sit amet diam sagittis aliquet eget eu
+            sapien. Curabitur a pharetra purus.
+            Nulla facilisi. Suspendisse potenti. Morbi mollis aliquet sapien sed faucibus. Donec
+            aliquam nibh nibh, ac faucibus felis aliquam at. Pellentesque egestas enim sem, eu
+            tempor urna posuere eget. Cras fermentum commodo neque ac gravida.
         """
 
         XCTAssertThrowsError(try PaddedCompressedString.fromString(text: message)) { error in

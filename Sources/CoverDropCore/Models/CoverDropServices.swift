@@ -40,7 +40,7 @@ public enum CoverDropServices {
                 if let testDefaultJournalist = PublicKeysHelper.shared.testDefaultJournalist {
                     let messages: [Message] = await [
                         .outboundMessage(message: OutboundMessageData(recipient: testDefaultJournalist, messageText: "Hey", dateSent: Date())),
-                        .incomingMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date()))
+                        .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date())))
                     ]
                     let newStateWithMessages = await UnlockedSecretData(passphrase: passphrase, messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: storage.privateSendingQueueSecret)
                     let key = try await SecureEnclavePrivateKey.loadKey(name: EncryptedStorage.fileName)

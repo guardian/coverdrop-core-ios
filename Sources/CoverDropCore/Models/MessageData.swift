@@ -3,7 +3,7 @@ import Foundation
 
 public enum Message: Codable, Equatable, Hashable, Comparable {
     case outboundMessage(message: OutboundMessageData)
-    case incomingMessage(message: IncomingMessageData)
+    case incomingMessage(message: IncomingMessageType)
 
     static func formatExpiryDate(messageDate: Date, expiry: Date) -> String? {
         let timeTillExpiry = expiry.distance(to: messageDate)
@@ -135,6 +135,38 @@ extension OutboundMessageData: CustomStringConvertible {
              dateQueued: \(dateQueued)
         """
     }
+}
+
+public enum IncomingMessageType: Hashable, Codable, Comparable {
+    case textMessage(message: IncomingMessageData)
+    case handoverMessage(message: HandoverMessageData)
+}
+
+public struct HandoverMessageData: Hashable, Codable, Comparable {
+    public static func < (lhs: HandoverMessageData, rhs: HandoverMessageData) -> Bool {
+        return lhs.handoverTo < rhs.handoverTo &&
+            lhs.sender < rhs.sender &&
+            lhs.timestamp < rhs.timestamp
+    }
+
+    public static func == (lhs: HandoverMessageData, rhs: HandoverMessageData) -> Bool {
+        return lhs.handoverTo == rhs.handoverTo &&
+            lhs.sender == rhs.sender &&
+            lhs.timestamp == rhs.timestamp
+    }
+
+    init?(sender: JournalistKeyData, timestamp: Date, handoverTo: String) {
+        if handoverTo.count > DeadDropMessageParser.journalistIdentityMaxLength {
+            return nil
+        }
+        self.handoverTo = handoverTo
+        self.sender = sender
+        self.timestamp = timestamp
+    }
+
+    public var sender: JournalistKeyData
+    public var timestamp: Date
+    public var handoverTo: String
 }
 
 public struct IncomingMessageData: Hashable, Codable, Comparable {

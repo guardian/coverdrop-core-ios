@@ -13,24 +13,24 @@
   "keys": [
     {
       "org_pk": {
-        "key": "f9162ddd3609f1985b9d00c1701c2dfa046c819eefc81d5b3a8b6799c27827ee",
-        "certificate": "a05beac4862a73bc56243c91686bad92bf209131d34d0225f1c7832c96931f3cdeed011203ffe95a9fea74428735c22f2f3a8092ca65f1521192b38be8060d0c",
-        "not_valid_after": "2024-09-02T17:16:49.896447Z"
+        "key": "73ee6a1a04bcb962b95feb5396932550de8ed29320103bd62356d482f6eb2d5c",
+        "certificate": "6a083e504c149df7bef6cd420ba13a2f7dcb6664d0dc5ade80121dcfa8311bd5cb8fe9accfb6cb07e0c1fac11c2dc621680a1accead5cd660759b7b7b015a400",
+        "not_valid_after": "2024-10-02T19:06:19.921207Z"
       },
       "covernodes": [
         {
           "provisioning_pk": {
-            "key": "33d96b11013c00c793a5dd10e1f95e196901a437e479ed21612005e95ca751de",
-            "certificate": "7687df2440106111ee01708a7da3dc66343c31e8bf22d2eb31ff13c8599a14be89affd81ad0da22c2190e4855866d7a5ac70093423eb2e273efa3c5f116f2e08",
-            "not_valid_after": "2024-02-19T17:16:51.668221Z"
+            "key": "1c704cad39284b8a9269a3d6357f21e596b2eeed820ba3524df2544174b4f70f",
+            "certificate": "3f9a8a7345dcd5ffe96beab355e3662a3da70d60bc70971f0f4e3ca312f211d99f95d9164ff668fd402df2baa508d0d7d4817c3692756d65b52cab296dc7c008",
+            "not_valid_after": "2024-03-20T19:06:21.272197Z"
           },
           "covernodes": {
             "covernode_001": [
               {
                 "id_pk": {
-                  "key": "91c6dcf45bc1eab14da9c7efb17f258c0cf7fc3790b323a99be4ce6c7c07807e",
-                  "certificate": "18bb5244c9097f2e7561e800971cd774a8852cb86024dad3ea8ac3966b19a3743657ad4beded89a3010a7a6b3374e335c43f23e993f8417abf9667cae0cdb700",
-                  "not_valid_after": "2023-10-02T17:16:52.522034Z"
+                  "key": "504560a698983c7864b20fc1d4ee115901a38e7d958f5e40accbed0497ecad17",
+                  "certificate": "a6d80476390948c98396fac7c401ffc6678065bb30e3e3ec3a58dc44982a742de0b06310303e3939dae0b428ed92d77bb61fb4d964d87b402fc4b1956c01310e",
+                  "not_valid_after": "2023-11-01T19:06:21.976033Z"
                 },
                 "msg_pks": []
               }
@@ -41,17 +41,17 @@
       "journalists": [
         {
           "provisioning_pk": {
-            "key": "452bd05993423cff2e63dc625885d230c9b9cdfb7e703bc7671875d4d0d39fe9",
-            "certificate": "3c19fa5031f50156029d3f4ec54cf547009300095cc4258a05f736f055ddabd224d5d60e253e2e04d4fbba9c885b5d160e6282911ab32c685b7a04f9d0d7390a",
-            "not_valid_after": "2024-02-19T17:16:50.908728Z"
+            "key": "947d712a3ce4758b6313630696d3d8e18d635a0ecfb64f8c4e90fbf8a339356d",
+            "certificate": "7fcbc31ff56e10c7515bf517763675a3df2079f3da62ee2e408fb4bb7174062bcc74a70df9102bf440a879c2f3f4c2c83f88226228d540fa09067911a2a11d00",
+            "not_valid_after": "2024-03-20T19:06:20.603185Z"
           },
           "journalists": {
             "static_test_journalist": [
               {
                 "id_pk": {
-                  "key": "a836d25394e1275fdb4256e9b37be79bd08fd68bf0ab07f573a9e8ae29681cef",
-                  "certificate": "f1ee98fdbb51c72e8eeb53de091bf14a03bc34214cc7a0ef84b0c24683a979a697608db5117854e7b7e451496e28495c64650ea511e48068635f06060ba4ce02",
-                  "not_valid_after": "2023-10-30T17:16:54.810680Z"
+                  "key": "e8f1603a7362f154e55e930091839a721f899b1878a7f11dff1256bfb3a45a7a",
+                  "certificate": "368f7b296718eda18cb5bf88e7d0124edd91aab58623f32f7e70ebbd2976abd20878020aa4048331a57878ae64ff3f275287b2f377fa4c7d9a110f6dadec420d",
+                  "not_valid_after": "2023-11-29T19:06:24.399522Z"
                 },
                 "msg_pks": []
               }

@@ -14,7 +14,7 @@ final class MessageRecipientsTests: XCTestCase {
 
     func testDefaultRecipient() {
         let expectedDefaultRecipientId = testKeys.defaultJournalistId
-        XCTAssert(expectedDefaultRecipientId == nil)
+        XCTAssert(expectedDefaultRecipientId != nil)
     }
 
     func testDefaultRecipientExcluded() {

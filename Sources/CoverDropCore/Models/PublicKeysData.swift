@@ -157,22 +157,3 @@ public struct UnverifiedSignedPublicSigningKeyData: Codable, Equatable {
         case notValidAfter = "not_valid_after"
     }
 }
-
-public struct UnverifiedSignedPublicSigningKeyDataKeyAndType: Codable, Equatable {
-    public static func == (lhs: UnverifiedSignedPublicSigningKeyDataKeyAndType, rhs: UnverifiedSignedPublicSigningKeyDataKeyAndType) -> Bool {
-        return lhs.key == rhs.key
-    }
-
-    public init(key: HexEncodedString, type: String?) {
-        self.key = key
-        self.type = type
-    }
-
-    var key: HexEncodedString
-    var type: String?
-
-    enum CodingKeys: String, CodingKey {
-        case key
-        case type
-    }
-}

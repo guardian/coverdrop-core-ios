@@ -33,12 +33,13 @@ extension DecryptedDeadDrops {
         var foundMessage: Message?
         // We try to decrypt the message with all the available keys for a journalist,
         for messageKey in journalistKey.messageKeys {
-            if let maybePaddedMessage: PaddedCompressedString? = try? TwoPartyBox<PaddedCompressedString>.decrypt(senderPk: messageKey.key, recipientSk: userSecretKey, data: message),
-               let paddedMessage = maybePaddedMessage,
-               let messageText = try? paddedMessage.toString()
+            if let maybeMessageBytes: [UInt8]? = try? TwoPartyBox<[UInt8]>.decrypt(senderPk: messageKey.key, recipientSk: userSecretKey, data: message),
+               let messageBytes = maybeMessageBytes
             {
-                foundMessage = .incomingMessage(message: IncomingMessageData(sender: journalistKey, messageText: messageText, dateReceived: dateReceived, deadDropId: deadDropId))
-                break
+                if let message = DeadDropMessageParser.parseMessage(messageBytes: messageBytes, journalistKey: journalistKey, deadDropId: deadDropId, dateReceived: dateReceived) {
+                    foundMessage = message
+                    break
+                }
             }
             continue
         }

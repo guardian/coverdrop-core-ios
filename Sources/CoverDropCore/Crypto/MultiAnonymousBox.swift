@@ -4,7 +4,7 @@ import Sodium
 let wrappedKeySize = Sodium().secretBox.KeyBytes + Sodium().box.SealBytes
 
 enum MultiAnonymousBoxError: Error {
-    case keyGenFailed, encryptWithSecretBoxFailed, badOutputLength, decryptWithSecretBoxFailed
+    case keyGenFailed, encryptWithSecretBoxFailed, badOutputLength, decryptWithSecretBoxFailed, missingRecipientPublicKeys
 }
 
 public struct MultiAnonymousBox<T>: Equatable {
@@ -29,6 +29,10 @@ public extension MultiAnonymousBox {
         let message = data.asUnencryptedBytes()
 
         let key = Sodium().secretBox.key()
+
+        if recipientPks.isEmpty {
+            throw MultiAnonymousBoxError.missingRecipientPublicKeys
+        }
 
         guard let ciphertext = encryptWithSecretBox(
             key: key,

@@ -3,22 +3,22 @@
 //
 // The Rust code is here: common/src/protocol/constants.rs
 
-public struct Constants {
+public enum Constants {
     public static let journalistProvisioningKeyValidDurationSeconds = 14515200
     public static let journalistIdKeyValidDurationSeconds = 4838400
     public static let journalistMsgKeyValidDurationSeconds = 604800
     public static let covernodeProvisioningKeyValidDurationSeconds = 14515200
     public static let covernodeIdKeyValidDurationSeconds = 2419200
     public static let covernodeMsgKeyValidDurationSeconds = 1209600
-    public static let userToCovernodeEncryptedMessageLen = 516
-    public static let userToCovernodeMessageLen = 340
-    public static let userToJournalistEncryptedMessageLen = 336
-    public static let userToJournalistPaddedMessageLen = 288
-    public static let journalistToCovernodeEncryptedMessageLen = 473
-    public static let journalistToCovernodeMessageLen = 297
-    public static let journalistToUserEncryptedMessageLen = 296
-    public static let journalistToUserPaddedMessageLen = 256
-    public static let messagePaddingLen = 256
+    public static let userToCovernodeEncryptedMessageLen = 772
+    public static let userToCovernodeMessageLen = 596
+    public static let userToJournalistEncryptedMessageLen = 592
+    public static let userToJournalistPaddedMessageLen = 544
+    public static let journalistToCovernodeEncryptedMessageLen = 730
+    public static let journalistToCovernodeMessageLen = 554
+    public static let journalistToUserEncryptedMessageLen = 553
+    public static let journalistToUserPaddedMessageLen = 513
+    public static let messagePaddingLen = 512
     public static let recipientTagLen = 4
     public static let realOrCoverByteLen = 1
     public static let x25519PublicKeyLen = 32
