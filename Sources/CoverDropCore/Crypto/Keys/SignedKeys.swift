@@ -84,16 +84,13 @@ public class SignedPublicSigningKey<T: Role, S: SigningKey>: SigningKey, Codable
     }
 
     public static func fromUnverified<R: Role, Q: SigningKey>(unverifiedKey: UnverifiedSignedPublicSigningKeyData, signingKey: Q, now: Date) throws -> SignedPublicSigningKey<R, Q> {
-        if let messageKeyDate = unverifiedKey.notValidAfter,
-           let validMessageKeyDate = DateFormats.validateDate(date: messageKeyDate),
-           let verifiedKey = SignedPublicSigningKey<R, Q>(
-               key: Sign.KeyPair.PublicKey(unverifiedKey.key.bytes),
-               certificate: Signature<R>.fromBytes(bytes: unverifiedKey.certificate.bytes),
-               signingKey: signingKey,
-               notValidAfter: validMessageKeyDate,
-               now: now
-           )
-        {
+        if let verifiedKey = SignedPublicSigningKey<R, Q>(
+            key: Sign.KeyPair.PublicKey(unverifiedKey.key.bytes),
+            certificate: Signature<R>.fromBytes(bytes: unverifiedKey.certificate.bytes),
+            signingKey: signingKey,
+            notValidAfter: unverifiedKey.notValidAfter.date,
+            now: now
+        ) {
             return verifiedKey
         } else { throw VerificationError.couldNotGetKeyFromUnverified }
     }
@@ -128,16 +125,13 @@ public class SignedPublicEncryptionKey<T: Role, S: SigningKey>: Codable {
     }
 
     public static func fromUnverified<R: Role, Q: SigningKey>(unverifiedMessageKey: UnverifiedSignedPublicEncryptionKeyData, signingKey: Q, now: Date) throws -> SignedPublicEncryptionKey<R, Q> {
-        if let messageKeyDate = unverifiedMessageKey.notValidAfter,
-           let validMessageKeyDate = DateFormats.validateDate(date: messageKeyDate),
-           let verifiedMessageKey = SignedPublicEncryptionKey<R, Q>(
-               key: PublicEncryptionKey<R>(key: unverifiedMessageKey.key.bytes),
-               certificate: Signature<R>.fromBytes(bytes: unverifiedMessageKey.certificate.bytes),
-               signingKey: signingKey,
-               notValidAfter: validMessageKeyDate,
-               now: now
-           )
-        {
+        if let verifiedMessageKey = SignedPublicEncryptionKey<R, Q>(
+            key: PublicEncryptionKey<R>(key: unverifiedMessageKey.key.bytes),
+            certificate: Signature<R>.fromBytes(bytes: unverifiedMessageKey.certificate.bytes),
+            signingKey: signingKey,
+            notValidAfter: unverifiedMessageKey.notValidAfter.date,
+            now: now
+        ) {
             return verifiedMessageKey
         } else { throw VerificationError.couldNotGetKeyFromUnverified }
     }

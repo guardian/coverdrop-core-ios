@@ -160,14 +160,8 @@ public struct VerifiedPublicKeysHierarchy {
     ///   - currentTime: currentTime: the current time the app is running in
     /// - Returns: Returns a VerifiedPublicKeysHierarchy if successfully verified, or fails if it could not verify.
     init?(keyHierarchy: KeyHierarchy, trustedOrganizationPublicKeys: [TrustedOrganizationPublicKey], currentTime: Date) {
-        guard let orgKeyDate = keyHierarchy.organizationPublicKey.notValidAfter,
-              let orgKeyValidDate = DateFormats.validateDate(date: orgKeyDate)
-        else {
-            return nil
-        }
-
         let unverifiedOrganizationPublicKey = SelfSignedPublicSigningKey<Organization>(key: Sign.KeyPair.PublicKey(keyHierarchy.organizationPublicKey.key.bytes), certificate: Signature<Organization>.fromBytes(
-            bytes: keyHierarchy.organizationPublicKey.certificate.bytes), notValidAfter: orgKeyValidDate, now: currentTime)
+            bytes: keyHierarchy.organizationPublicKey.certificate.bytes), notValidAfter: keyHierarchy.organizationPublicKey.notValidAfter.date, now: currentTime)
 
         guard let orgPublicKey = unverifiedOrganizationPublicKey,
               let trustedOrganizationPublicKey: TrustedOrganizationPublicKey = VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: orgPublicKey, trustedOrgPks: trustedOrganizationPublicKeys)

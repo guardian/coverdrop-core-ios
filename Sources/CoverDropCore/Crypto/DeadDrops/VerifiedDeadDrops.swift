@@ -70,16 +70,14 @@ public struct VerifiedDeadDrop {
                 signature: Signature.fromBytes(bytes: unverifiedDeadDropCertificateData.data)
             ) {
                 let parsedDeadDropData = try VerifiedDeadDrop.parseDeadDropData(data: unverifiedDeadDrop.data.bytes)
-                if let createdDate = unverifiedDeadDrop.createdAt,
-                   let validDeadDropDate = DateFormats.validateDate(date: createdDate)
-                {
-                    // Check the deaddrop publish date is not more that 1 week in the future
-                    // This is to make sure no-one has tampered with the deaddrop api dates.
-                    if Date().distance(to: validDeadDropDate) < 60 * 60 * 24 * 6 {
-                        id = unverifiedDeadDrop.id
-                        data = parsedDeadDropData
-                        publishedDate = validDeadDropDate
-                    } else { return nil }
+                let validDeadDropDate = unverifiedDeadDrop.createdAt.date
+                // Check the deaddrop publish date is not more that 1 week in the future
+                // This is to make sure no-one has tampered with the deaddrop api dates.
+                let isValidDateLessThan7DaysInTheFuture = Date().distance(to: validDeadDropDate) < 60 * 60 * 24 * 7
+                if isValidDateLessThan7DaysInTheFuture {
+                    id = unverifiedDeadDrop.id
+                    data = parsedDeadDropData
+                    publishedDate = validDeadDropDate
                 } else { return nil }
             } else { return nil }
         } catch { return nil }

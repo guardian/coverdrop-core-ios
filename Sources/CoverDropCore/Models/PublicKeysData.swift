@@ -117,7 +117,7 @@ public struct JournalistProfile: Codable, Equatable {
 }
 
 public struct UnverifiedSignedPublicEncryptionKeyData: Codable, Equatable {
-    public init(key: HexEncodedString, certificate: HexEncodedString, notValidAfter: String?) {
+    public init(key: HexEncodedString, certificate: HexEncodedString, notValidAfter: RFC3339DateTimeString) {
         self.key = key
         self.certificate = certificate
         self.notValidAfter = notValidAfter
@@ -125,7 +125,7 @@ public struct UnverifiedSignedPublicEncryptionKeyData: Codable, Equatable {
 
     public var key: HexEncodedString
     public var certificate: HexEncodedString
-    public var notValidAfter: String?
+    public var notValidAfter: RFC3339DateTimeString
 
     enum CodingKeys: String, CodingKey {
         case key
@@ -141,7 +141,7 @@ public struct UnverifiedSignedPublicSigningKeyData: Codable, Equatable {
             lhs.notValidAfter == rhs.notValidAfter
     }
 
-    public init(key: HexEncodedString, certificate: HexEncodedString, notValidAfter: String?) {
+    public init(key: HexEncodedString, certificate: HexEncodedString, notValidAfter: RFC3339DateTimeString) {
         self.key = key
         self.certificate = certificate
         self.notValidAfter = notValidAfter
@@ -149,7 +149,7 @@ public struct UnverifiedSignedPublicSigningKeyData: Codable, Equatable {
 
     var key: HexEncodedString
     var certificate: HexEncodedString
-    public var notValidAfter: String?
+    public var notValidAfter: RFC3339DateTimeString
 
     enum CodingKeys: String, CodingKey {
         case key

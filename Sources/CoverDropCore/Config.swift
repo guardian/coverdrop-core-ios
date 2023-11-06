@@ -185,11 +185,8 @@ public struct ProdConfig: ConfigProtocol {
             if let resourceUrl = resourceUrlOption {
                 let data = try Data(contentsOf: resourceUrl)
                 let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyData.self, from: data)
-                if let notValidAfterString = keyData.notValidAfter,
-                   let notValidAfter = DateFormats.validateDate(date: notValidAfterString)
-                {
-                    return SelfSignedPublicSigningKey<TrustedOrganization>.init(key: Sign.KeyPair.PublicKey(keyData.key.bytes), certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes), notValidAfter: notValidAfter, now: Date.now)
-                }
+
+                return SelfSignedPublicSigningKey<TrustedOrganization>.init(key: Sign.KeyPair.PublicKey(keyData.key.bytes), certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes), notValidAfter: keyData.notValidAfter.date, now: Date.now)
             }
             return nil
         }

@@ -17,9 +17,9 @@ public struct DeadDropId: Codable, Comparable {
     public var id: Int
 }
 
-public struct DeadDrop: Codable {
+public struct DeadDrop: Codable, Equatable {
     public var id: Int
-    public var createdAt: String?
+    public var createdAt: RFC3339DateTimeString
     public var data: Base64EncodedString
     public var cert: HexEncodedString
 
