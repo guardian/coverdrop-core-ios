@@ -6,26 +6,45 @@ enum CoverDropServicesError: Error {
     case failedToGenerateCoverMessage
 }
 
-public enum CoverDropServices {
-    public static func didLaunch() throws {
+public class CoverDropServices: ObservableObject {
+    @MainActor @Published public var isReady: Bool = false
+
+    private init() {}
+
+    public static var shared = CoverDropServices()
+
+    public func didLaunch() throws {
         BackgroundTaskService.registerAppRefresh()
     }
 
-    public static func didLaunchAsync() async throws {
+    public func didLaunchAsync() async throws {
+        // To initialise the CoverDrop service we need to:
+        // 1. Setup the public data repository
         PublicDataRepository.setup(ApplicationConfig.config)
+        // 2. Get the shared instance of public data repository
         let publicDataRepository = PublicDataRepository.shared
-        _ = SecretDataRepository.shared
-
+        // 3. request the public keys and any dead drops
         try await publicDataRepository.pollDataSources()
-
-        guard let coverMessage = try? CoverMessage.getCoverMessage() else {
+        // 4. get the verified keys
+        guard let verifiedPublicKeys = publicDataRepository.verifiedPublicKeysData else {
+            throw CoverDropServicesError.coverNodeKeysNotAvailable
+        }
+        // 5. generate a coverMessage from the verified Keys
+        guard let coverMessage = try? CoverMessage.getCoverMessage(verifiedPublicKeys: verifiedPublicKeys) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
-
+        // 6. starte the private sending queue
         try await PrivateSendingQueueRepository.shared.start(coverMessage: coverMessage)
+        let privateSendingQueueIsReady = await PrivateSendingQueueRepository.shared.isReady
 
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart(withSecureEnclave: SecureEnclave.isAvailable)
+        _ = SecretDataRepository.shared
+
+        await MainActor.run {
+            isReady = publicDataRepository.areKeysAvailable && EncryptedStorage.isReady && privateSendingQueueIsReady
+        }
+
         if ApplicationConfig.config.startWithTestStorage {
             // If we are in UI_TEST_MODE, we want to initialise the storage with a known passphase
             // and set of user keys, so we can work with UI
@@ -52,9 +71,9 @@ public enum CoverDropServices {
 
     public static func didEnterForeground() {
         Task {
+            try? await PublicDataRepository.shared.dequeueMessageAndSend()
             try? await BackgroundLogoutService.logoutIfBackgroundedForTooLong()
             try? await PublicDataRepository.shared.pollDataSources()
-            try? await PublicDataRepository.shared.dequeueMessageAndSend()
         }
     }
 

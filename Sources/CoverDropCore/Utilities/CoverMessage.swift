@@ -6,9 +6,9 @@ public enum CoverMessageError: Error {
 }
 
 public enum CoverMessage {
-    public static func getCoverMessage() throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        let publicDataRepository = PublicDataRepository.shared
-        guard let allCoverNodes = publicDataRepository.verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies() else {
+    public static func getCoverMessage(verifiedPublicKeys: VerifiedPublicKeys) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+        let allCoverNodes = verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+        if allCoverNodes.isEmpty {
             throw CoverMessageError.failedToGetCoverNodeMessageKeys
         }
         let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)

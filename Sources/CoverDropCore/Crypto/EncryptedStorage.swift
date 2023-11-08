@@ -31,6 +31,14 @@ public actor EncryptedStorage {
     public static let fileName = "coverdrop"
     public static let storagePaddingToSize = 1 * 1024 * 1024 // 1 Mib
     public static let xsalsa20KeyLength = 32
+    /// For the EncryptedStorage to be ready, we expect a file to be on disk
+    /// As a side effect of creating the storage, we also expect a key to be create in the secure enclave if available
+    /// As its a side effect, we don't explicitly check for it, but just assume it has happened.
+    public static var isReady: Bool {
+        guard let fileURL = try? EncryptedStorage.secureStorageFileURL() else { return false }
+
+        return FileManager.default.fileExists(atPath: fileURL.path)
+    }
 
     /// To be called on every app start. If no storage exists, a new one is created with an undisclosed passphrase. If one already exists, its last-modified date is updated.
     /// - Parameters:

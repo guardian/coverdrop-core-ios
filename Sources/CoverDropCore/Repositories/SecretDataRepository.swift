@@ -11,9 +11,8 @@ public class SecretDataRepository: ObservableObject {
     }
 
     public static let shared = SecretDataRepository()
-    public func unlock(passphrase: ValidPassword) async throws -> Bool {
+    public func unlock(passphrase: ValidPassword, key: SecureEnclavePrivateKey) async throws -> Bool {
         do {
-            let key = try await SecureEnclavePrivateKey.loadKey(name: EncryptedStorage.fileName)
             // load data from Encrypted Storage
             let storage: Storage = try await EncryptedStorage.loadStorageFromDisk(passphrase: passphrase, withSecureEnclave: SecureEnclave.isAvailable, secureEnclaveKey: key)
 

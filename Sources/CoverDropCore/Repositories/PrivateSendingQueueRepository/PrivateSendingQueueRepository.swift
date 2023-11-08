@@ -3,6 +3,9 @@ import Foundation
 /// This repository actor is the main interface for the app for creating and managing its instance of the global `PrivateSendingQueue` via a  `shared` singleton instance.
 public actor PrivateSendingQueueRepository: ObservableObject {
     public static let shared = PrivateSendingQueueRepository()
+    public var isReady: Bool {
+        queue != nil
+    }
 
     @Published public var lastUpdated: Date = .now
 

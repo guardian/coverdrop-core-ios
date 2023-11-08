@@ -137,7 +137,7 @@ public struct VerifiedPublicKeysHierarchy {
     /// This gets the mst recent verified CoverNode key hierarcy by `notValidAfter` date
     /// - Returns: A `VerifiedCoverNodeKeyHierarchy`
     public func getMostRecentCoverNodeHierarchy() -> VerifiedCoverNodeKeyHierarchy? {
-        return self.verifiedCoverNodeKeyHierarchies.max(by: { $0.provisioningKey.notValidAfter > $1.provisioningKey.notValidAfter })
+        return self.verifiedCoverNodeKeyHierarchies.max(by: { $0.provisioningKey.notValidAfter < $1.provisioningKey.notValidAfter })
     }
 
     /// This gets all the public keys for each journalist for this key hierarchy.
@@ -326,7 +326,7 @@ public struct VerifiedJournalistPublicKeyHierarchy {
     public func getMostRecentVerifiedJournalistPublicKeyHierarchy() -> [String: VerifiedJournalistPublicKeysGroup]? {
         var journalistKey: [String: VerifiedJournalistPublicKeysGroup] = [:]
         self.keys.forEach { journalist, key in
-            if let mostRecentKey = key.max(by: { $0.id.notValidAfter > $1.id.notValidAfter }) {
+            if let mostRecentKey = key.max(by: { $0.id.notValidAfter < $1.id.notValidAfter }) {
                 journalistKey.updateValue(mostRecentKey, forKey: journalist)
             }
         }
@@ -358,7 +358,7 @@ public struct VerifiedCoverNodeKeyHierarchy {
     public func getMostRecentCoverNodeKeyHierarchy() -> [CoverNodeIdentity: VerifiedCoverNodeKeysFamily]? {
         var coverNodeKeys: [CoverNodeIdentity: VerifiedCoverNodeKeysFamily] = [:]
         self.idPublicKeys.forEach { coverNode, key in
-            if let mostRecentKey = key.max(by: { $0.id.notValidAfter > $1.id.notValidAfter }) {
+            if let mostRecentKey = key.max(by: { $0.id.notValidAfter < $1.id.notValidAfter }) {
                 coverNodeKeys.updateValue(mostRecentKey, forKey: coverNode)
             }
         }

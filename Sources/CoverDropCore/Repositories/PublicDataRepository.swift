@@ -58,16 +58,15 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.configNotAvailable
         }
         // Load public keys
-        do {
-            if let config = PublicDataRepository.appConfig {
-                let publicKeysData = try await PublicKeyRepository().loadKeys(cacheEnabled: cacheEnabled)
-                let trustedRootKeys = try config.organizationPublicKeys()
-                let dateFunction = config.currentKeysPublishedTime()
-                let verifiedPublicKeysData = try VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: dateFunction)
-                self.verifiedPublicKeysData = verifiedPublicKeysData
-                areKeysAvailable = true
-            }
-        } catch {}
+
+        if let config = PublicDataRepository.appConfig,
+           let publicKeysData = try? await PublicKeyRepository().loadKeys(cacheEnabled: cacheEnabled),
+           let trustedRootKeys = try? config.organizationPublicKeys()
+        {
+            let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: config.currentKeysPublishedTime())
+            self.verifiedPublicKeysData = verifiedPublicKeysData
+            areKeysAvailable = true
+        }
     }
 
     public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws {

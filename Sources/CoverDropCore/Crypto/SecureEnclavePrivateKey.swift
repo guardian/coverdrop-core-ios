@@ -62,6 +62,10 @@ public extension SecureEnclavePrivateKey {
         return try await load.value
     }
 
+    static func loadDefaultKey() async throws -> SecureEnclavePrivateKey {
+        try await SecureEnclavePrivateKey.loadKey(name: EncryptedStorage.fileName)
+    }
+
     static func loadKey(name: String) async throws -> SecureEnclavePrivateKey {
         let load = Task {
             guard let tag = name.data(using: .utf8) else {
