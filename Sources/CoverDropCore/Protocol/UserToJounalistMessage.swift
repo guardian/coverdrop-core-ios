@@ -28,21 +28,22 @@ public struct UserToCoverNodeMessageData: Equatable, Encryptable {
 
 public struct UserToJournalistMessageData: Equatable, Encryptable {
     let publicKey: PublicEncryptionKey<User>
+    let reservedByte: UInt8
     let paddedCompressedString: PaddedCompressedString
 
     public func asUnencryptedBytes() -> [UInt8] {
-        var publicKeysBytes = publicKey.toBytes()
-        let compressedStringBytes: [UInt8] = paddedCompressedString.value
-        publicKeysBytes.append(contentsOf: compressedStringBytes)
-        return publicKeysBytes
+        let publicKeyBytes = publicKey.toBytes()
+        let paddedCompressedStringBytes = paddedCompressedString.value
+        return publicKeyBytes + [reservedByte] + paddedCompressedStringBytes
     }
 
     public static func fromUnencryptedBytes(bytes: [UInt8]) throws -> UserToJournalistMessageData {
         let publicKey = PublicEncryptionKey<User>(key: Array(bytes.prefix(Constants.x25519PublicKeyLen)))
+        let reservedByte = bytes[Constants.x25519PublicKeyLen]
         let plainTextPaddedCompresssedStringBytes = Array(bytes.suffix(Constants.messagePaddingLen))
 
         let plainTextPaddedCompresssedString = try PaddedCompressedString.fromUncheckedBytes(bytes: plainTextPaddedCompresssedStringBytes)
-        return UserToJournalistMessageData(publicKey: publicKey, paddedCompressedString: plainTextPaddedCompresssedString)
+        return UserToJournalistMessageData(publicKey: publicKey, reservedByte: reservedByte, paddedCompressedString: plainTextPaddedCompresssedString)
     }
 }
 
@@ -80,7 +81,7 @@ public enum UserToCoverNodeMessage {
         // append the compressed the user public key
         let publicKeysBytes = PublicEncryptionKey<User>(key: userPublicKey.toBytes())
 
-        let userToJournalistPlaintext = UserToJournalistMessageData(publicKey: publicKeysBytes, paddedCompressedString: compressedMessage)
+        let userToJournalistPlaintext = UserToJournalistMessageData(publicKey: publicKeysBytes, reservedByte: 0x00, paddedCompressedString: compressedMessage)
 
         // create a PublicEncryptionKey instance from the recipient key bytes and
         // encrypt the padded compressed string and public key with Anonymous box

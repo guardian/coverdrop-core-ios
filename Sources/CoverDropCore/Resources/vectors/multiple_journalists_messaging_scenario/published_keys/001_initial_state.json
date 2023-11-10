@@ -63,14 +63,14 @@
             "additional_test_journalist_1": [
               {
                 "id_pk": {
-                  "key": "143e372821fddcb7ae5c386b2b9d28fd07a4b9e1d7d1fdd8825263d59f74780e",
-                  "certificate": "79b26e73fb7fb6994852a22490006e27e62c115fc74dcc142c5e34637f878c8374bea1bde6c0349c2c290b0dd9a5fc7852f30dad99002a43c1128d16f9f33b0e",
+                  "key": "e9434132c788007b990ce9653763fc067854bdd119a1fa78b6314a60dab01b7f",
+                  "certificate": "b4503fc901c80331d0c124d705fca09e8305b937e3773c613b3ee9cbb0260a99a41103350251f4f1687e017a03c52ee4ff87335ef6ca4d7baaeda1af60597d01",
                   "not_valid_after": "2023-11-29T19:06:19Z"
                 },
                 "msg_pks": [
                   {
-                    "key": "3410997a2d6d40d5062aeaad0c52b1541c04fe3a9c72761a0e2bf2ffd8dc914d",
-                    "certificate": "6db3d9c17966a970a1d32b3f76e7f61a69b1c2f129588496f9caf7916fb342308304e2b3e94626335afacd3778f3279bdeacc32cb5d6797364062e498198ee0d",
+                    "key": "bbae87887cda586c6a60125a81e6dc14423171a566a7d163237bca0ee9bd9008",
+                    "certificate": "987d801cf445a7df475c164981f8011168adba034ec7082ed70a9879e36ec3b9d869db7a192f515a24dbe8082f738cd47aab541e8cf23823939c5a45055f5b07",
                     "not_valid_after": "2023-10-11T19:06:19Z"
                   }
                 ]

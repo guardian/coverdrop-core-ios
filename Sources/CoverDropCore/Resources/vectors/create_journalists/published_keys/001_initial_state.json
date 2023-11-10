@@ -68,23 +68,18 @@
             "not_valid_after": "2024-03-20T19:06:20.603185Z"
           },
           "journalists": {
-            "generated_test_journalist": [
+            "generated_test_desk": [
               {
                 "id_pk": {
-                  "key": "ffd16b053f775a22bdb85f1363bfcf3726fff815d3ad2a024d1a3d64300e9e7f",
-                  "certificate": "b74b7df86a7410c354b2b7049051a373b1a3a0e6ffebdc5b94d45cc7e396f3853440664ee45ad77c51cc5de0b2225c792a35634f1a3294bc0fbf6e079152080c",
-                  "not_valid_after": "2023-11-29T19:06:36.349819792Z"
+                  "key": "0f816b6ab87ff8581515667f54425dcf4717ab5e8e5696f50af818891965775f",
+                  "certificate": "70b6ddb12efa9ed796d3c033893c05bdb6257d7bd79c8e06db874ca1260362463c35a3b717b4be457ee0085e5746dc28b5bb2a1b4c04ab5a8486bc6c947aed0f",
+                  "not_valid_after": "2023-11-29T19:06:35.520079541Z"
                 },
                 "msg_pks": [
                   {
-                    "key": "bb99d3993a9d923f224d3ccf38e063edcfd8968ff05314bf2ad6f2f7e7e31c48",
-                    "certificate": "d6dc6afffdddb48cee1d348cda1f2e10a0a1e57fb7c75827e417b893b11990a3833f274cc089432bb3e02d74bade7be51f58550e70f0e7e2ac9b4227a18d920f",
-                    "not_valid_after": "2023-10-11T19:06:37.615836667Z"
-                  },
-                  {
-                    "key": "27b8e6e4233d74a1d8d4e851614acba30e128812b6f0850ccfad4a291633507c",
-                    "certificate": "404b7224f18004d6819445618357fa62d17df6e6606902193c06fae72e14ce80f5708f6c43697e49f7badec8a18016ac7025584d5ecd01bf543e909576525c00",
-                    "not_valid_after": "2023-10-11T19:06:36.349819792Z"
+                    "key": "428f1ca88c5585b0374e2530001ff8d699f118a4169d69dd4f8bdc87315c456b",
+                    "certificate": "77506e77a9c178dbcc86eaf9e30e3a926f97bb1ff42367083b66c03fed5d3136ccb0e7f22c46cbaee70f1e72098740e21cb86bbefd7b0d75bdf780b4ba627800",
+                    "not_valid_after": "2023-10-11T19:06:35.520079541Z"
                   }
                 ]
               }
@@ -105,18 +100,23 @@
                 ]
               }
             ],
-            "generated_test_desk": [
+            "generated_test_journalist": [
               {
                 "id_pk": {
-                  "key": "79711b679b76fda97a5916769f7cc2682e373e160f24a9ef613310b3a06c7b64",
-                  "certificate": "b4cac58e36495791703767383dbbd82c608e93c5c863eb8c8f4cb9c78ad006a66e96c9070a50798389a5d7d663806e9ee6ad658fed4b4adb7b9658d8cd06150b",
-                  "not_valid_after": "2023-11-29T19:06:36.894481500Z"
+                  "key": "48e483ae0d57885ab455d39f9b3092f9e4a7b7f6eaa5364f5a6e95bd43b2ac7f",
+                  "certificate": "92e895d114f28bc2bf0105a4d60362af8ccb480d15a51979a0094354c6f9a1ad509c160f47b44cd714b31d9710d786a311965106a2836744eaf84dae399f590c",
+                  "not_valid_after": "2023-11-29T19:06:34.924978583Z"
                 },
                 "msg_pks": [
                   {
-                    "key": "5cf8e314189ba541379393989438211539021806ed4f5a220296730ea6090c1a",
-                    "certificate": "f0dc6f73240746e6c5b3ae99af7bb29d9244cc6832cccbf1b39f305194514c0bf84fc1f78c3d1a0f30de60322d1f1b19335b29967b05b1bcaf07d0b91579100d",
-                    "not_valid_after": "2023-10-11T19:06:36.894481500Z"
+                    "key": "6bec64f78aa7693f9933e167361692fb95e589426850f1e7406dcde204a5af5d",
+                    "certificate": "42e3b3e4de456d9757bd00c45f0cd1f9d5987eb3e287b57cfcded283dd565cb6ba066808d09e361c67a286f7306b08b3c56d8fad2f1e58b60507118b7efc8302",
+                    "not_valid_after": "2023-10-11T19:06:34.924978583Z"
+                  },
+                  {
+                    "key": "ef77048ce37c6ab62fa3ceb2a53e1e2e8bcc9b903b2cb0582cef3a0255510c48",
+                    "certificate": "d74339428294eae36d4d2dfd4a9ea381630f7d813f4f46e72c000074398c201a4ff4f46603dfb4cce22dc003f35a028ec3130c228928e07810d2fbff656c8802",
+                    "not_valid_after": "2023-10-11T19:06:36.245433083Z"
                   }
                 ]
               }
