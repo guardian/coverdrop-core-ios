@@ -4,6 +4,7 @@ import Foundation
 enum CoverDropServicesError: Error {
     case coverNodeKeysNotAvailable
     case failedToGenerateCoverMessage
+    case failedToStartCachingNotEnabledInProd
 }
 
 public class CoverDropServices: ObservableObject {
@@ -23,6 +24,16 @@ public class CoverDropServices: ObservableObject {
         PublicDataRepository.setup(ApplicationConfig.config)
         // 2. Get the shared instance of public data repository
         let publicDataRepository = PublicDataRepository.shared
+
+        // Note the app will not be made available if the cache is not enabled in production
+        if let appConfig = PublicDataRepository.appConfig,
+           case .prodConfig = appConfig
+        {
+            if !appConfig.cacheEnabled {
+                throw CoverDropServicesError.failedToStartCachingNotEnabledInProd
+            }
+        }
+
         // 3. request the public keys and any dead drops
         try await publicDataRepository.pollDataSources()
         // 4. get the verified keys

@@ -22,19 +22,29 @@ public enum FileHelper {
         /// the file cache time, we return true
         func canRefresh(now: Date) throws -> Bool {
             let fileExpiry = Double(durationInSeconds)
-            let interval = try now.timeIntervalSince(getLastUpdatedDate())
+            let interval = try now.timeIntervalSince(getLastUpdatedDate(fileUrl: fileUrl))
             return interval > fileExpiry
         }
 
-        func getLastUpdatedDate() throws -> Date {
-            let attributes: [FileAttributeKey: Any] = try FileManager.default.attributesOfItem(atPath: fileUrl.path)
-            let optionalModificationDate = attributes[FileAttributeKey.modificationDate] as? Date
-            guard let modificationDate = optionalModificationDate else {
-                throw PublicKeyLocalRepositoryError.failedToGetModificationDate
-            }
-            return modificationDate
-        }
-
         return try canRefresh(now: now)
+    }
+
+    static func getLastUpdatedDate(fileUrl: URL) throws -> Date {
+        let attributes: [FileAttributeKey: Any] = try FileManager.default.attributesOfItem(atPath: fileUrl.path)
+        let optionalModificationDate = attributes[FileAttributeKey.modificationDate] as? Date
+        guard let modificationDate = optionalModificationDate else {
+            throw PublicKeyLocalRepositoryError.failedToGetModificationDate
+        }
+        return modificationDate
+    }
+
+    // This is for testing purposes.
+    public static func setLastUpdatedDate(fileUrl: URL, now: Date) throws -> Bool {
+        let attributes = [FileAttributeKey.modificationDate: now]
+        if let setSuccess = try? FileManager.default.setAttributes(attributes, ofItemAtPath: fileUrl.path) {
+            return true
+        } else {
+            return false
+        }
     }
 }

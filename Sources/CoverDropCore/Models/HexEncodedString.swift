@@ -3,6 +3,10 @@ import Foundation
 /// A HexEncoded string is a hexidecimal string representation of a byte array
 /// This is used to decode hex encoded string from our API responses
 public struct HexEncodedString: Codable, Equatable {
+    init(bytes: [UInt8]) {
+        self.bytes = bytes
+    }
+
     public var bytes: [UInt8]
 
     public init(from decoder: Decoder) throws {

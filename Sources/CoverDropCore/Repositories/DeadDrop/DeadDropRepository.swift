@@ -1,7 +1,7 @@
 import Foundation
 
 protocol DeadDropRepositoryProtocol {
-    func loadDeadDrops(cacheEnabled: Bool) async throws -> DeadDropData?
+    func loadDeadDropsWithCache(cacheEnabled: Bool) async throws -> DeadDropData?
 }
 
 /// This repository is for managing dead drops published from the API `/users/dead-drops`
@@ -20,46 +20,56 @@ struct DeadDropRepository: DeadDropRepositoryProtocol {
     public let now: Date
     public let urlSessionData: URLSession
 
-    /// This loads dead drops from the `/users/dead-drops/` endpoint and caches the most recent processed dead drop id
+    /// This loads dead drops from the `/user/dead-drops/` endpoint and caches the response.
+    /// Each dead drop will only be kept in cache for 2 weeks, and will be removed during a merge and trim operation, once the dead drop `createdAt` date  falls outside that period.
+    /// A merge and trim only happens when new dead drops have been got from the api.
     /// At any point in time, the dead drop api only has the last 2 weeks worth of dead drops, so inital loading will generally have a fixed size.
-    func loadDeadDrops(cacheEnabled: Bool = true) async throws -> DeadDropData? {
-        let fileUrl = try await DeadDropIdRepository().fileURL()
+    func loadDeadDropsWithCache(cacheEnabled: Bool = true) async throws -> DeadDropData? {
+        var latestDeadDropId = 0
 
-        // load the last succesfull dead drop ID from disk
-        // If this fails, we assume we've never loaded any dead drops before,
-        // so we initialise the storage with 0 as the dead drop ID
-        // If we are unable to initialise the storage, we just give up.
-        guard var latestDeadDropId = try? await DeadDropIdRepository().load() else {
-            do {
-                try await DeadDropIdRepository().save(deadDrops: DeadDropId(id: 0))
-                return try await loadDeadDrops(cacheEnabled: cacheEnabled)
-            } catch {
-                return nil
+        if cacheEnabled {
+            var cachedDeadDrops = DeadDropData(deadDrops: [])
+
+            let fileUrl = try await DeadDropLocalRepository().fileURL()
+            let cacheFileAlreadyExists = FileManager.default.fileExists(atPath: fileUrl.path)
+
+            // This should only run on first ever load
+            if !cacheFileAlreadyExists {
+                do {
+                    let deadDropData = try await DeadDropWebRepository(session: urlSessionData).loadDeadDrops(id: latestDeadDropId)
+                    try await DeadDropLocalRepository().save(deadDrops: deadDropData)
+                    return deadDropData
+                } catch {
+                    return cachedDeadDrops
+                }
             }
-        }
-
-        do {
-            // if we are outside the cache window, we try and load dead drops from the api
-            // using the most recent id + 1
-
-            var shouldRefresh = try FileHelper.isFileOlderThan(durationInSeconds: maxCacheAge, fileUrl: fileUrl, now: now)
-
-            if !cacheEnabled {
-                shouldRefresh = true
-                latestDeadDropId = DeadDropId(id: 0)
-                try await DeadDropIdRepository().save(deadDrops: DeadDropId(id: 0))
+            // If the cache file does not exist we initialise the cache with empty dead drop data
+            // get the highest id that is stored in the cache
+            if let gotCachedDeadDrops = try? await DeadDropLocalRepository().load(),
+               let highestLocalDeadDropId: Int = gotCachedDeadDrops.deadDrops.max(by: { $0.id < $1.id })?.id
+            {
+                latestDeadDropId = highestLocalDeadDropId
+                cachedDeadDrops = gotCachedDeadDrops
             }
 
-            if shouldRefresh || latestDeadDropId.id == 0 {
-                let deadDropData = try await DeadDropWebRepository(session: urlSessionData).loadDeadDrops(id: latestDeadDropId.id)
-                return deadDropData
+            // If we outside the cache time, we want to get new data from the api and save
+            // the merged and trimmed results back to the cache file
+            if (try? FileHelper.isFileOlderThan(durationInSeconds: maxCacheAge, fileUrl: fileUrl, now: now) == true) != nil
+            {
+                if let deadDropData = try? await DeadDropWebRepository(session: urlSessionData).loadDeadDrops(id: latestDeadDropId) {
+                    let mergedDeadDrops = await DeadDropLocalRepository().mergeAndTrim(existingDeadDrops: cachedDeadDrops, newDeadDrops: deadDropData)
+                    try? await DeadDropLocalRepository().save(deadDrops: mergedDeadDrops)
+                    return mergedDeadDrops
+                }
             } else {
-                // if we are inside the cache window, we do nothing
-                return nil
+                // otherwise we just return the cached deaddrops
+                return cachedDeadDrops
             }
-        } catch {
-            // if loading the dead drops fails because the API is unavailable we do nothing
-            return nil
+        } else {
+            if let deadDropData = try? await DeadDropWebRepository(session: urlSessionData).loadDeadDrops(id: latestDeadDropId) {
+                return deadDropData
+            }
         }
+        return nil
     }
 }

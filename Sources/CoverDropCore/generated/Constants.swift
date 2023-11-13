@@ -28,5 +28,6 @@ public struct Constants {
     public static let messageValidForDurationInSeconds = 1209600
     public static let messageExpiryWarningInSeconds = 172800
     public static let maxBackgroundDurationInSeconds = 300
+    public static let clientDeadDropCacheTtlSeconds = 1209600
     public static let covernodeWrappingKeyCount = 2
 }

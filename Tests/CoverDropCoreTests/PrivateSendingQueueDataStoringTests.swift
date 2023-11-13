@@ -4,6 +4,7 @@ import XCTest
 
 final class PrivateSendingQueueDiskStoringTests: XCTestCase {
     func testSaving() async throws {
+        PublicDataRepository.setup(.devConfig)
         try await PublicDataRepository.shared.pollDataSources()
         guard let coverMessage = try? CoverMessage.getCoverMessage(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")
@@ -27,6 +28,7 @@ final class PrivateSendingQueueDiskStoringTests: XCTestCase {
     }
 
     func testLoading() async throws {
+        PublicDataRepository.setup(.devConfig)
         try await PublicDataRepository.shared.pollDataSources()
         guard let coverMessage = try? CoverMessage.getCoverMessage(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")

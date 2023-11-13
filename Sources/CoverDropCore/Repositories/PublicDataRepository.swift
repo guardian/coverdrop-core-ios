@@ -41,7 +41,7 @@ public class PublicDataRepository: ObservableObject {
         }
 
         // Load dead drops from journalists
-        if let deadDrops = try await DeadDropRepository().loadDeadDrops(cacheEnabled: cacheEnabled),
+        if let deadDrops = try await DeadDropRepository().loadDeadDropsWithCache(cacheEnabled: cacheEnabled),
            let verifiedPublicKeys = verifiedPublicKeysData
         {
             let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDrops, verifiedKeys: verifiedPublicKeys)
