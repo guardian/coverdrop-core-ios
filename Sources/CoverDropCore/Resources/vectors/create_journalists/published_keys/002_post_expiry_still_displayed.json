@@ -78,7 +78,7 @@
                 "msg_pks": []
               }
             ],
-            "generated_test_desk": [
+            "generated_test_journalist": [
               {
                 "id_pk": {
                   "key": "0f816b6ab87ff8581515667f54425dcf4717ab5e8e5696f50af818891965775f",
@@ -88,7 +88,7 @@
                 "msg_pks": []
               }
             ],
-            "generated_test_journalist": [
+            "generated_test_desk": [
               {
                 "id_pk": {
                   "key": "48e483ae0d57885ab455d39f9b3092f9e4a7b7f6eaa5364f5a6e95bd43b2ac7f",

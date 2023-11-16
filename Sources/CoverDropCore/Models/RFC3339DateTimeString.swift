@@ -7,7 +7,7 @@ public struct RFC3339DateTimeString: Codable, Equatable, Comparable {
         lhs.date < rhs.date
     }
 
-    init(date: Date) {
+    public init(date: Date) {
         self.date = date
     }
 

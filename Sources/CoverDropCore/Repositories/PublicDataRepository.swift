@@ -8,6 +8,7 @@ enum PublicDataRepositoryError: Error {
 
 public class PublicDataRepository: ObservableObject {
     @Published public var verifiedPublicKeysData: VerifiedPublicKeys?
+    @Published public var coverDropServiceStatus: StatusData?
     @Published public var deadDrops: VerifiedDeadDrops?
     @Published public var areKeysAvailable: Bool = false
     @Published public var cacheEnabled: Bool = true
@@ -31,8 +32,20 @@ public class PublicDataRepository: ObservableObject {
     // This is @MainActor is done as timers are required to be run on the main UI thread.
     // We do all actual work in a background Task, so this will not affect UI rendering performance.
     @MainActor public func pollDataSources() async throws {
+        try await loadStatus()
         try await loadPublicKeys()
         try await loadDeadDrops()
+    }
+
+    public func loadStatus() async throws {
+        guard let cacheEnabled = PublicDataRepository.appConfig?.cacheEnabled else {
+            throw PublicDataRepositoryError.configNotAvailable
+        }
+        if let config = PublicDataRepository.appConfig,
+           let currentStatus = try? await StatusRepository().getStatusWithCache(cacheEnabled: config.cacheEnabled)
+        {
+            coverDropServiceStatus = currentStatus
+        }
     }
 
     public func loadDeadDrops() async throws {

@@ -10,14 +10,18 @@ enum MockUrlData {
     static func getMockUrlData() -> [URL?: MockResponse] {
         var publicKeysData = MockUrlData.getKeys()
         var deadDropData = MockUrlData.getDeadDrops()
-        #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("EMPTY_KEYS_DATA") {
-                publicKeysData = Data()
-            } else if ProcessInfo.processInfo.arguments.contains("MULTIPLE_JOURNALIST_SCENARIO") {
-                publicKeysData = MockUrlData.getMultipleJournalistKeys()
-                deadDropData = MockUrlData.getMulitpleJournalistDeadDrops()
-            }
-        #endif
+        var statusData = MockUrlData.getStatusData()
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("EMPTY_KEYS_DATA") {
+            publicKeysData = Data()
+        } else if ProcessInfo.processInfo.arguments.contains("MULTIPLE_JOURNALIST_SCENARIO") {
+            publicKeysData = MockUrlData.getMultipleJournalistKeys()
+            deadDropData = MockUrlData.getMulitpleJournalistDeadDrops()
+        }
+        if ProcessInfo.processInfo.arguments.contains("STATUS_UNAVAILABLE") {
+            statusData = MockUrlData.getStatusUnavailableData()
+        }
+#endif
         return [
             URL(string: "http://localhost:3000/v1/public-keys")!: MockResponse(
                 error: nil,
@@ -47,12 +51,33 @@ enum MockUrlData {
                 data: Data(),
                 response: HTTPURLResponse(url: URL(string: "http://localhost:7676/user/messages")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             ),
+            URL(string: "http://localhost:3000/v1/status")!: MockResponse(
+                error: nil,
+                data: statusData,
+                response: HTTPURLResponse(url: URL(string: "http://localhost:3000/v1/status")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            )
         ]
     }
 
     static func getDeadDrops() -> Data {
         do {
             return try DeadDropDataHelper.shared.readLoadDeadDropJson()
+        } catch {
+            return Data()
+        }
+    }
+
+    static func getStatusData() -> Data {
+        do {
+            return try StatusDataHelper.shared.readAvailableStatusJson()
+        } catch {
+            return Data()
+        }
+    }
+
+    static func getStatusUnavailableData() -> Data {
+        do {
+            return try StatusDataHelper.shared.readUnavailableStatusJson()
         } catch {
             return Data()
         }

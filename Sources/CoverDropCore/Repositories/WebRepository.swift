@@ -18,8 +18,11 @@ extension WebRepository {
             else {
                 throw URLError(.badServerResponse)
             }
+            Debug.println(String(decoding: data, as: UTF8.self))
 
             let decoded = try JSONDecoder().decode(Value.self, from: data)
+            Debug.println(decoded)
+
             return decoded
         } catch {
             throw URLError(.badServerResponse)

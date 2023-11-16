@@ -91,6 +91,22 @@
                   }
                 ]
               }
+            ],
+            "additional_test_journalist_1": [
+              {
+                "id_pk": {
+                  "key": "5d3a0016bd6dcce8b07db1cc7793f8ea098fceb17388ece1989c577022e060ad",
+                  "certificate": "69ea08334fbdfa3bb47b25f71ad3d0d8babdd2cb9116a9349418c5ab62f5ad09b82bb6c5f50747ef290c0ac00809edd0a8c8970f6ab0e1c647f44518c1c40805",
+                  "not_valid_after": "2023-11-29T19:06:19Z"
+                },
+                "msg_pks": [
+                  {
+                    "key": "cfe74da091bc8d76eed7896781142b0e97cd3c9bdd7841a7f611786fab04e37a",
+                    "certificate": "6506c4a06fecbca0b0b84a5dde02393b4734dbf3f0a6bed17ccdb47b65346c38f0c78d64907a27e3be05dab68ec66331c59ee2d7d0e6696b16df433f4a685e0c",
+                    "not_valid_after": "2023-10-11T19:06:19Z"
+                  }
+                ]
+              }
             ]
           }
         }
