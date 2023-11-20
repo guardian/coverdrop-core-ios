@@ -7,7 +7,7 @@ enum MultiAnonymousBoxError: Error {
     case keyGenFailed, encryptWithSecretBoxFailed, badOutputLength, decryptWithSecretBoxFailed, missingRecipientPublicKeys
 }
 
-public struct MultiAnonymousBox<T>: Equatable {
+public struct MultiAnonymousBox<T>: Equatable, Hashable {
     var bytes: [UInt8]
 }
 

@@ -6,7 +6,7 @@ final class PrivateSendingQueueDiskStoringTests: XCTestCase {
     func testSaving() async throws {
         PublicDataRepository.setup(.devConfig)
         try await PublicDataRepository.shared.pollDataSources()
-        guard let coverMessage = try? CoverMessage.getCoverMessage(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")
             return
         }
@@ -15,7 +15,7 @@ final class PrivateSendingQueueDiskStoringTests: XCTestCase {
         let sut = PrivateSendingQueueDataStore()
         let defaultConfig = PrivateSendingQueueConfiguration.default
         let queue = try PrivateSendingQueue(totalQueueSize: defaultConfig.totalQueueSize,
-                                            messageSize: defaultConfig.messageSize, coverMessage: coverMessage)
+                                            messageSize: defaultConfig.messageSize, coverMessageFactory: coverMessageFactory)
 
         // WHEN that queue is saved to the store
         try await sut.saveQueue(queue)
@@ -30,7 +30,7 @@ final class PrivateSendingQueueDiskStoringTests: XCTestCase {
     func testLoading() async throws {
         PublicDataRepository.setup(.devConfig)
         try await PublicDataRepository.shared.pollDataSources()
-        guard let coverMessage = try? CoverMessage.getCoverMessage(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")
             return
         }
@@ -39,7 +39,7 @@ final class PrivateSendingQueueDiskStoringTests: XCTestCase {
         let sut = PrivateSendingQueueDataStore()
         let defaultConfig = PrivateSendingQueueConfiguration.default
         var queue = try PrivateSendingQueue(totalQueueSize: defaultConfig.totalQueueSize,
-                                            messageSize: defaultConfig.messageSize, coverMessage: coverMessage)
+                                            messageSize: defaultConfig.messageSize, coverMessageFactory: coverMessageFactory)
         let message = try await PrivateSendingQueueTests().message1()
         try queue.enqueue(secret: PrivateSendingQueueTests().secret!,
                           message: message)

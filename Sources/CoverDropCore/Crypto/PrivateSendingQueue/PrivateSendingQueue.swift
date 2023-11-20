@@ -72,12 +72,13 @@ struct PrivateSendingQueue: Equatable {
     /// - Parameters:
     ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform serialization standard
     ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform serialization standard
-    init(totalQueueSize: Int32, messageSize: Int32, coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) throws {
+    init(totalQueueSize: Int32, messageSize: Int32, coverMessageFactory: () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>) throws {
         self.totalQueueSize = totalQueueSize
         self.messageSize = messageSize
         initialMessagesAndHints = ([], [])
         // fill-up queue with cover messages
         while mStorage.count < totalQueueSize {
+            let coverMessage = try coverMessageFactory()
             try addCoverMessageAndHint(coverMessage: coverMessage)
         }
         if !assertInvariants() {
@@ -89,11 +90,12 @@ struct PrivateSendingQueue: Equatable {
     /// they would be at the front and returned before any cover messages. Afterwards the buffer
     /// is filled up to `self.size` again.
     @discardableResult
-    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessage: MultiAnonymousBox<UserToCoverNodeMessageData>) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let message = mStorage.removeFirst()
         _ = mHints.removeFirst()
 
         // and fill-up both
+        let coverMessage = try coverMessageFactory()
         try addCoverMessageAndHint(coverMessage: coverMessage)
 
         if !assertInvariants() {

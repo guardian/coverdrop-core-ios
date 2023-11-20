@@ -47,7 +47,11 @@ final class DeadDropRepositoryTests: XCTestCase {
         // note we are outside the cache window
         let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSession: urlSessionConfig).loadDeadDropsWithCache(cacheEnabled: false)
 
-        XCTAssertFalse(results!.deadDrops.isEmpty)
+        if let validResults = results {
+            XCTAssertFalse(validResults.deadDrops.isEmpty)
+        } else {
+            XCTFail("Failed to get result")
+        }
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDrops() async throws {
@@ -58,7 +62,11 @@ final class DeadDropRepositoryTests: XCTestCase {
         // note we are outside the cache window
         let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSession: urlSessionConfig).loadDeadDropsWithCache()
 
-        XCTAssertFalse(results!.deadDrops.isEmpty)
+        if let validResults = results {
+            XCTAssertFalse(validResults.deadDrops.isEmpty)
+        } else {
+            XCTFail("Failed to get result")
+        }
     }
 
     func testFirstRunInsideCacheWindowWithApiResponseLoadsDeadDropsAndCachesResponse() async throws {

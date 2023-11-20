@@ -41,11 +41,11 @@ public class CoverDropServices: ObservableObject {
             throw CoverDropServicesError.coverNodeKeysNotAvailable
         }
         // 5. generate a coverMessage from the verified Keys
-        guard let coverMessage = try? CoverMessage.getCoverMessage(verifiedPublicKeys: verifiedPublicKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
         // 6. starte the private sending queue
-        try await PrivateSendingQueueRepository.shared.start(coverMessage: coverMessage)
+        try await PrivateSendingQueueRepository.shared.start(coverMessageFactory: coverMessageFactory)
         let privateSendingQueueIsReady = await PrivateSendingQueueRepository.shared.isReady
 
         // Check Encrypted Storage exists, and create if not

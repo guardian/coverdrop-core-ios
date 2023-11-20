@@ -4,6 +4,8 @@ import Sodium
 enum PublicDataRepositoryError: Error {
     case configNotAvailable
     case failedToGenerateRandomBytes
+    case failedToGetCoverNodeMessageKeys
+    case failedToCreateCoverMessage
 }
 
 public class PublicDataRepository: ObservableObject {
@@ -102,9 +104,10 @@ public class PublicDataRepository: ObservableObject {
            let allCoverNodes = try? verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
         {
             if let messageResult = try? await sendMessage(message: message) {
-                let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
-                if let coverMessage = try? createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys) {
-                    guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessage: coverMessage) else {
+                if let validVerifiedPublicKeysData = verifiedPublicKeysData,
+                   let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: validVerifiedPublicKeysData)
+                {
+                    guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessage) else {
                         throw UserToJournalistMessagingError.failedToDequeue
                     }
                 }
@@ -132,5 +135,16 @@ public class PublicDataRepository: ObservableObject {
         // encrypt outer message to CoverNode
         let outerEncryptedMessage = try MultiAnonymousBox<UserToCoverNodeMessageData>.encrypt(recipientPks: coverNodeKeys, data: payloadForOuter)
         return outerEncryptedMessage
+    }
+
+    public static func getCoverMessageFactory(verifiedPublicKeys: VerifiedPublicKeys) throws -> () throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+        let allCoverNodes = verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+        if allCoverNodes.isEmpty {
+            throw PublicDataRepositoryError.failedToGetCoverNodeMessageKeys
+        }
+        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
+        return {
+            try PublicDataRepository.shared.createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys)
+        }
     }
 }
