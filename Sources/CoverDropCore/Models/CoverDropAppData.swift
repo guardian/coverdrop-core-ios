@@ -10,7 +10,7 @@ public class CoverDropAppData {
     @Published public var publicKeysData: PublicKeysData?
 
     public func initialise() async throws -> CoverDropAppData {
-        let data = try await PublicKeyRepository().loadKeys()
+        let data = try await PublicKeyRepository().downloadAndUpdateAllCaches()
         publicKeysData = data
         return self
     }

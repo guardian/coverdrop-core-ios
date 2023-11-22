@@ -17,9 +17,9 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponseFailure()
 
-        let results = try await StatusRepository(urlSessionConfig: urlSessionConfig).getStatusWithCache(cacheEnabled: false)
+        let results = try await StatusRepository(urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
 
-        XCTAssertTrue(results.status == .unavailable)
+        XCTAssertTrue(results?.status == .unavailable)
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDropsAndCacheDisabled() async throws {
@@ -28,8 +28,8 @@ final class StatusRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         // note we are outside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSessionConfig: urlSessionConfig).getStatusWithCache(cacheEnabled: false)
-        XCTAssertTrue(results.status == .available)
+        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
+        XCTAssertTrue(results?.status == .available)
     }
 
     func testFirstRunReturnsDefaultStatusIfAPIResponseFails() async throws {
@@ -37,9 +37,9 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponseFailure()
 
-        let results = try await StatusRepository(urlSessionConfig: urlSessionConfig).getStatusWithCache()
+        let results = try await StatusRepository(urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
 
-        XCTAssertTrue(results.status == .unavailable)
+        XCTAssertTrue(results?.status == .unavailable)
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDrops() async throws {
@@ -48,9 +48,9 @@ final class StatusRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         // note we are outside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSessionConfig: urlSessionConfig).getStatusWithCache()
+        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
 
-        XCTAssertTrue(results.status == .available)
+        XCTAssertTrue(results?.status == .available)
     }
 
     func testFirstRunInsideCacheWindowWithApiResponseLoadsStatusAndCachesResponse() async throws {
@@ -58,7 +58,7 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponse()
         // note we are intside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSessionConfig: urlSessionConfig).getStatusWithCache()
+        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
         let cache = try await StatusLocalRepository().load()
         XCTAssertEqual(results, cache)
     }
@@ -68,7 +68,7 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponse()
         // note we are outside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 2), urlSessionConfig: urlSessionConfig).getStatusWithCache()
+        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 2), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
         let cache = try await StatusLocalRepository().load()
         XCTAssertEqual(results, cache)
     }
@@ -78,17 +78,17 @@ final class StatusRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponseFailure()
 
         // note we are inside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSessionConfig: urlSessionConfig).getStatusWithCache(cacheEnabled: false)
+        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
 
-        XCTAssertTrue(results.status == .unavailable)
+        XCTAssertTrue(results?.status == .unavailable)
     }
 
     func testCacheInsideCacheWindowUpdatesCache() async throws {
         try await removeStatusCacheFile()
         let urlSessionConfig = mockApiResponse()
 
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSessionConfig: urlSessionConfig).getStatusWithCache()
-        let results2 = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSessionConfig: urlSessionConfig).getStatusWithCache()
+        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results2 = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
 
         XCTAssertEqual(results, results2)
     }

@@ -39,3 +39,8 @@ extension WebRepository {
         }
     }
 }
+
+protocol CacheableWebRepository<T>: WebRepository {
+    associatedtype T: Codable
+    func get(params: [String: String]?) async throws -> T
+}

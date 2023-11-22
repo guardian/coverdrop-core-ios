@@ -5,11 +5,11 @@ enum PublicKeyLocalRepositoryError: Error {
     case failedToGetModificationDate
 }
 
-actor PublicKeyLocalRepository {
-    let publicKeyFileLocation = "publicKeys.json"
+actor PublicKeyLocalRepository: LocalCacheFileRepository {
+    let fileLocation = "publicKeys.json"
 
     func fileURL() throws -> URL {
-        return try FileHelper.getPath(fileName: publicKeyFileLocation)
+        return try FileHelper.getPath(fileName: fileLocation)
     }
 
     func load() async throws -> PublicKeysData {
@@ -18,9 +18,9 @@ actor PublicKeyLocalRepository {
         return try JSONDecoder().decode(PublicKeysData.self, from: data)
     }
 
-    func save(publicKeys: PublicKeysData) throws {
-        let data = try JSONEncoder().encode(publicKeys)
+    func save(data: PublicKeysData) async throws {
+        let encodedData = try JSONEncoder().encode(data)
         let outfile = try fileURL()
-        try data.write(to: outfile)
+        try encodedData.write(to: outfile)
     }
 }

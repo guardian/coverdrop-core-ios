@@ -16,17 +16,17 @@ public enum FileHelper {
         return fullPath
     }
 
-    public static func isFileOlderThan(durationInSeconds: Double, fileUrl: URL, now: Date) throws -> Bool {
-        /// This function checks the last updated date
-        /// If the time interval between now and the last updated date is greater that
-        /// the file cache time, we return true
-        func canRefresh(now: Date) throws -> Bool {
-            let fileExpiry = Double(durationInSeconds)
-            let interval = try now.timeIntervalSince(getLastUpdatedDate(fileUrl: fileUrl))
-            return interval > fileExpiry
+    /// This function checks the last updated date
+    /// If the time interval between now and the last updated date is greater that
+    /// the file cache time, we return true
+    public static func isFileOlderThan(durationInSeconds: TimeInterval, fileUrl: URL, now: Date) -> Bool {
+        if let interval = try? now.timeIntervalSince(getLastUpdatedDate(fileUrl: fileUrl)) {
+            return interval > durationInSeconds
+        } else {
+            // as this is used to see if a cache file needs to be refresh,
+            // we default to true on error which would result in a attempt to refresh the cache
+            return true
         }
-
-        return try canRefresh(now: now)
     }
 
     static func getLastUpdatedDate(fileUrl: URL) throws -> Date {

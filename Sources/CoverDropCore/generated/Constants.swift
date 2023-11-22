@@ -3,7 +3,7 @@
 //
 // The Rust code is here: common/src/protocol/constants.rs
 
-public struct Constants {
+public enum Constants {
     public static let journalistProvisioningKeyValidDurationSeconds = 14515200
     public static let journalistIdKeyValidDurationSeconds = 4838400
     public static let journalistMsgKeyValidDurationSeconds = 604800
@@ -29,5 +29,6 @@ public struct Constants {
     public static let messageExpiryWarningInSeconds = 172800
     public static let maxBackgroundDurationInSeconds = 300
     public static let clientDeadDropCacheTtlSeconds = 1209600
+    public static let localCacheDurationBetweenDownloadsSeconds = 3600
     public static let covernodeWrappingKeyCount = 2
 }

@@ -1,15 +1,10 @@
 import Combine
 import Foundation
 
-// MARK: - Protocol
-
-protocol StatusWebRepositoryProtocol: WebRepository {
-    func loadStatus() async throws -> StatusData
-}
-
 // MARK: - Implimentation
 
-struct StatusWebRepository: StatusWebRepositoryProtocol {
+struct StatusWebRepository: CacheableWebRepository {
+    typealias T = StatusData
     let session: URLSession
     let baseURL: String
 
@@ -23,8 +18,9 @@ struct StatusWebRepository: StatusWebRepositoryProtocol {
         baseURL = baseUrl
     }
 
-    func loadStatus() async throws -> StatusData {
-        return try await call(endpoint: API.status)
+    func get(params: [String: String]?) async throws -> StatusData {
+        let response: StatusData = try await call(endpoint: API.status)
+        return response
     }
 }
 
@@ -37,17 +33,17 @@ extension StatusWebRepository {
 }
 
 extension StatusWebRepository.API: APICall {
-    var path: String {
+    var path: String? {
         switch self {
             case .status:
                 return "/status"
         }
     }
 
-    var method: String {
+    var method: HttpMethod {
         switch self {
             case .status:
-                return "GET"
+                return .GET
         }
     }
 

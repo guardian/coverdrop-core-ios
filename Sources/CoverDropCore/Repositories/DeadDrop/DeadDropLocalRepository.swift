@@ -1,15 +1,15 @@
 import Foundation
 import SwiftUI
 
-actor DeadDropLocalRepository {
-    let deadDropCacheFileLocation = "deadDrops.json"
+actor DeadDropLocalRepository: LocalCacheFileRepository {
+    let fileLocation = "deadDrops.json"
 
     /// Gets the file URL for deadDropCacheFileLocation
     ///
     /// - Returns: the URL to the file if it is found
     /// - Throws: if the file path is not valid
     func fileURL() throws -> URL {
-        return try FileHelper.getPath(fileName: deadDropCacheFileLocation)
+        return try FileHelper.getPath(fileName: fileLocation)
     }
 
     /// Loads the deadDrop cache file from disk and decodes to DeadDropData
@@ -24,10 +24,10 @@ actor DeadDropLocalRepository {
     /// Saves the supplied dead drops to the local cache file
     /// - Parameter deadDrops: deadDrops to be cached.
     /// - Throws: if writing to the output file fails or JSON encoding fails
-    func save(deadDrops: DeadDropData) throws {
-        let data = try JSONEncoder().encode(deadDrops)
+    func save(data: DeadDropData) async throws {
+        let encodedData = try JSONEncoder().encode(data)
         let outfile = try fileURL()
-        try data.write(to: outfile)
+        try encodedData.write(to: outfile)
     }
 
     /// Merges two sets of dead drops, with duplicate entries being merged.

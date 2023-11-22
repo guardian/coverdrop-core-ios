@@ -5,11 +5,11 @@ enum StatusLocalRepositoryError: Error {
     case failedToGetModificationDate
 }
 
-actor StatusLocalRepository {
-    let publicKeyFileLocation = "status.json"
+actor StatusLocalRepository: LocalCacheFileRepository {
+    let fileLocation = "status.json"
 
     func fileURL() throws -> URL {
-        return try FileHelper.getPath(fileName: publicKeyFileLocation)
+        return try FileHelper.getPath(fileName: fileLocation)
     }
 
     func load() async throws -> StatusData {
@@ -18,9 +18,9 @@ actor StatusLocalRepository {
         return try JSONDecoder().decode(StatusData.self, from: data)
     }
 
-    func save(status: StatusData) throws {
-        let data = try JSONEncoder().encode(status)
+    func save(data: StatusData) async throws {
+        let encodedData = try JSONEncoder().encode(data)
         let outfile = try fileURL()
-        try data.write(to: outfile)
+        try encodedData.write(to: outfile)
     }
 }

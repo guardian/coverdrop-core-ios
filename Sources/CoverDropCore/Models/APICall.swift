@@ -1,8 +1,13 @@
 import Foundation
 
+enum HttpMethod: String {
+    case GET
+    case POST
+}
+
 protocol APICall {
-    var path: String { get }
-    var method: String { get }
+    var path: String? { get }
+    var method: HttpMethod { get }
     var headers: [String: String]? { get }
 }
 
@@ -24,11 +29,13 @@ extension APIError: LocalizedError {
 
 extension APICall {
     func urlRequest(baseURL: String, body: Data? = nil) throws -> URLRequest {
-        guard let url = URL(string: baseURL + path) else {
+        guard let validPath = path,
+              let url = URL(string: baseURL + validPath)
+        else {
             throw APIError.invalidURL
         }
         var request = URLRequest(url: url)
-        request.httpMethod = method
+        request.httpMethod = method.rawValue
         request.allHTTPHeaderFields = headers
         if let suppliedBody = body {
             request.httpBody = suppliedBody

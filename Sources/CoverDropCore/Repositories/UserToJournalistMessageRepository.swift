@@ -32,17 +32,17 @@ extension UserToJournalistMessageWebRepository {
 }
 
 extension UserToJournalistMessageWebRepository.API: APICall {
-    var path: String {
+    var path: String? {
         switch self {
         case .sendMessage:
             return "/user/messages"
         }
     }
 
-    var method: String {
+    var method: HttpMethod {
         switch self {
         case .sendMessage:
-            return "POST"
+            return .POST
         }
     }
 

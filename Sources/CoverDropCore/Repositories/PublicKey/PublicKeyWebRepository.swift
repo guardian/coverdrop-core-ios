@@ -1,15 +1,16 @@
 import Combine
 import Foundation
 
-// MARK: - Protocol
-
-protocol PublicKeyWebRepositoryProtocol: WebRepository {
-    func loadKeys() async throws -> PublicKeysData
-}
-
 // MARK: - Implimentation
 
-struct PublicKeyWebRepository: PublicKeyWebRepositoryProtocol {
+struct PublicKeyWebRepository: CacheableWebRepository {
+    typealias T = PublicKeysData
+
+    func get(params: [String: String]? = [:]) async throws -> PublicKeysData {
+        let result: PublicKeysData = try await call(endpoint: API.allKeys)
+        return result
+    }
+
     let session: URLSession
     let baseURL: String
 
@@ -18,13 +19,9 @@ struct PublicKeyWebRepository: PublicKeyWebRepositoryProtocol {
         baseURL = ApplicationConfig.config.apiBaseUrl
     }
 
-    init(session: URLSession, baseUrl: String) {
+    init(session: URLSession, baseUrl: String = ApplicationConfig.config.apiBaseUrl) {
         self.session = session
         baseURL = baseUrl
-    }
-
-    func loadKeys() async throws -> PublicKeysData {
-        return try await call(endpoint: API.allKeys)
     }
 }
 
@@ -37,17 +34,17 @@ extension PublicKeyWebRepository {
 }
 
 extension PublicKeyWebRepository.API: APICall {
-    var path: String {
+    var path: String? {
         switch self {
         case .allKeys:
             return "/public-keys"
         }
     }
 
-    var method: String {
+    var method: HttpMethod {
         switch self {
         case .allKeys:
-            return "GET"
+            return .GET
         }
     }
 

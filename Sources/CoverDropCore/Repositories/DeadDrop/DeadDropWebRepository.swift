@@ -1,15 +1,11 @@
 import Combine
 import Foundation
 
-// MARK: - Protocol
-
-protocol DeadDropWebRepositoryProtocol: WebRepository {
-    func loadDeadDrops(id: Int) async throws -> DeadDropData
-}
-
 // MARK: - Implimentation
 
-struct DeadDropWebRepository: DeadDropWebRepositoryProtocol {
+struct DeadDropWebRepository: CacheableWebRepository {
+    typealias T = DeadDropData
+
     let session: URLSession
     let baseURL: String
 
@@ -20,8 +16,8 @@ struct DeadDropWebRepository: DeadDropWebRepositoryProtocol {
         baseURL = baseUrl
     }
 
-    func loadDeadDrops(id: Int) async throws -> DeadDropData {
-        let response: DeadDropData = try await call(endpoint: API.allDeadDrops(idsGreaterThan: id))
+    func get(params: [String: String]?) async throws -> DeadDropData {
+        let response: DeadDropData = try await call(endpoint: API.allDeadDrops(params: params))
         return response
     }
 }
@@ -30,22 +26,27 @@ struct DeadDropWebRepository: DeadDropWebRepositoryProtocol {
 
 extension DeadDropWebRepository {
     enum API {
-        case allDeadDrops(idsGreaterThan: Int)
+        case allDeadDrops(params: [String: String]?)
     }
 }
 
 extension DeadDropWebRepository.API: APICall {
-    var path: String {
+    var path: String? {
         switch self {
-        case let .allDeadDrops(idsGreaterThan: idsGreaterThan):
-            return "/user/dead-drops?ids_greater_than=\(idsGreaterThan)"
+        case let .allDeadDrops(params: params):
+            guard let params,
+                  let id = params["ids_greater_than"]
+            else {
+                return nil
+            }
+            return "/user/dead-drops?ids_greater_than=\(id)"
         }
     }
 
-    var method: String {
+    var method: HttpMethod {
         switch self {
         case .allDeadDrops:
-            return "GET"
+            return .GET
         }
     }
 

@@ -23,9 +23,8 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponseFailure()
 
-        let results = try await DeadDropRepository(urlSession: urlSessionConfig).loadDeadDropsWithCache(cacheEnabled: true)
+        let results = try await DeadDropRepository(urlSession: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: true)
 
-        XCTAssertNotNil(results)
         XCTAssertTrue(results!.deadDrops.isEmpty)
     }
 
@@ -34,9 +33,9 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponseFailure()
 
-        let results = try await DeadDropRepository(urlSession: urlSessionConfig).loadDeadDropsWithCache(cacheEnabled: false)
+        let results = try await DeadDropRepository(urlSession: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
 
-        XCTAssertNil(results)
+        XCTAssertTrue(results!.deadDrops.isEmpty)
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDropsAndCacheDisabled() async throws {
@@ -45,13 +44,14 @@ final class DeadDropRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         // note we are outside the cache window
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSession: urlSessionConfig).loadDeadDropsWithCache(cacheEnabled: false)
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSession: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
 
-        if let validResults = results {
-            XCTAssertFalse(validResults.deadDrops.isEmpty)
-        } else {
-            XCTFail("Failed to get result")
+        guard let actualResults = results else {
+            XCTFail("Failed to get results")
+            return
         }
+
+        XCTAssertFalse(actualResults.deadDrops.isEmpty)
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDrops() async throws {
@@ -60,7 +60,7 @@ final class DeadDropRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         // note we are outside the cache window
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
 
         if let validResults = results {
             XCTAssertFalse(validResults.deadDrops.isEmpty)
@@ -74,7 +74,7 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponse()
         // note we are intside the cache window
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
         let cache = try await DeadDropLocalRepository().load()
         XCTAssertEqual(results?.deadDrops, cache.deadDrops)
     }
@@ -84,7 +84,7 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponse()
         // note we are outside the cache window
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 2), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 2), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
         let cache = try await DeadDropLocalRepository().load()
         XCTAssertEqual(results?.deadDrops, cache.deadDrops)
     }
@@ -94,17 +94,22 @@ final class DeadDropRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponseFailure()
 
         // note we are inside the cache window
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSession: urlSessionConfig).loadDeadDropsWithCache(cacheEnabled: false)
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 50), urlSession: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
 
-        XCTAssertTrue(results == nil)
+        guard let actualResults = results else {
+            XCTFail("Failed to get results")
+            return
+        }
+
+        XCTAssertTrue(actualResults.deadDrops.isEmpty)
     }
 
     func testCacheInsideCacheWindowUpdatesCache() async throws {
         try await removeDeadDropCacheFile()
         let urlSessionConfig = mockApiResponse()
 
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).loadDeadDropsWithCache()
-        let results2 = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results2 = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
 
         XCTAssertEqual(results?.deadDrops, results2?.deadDrops)
     }
@@ -125,12 +130,12 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         let cached = DeadDropData(deadDrops: [deadDropApril01, deadDropApril05, deadDropApril06])
 
-        try await DeadDropLocalRepository().save(deadDrops: cached)
+        try await DeadDropLocalRepository().save(data: cached)
 
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 40), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
         XCTAssertTrue(results?.deadDrops.count == 4)
 
-        let results2 = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results2 = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
         XCTAssertTrue(results2?.deadDrops.count == 4)
     }
 
@@ -146,7 +151,7 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         // store the dead drops in the cache
         let cached = DeadDropData(deadDrops: cachedDeadDrops)
-        try await DeadDropLocalRepository().save(deadDrops: cached)
+        try await DeadDropLocalRepository().save(data: cached)
 
         // validate the dead drops were saved correctly
         let cachedDeadDropFromFile = try await DeadDropLocalRepository().load()
@@ -165,7 +170,10 @@ final class DeadDropRepositoryTests: XCTestCase {
         // In the DeadDropWebRepository we use the highest dead drop Id from the cache as the `ids_greater_than`
         // So this sets up a mock response for that specific request
         let baseUrl = DevConfig().apiBaseUrl
-        let deadDropAPIPath = DeadDropWebRepository.API.allDeadDrops(idsGreaterThan: maxDeadDropId).path
+        guard let deadDropAPIPath = DeadDropWebRepository.API.allDeadDrops(params: ["ids_greater_than": String(maxDeadDropId)]).path else {
+            XCTFail("Could not get path")
+            return
+        }
 
         let deadDropDataResponse = Data(deadDropJsonResponse)
         let deadDropMockApiResponse = [URL(string: "\(baseUrl + deadDropAPIPath)")!: MockResponse(
@@ -181,7 +189,7 @@ final class DeadDropRepositoryTests: XCTestCase {
         // as they are 2 weeks older that the most recent loaded dead drop
         // We check that the highest dead drop id is 3000, which means the files in cache also have the most recent from the api response.
 
-        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).loadDeadDropsWithCache()
+        let results = try await DeadDropRepository(now: Date(timeIntervalSinceNow: 60 * 90), urlSession: urlSessionConfig).downloadAndUpdateAllCaches()
         XCTAssertTrue(results?.deadDrops.count == 1001)
         let highestStoredDeadDrop = results?.deadDrops.max(by: { $0.id < $1.id })?.id
         XCTAssertTrue(highestStoredDeadDrop == 3000)
