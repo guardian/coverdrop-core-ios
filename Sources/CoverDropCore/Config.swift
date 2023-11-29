@@ -161,8 +161,8 @@ public struct ProdConfig: ConfigProtocol {
         return URLSession(configuration: urlSessionConfig)
     }
 
-    public let apiBaseUrl = "http://localhost:3000/v1"
-    public let messageBaseUrl = "http://localhost:7676"
+    public let apiBaseUrl = "https://coverdrop-api.code.dev-gutools.co.uk/v1"
+    public let messageBaseUrl = "https://secure-messaging.code.dev-guardianapis.com"
 
     // This supplies a date function, which is used to determine the current date
     // This is required as our mock keys data cannot be guarenteed to be valid
