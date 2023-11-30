@@ -9,7 +9,6 @@ public protocol ConfigProtocol {
     var passphraseLowWordCount: Int { get }
     var passphraseHighWordCount: Int { get }
     var currentKeysPublishedTime: () -> Date { get }
-    func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey]
     var startWithTestStorage: Bool { get }
     func currentTime() -> Date
 }
@@ -71,17 +70,6 @@ public enum ConfigType: ConfigProtocol {
             return CodeConfig().currentKeysPublishedTime
         case .prodConfig:
             return ProdConfig().currentKeysPublishedTime
-        }
-    }
-
-    public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
-        switch self {
-        case .devConfig:
-            return try DevConfig().organizationPublicKeys()
-        case .codeConfig:
-            return try CodeConfig().organizationPublicKeys()
-        case .prodConfig:
-            return try ProdConfig().organizationPublicKeys()
         }
     }
 
@@ -150,6 +138,42 @@ public enum ConfigType: ConfigProtocol {
             return ProdConfig().passphraseHighWordCount
         }
     }
+
+    public var envString: String {
+        switch self {
+        case .codeConfig:
+            return "code"
+        case .devConfig:
+            return "dev"
+        case .prodConfig:
+            return "prod"
+        }
+    }
+
+    public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
+        let subpath: String = self.envString
+        let resourcePaths: [String] = Bundle.module.paths(forResourcesOfType: "json", inDirectory: "organization_keys/\(subpath)/")
+
+        let keys: [TrustedOrganizationPublicKey] = try resourcePaths.compactMap { fullPath in
+            // As `Bundle.module.paths` returns the full path, we just want to get the filename
+            let fileName = URL(fileURLWithPath: fullPath).lastPathComponent
+            let fileNameWithoutExtension = (fileName as NSString).deletingPathExtension
+            let resourceUrlOption = Bundle.module.url(forResource: fileNameWithoutExtension, withExtension: ".json", subdirectory: "organization_keys/\(subpath)/")
+            if let resourceUrl = resourceUrlOption {
+                let data = try Data(contentsOf: resourceUrl)
+                let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyData.self, from: data)
+
+                return SelfSignedPublicSigningKey<TrustedOrganization>.init(
+                    key: Sign.KeyPair.PublicKey(keyData.key.bytes),
+                    certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes),
+                    notValidAfter: keyData.notValidAfter.date, now: Date.now
+                )
+            }
+            return nil
+        }
+
+        return keys
+    }
 }
 
 public struct ProdConfig: ConfigProtocol {
@@ -172,26 +196,6 @@ public struct ProdConfig: ConfigProtocol {
     public let currentKeysPublishedTime: () -> Date = {
         var dateFunc = Date()
         return dateFunc
-    }
-
-    public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
-        let resourcePaths: [String] = Bundle.module.paths(forResourcesOfType: "json", inDirectory: "organization_keys")
-
-        let keys: [TrustedOrganizationPublicKey] = try resourcePaths.compactMap { fullPath in
-            // As `Bundle.module.paths` returns the full path, we just want to get the filename
-            let fileName = URL(fileURLWithPath: fullPath).lastPathComponent
-            let fileNameWithoutExtension = (fileName as NSString).deletingPathExtension
-            let resourceUrlOption = Bundle.module.url(forResource: fileNameWithoutExtension, withExtension: ".json", subdirectory: "organization_keys")
-            if let resourceUrl = resourceUrlOption {
-                let data = try Data(contentsOf: resourceUrl)
-                let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyData.self, from: data)
-
-                return SelfSignedPublicSigningKey<TrustedOrganization>.init(key: Sign.KeyPair.PublicKey(keyData.key.bytes), certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes), notValidAfter: keyData.notValidAfter.date, now: Date.now)
-            }
-            return nil
-        }
-
-        return keys
     }
 
     public let cacheEnabled = true
@@ -228,10 +232,6 @@ public struct CodeConfig: ConfigProtocol {
         MockDate.currentTime()
     }
 
-    public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
-        return try ProdConfig().organizationPublicKeys()
-    }
-
     public let cacheEnabled = false
 
     public let startWithTestStorage = false
@@ -266,10 +266,6 @@ public struct DevConfig: ConfigProtocol {
     // This is only used for UI and Unit tests that require valid keys
     public let currentKeysPublishedTime: () -> Date = {
         MockDate.currentTime()
-    }
-
-    public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
-        return try ProdConfig().organizationPublicKeys()
     }
 
     public let cacheEnabled = false
