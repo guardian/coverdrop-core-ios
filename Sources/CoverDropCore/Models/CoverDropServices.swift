@@ -27,8 +27,7 @@ public class CoverDropServices: ObservableObject {
 
         // Note the app will not be made available if the cache is not enabled in production
         if let appConfig = PublicDataRepository.appConfig,
-           case .prodConfig = appConfig
-        {
+           case .prodConfig = appConfig {
             if !appConfig.cacheEnabled {
                 throw CoverDropServicesError.failedToStartCachingNotEnabledInProd
             }

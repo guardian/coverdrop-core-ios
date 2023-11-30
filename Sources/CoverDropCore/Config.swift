@@ -274,25 +274,25 @@ public struct DevConfig: ConfigProtocol {
 
     public var startWithTestMessages: Bool {
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
-                if ProcessInfo.processInfo.arguments.contains("START_WITH_MESSAGES") {
-                    return true
-                }
+        if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
+            if ProcessInfo.processInfo.arguments.contains("START_WITH_MESSAGES") {
+                return true
             }
+        }
         #endif
         return false
     }
 
     public func currentTime() -> Date {
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
-                if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
-                    let keysDate = MockDate.currentTime()
-                    return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
-                } else {
-                    return Date()
-                }
+        if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
+            if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
+                let keysDate = MockDate.currentTime()
+                return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
+            } else {
+                return Date()
             }
+        }
         #endif
         return Date()
     }
@@ -304,16 +304,16 @@ public enum ApplicationConfig {
     public static var config: ConfigType {
         var config = ConfigType.prodConfig
         #if DEBUG
-            let userDefaults = UserDefaults.standard
-            var useDevBackend = false
-            if userDefaults.value(forKey: "useDevBackend") != nil {
-                useDevBackend = userDefaults.bool(forKey: "useDevBackend")
-            }
-            if useDevBackend {
-                config = ConfigType.devConfig
-            } else {
-                config = ConfigType.codeConfig
-            }
+        let userDefaults = UserDefaults.standard
+        var useDevBackend = false
+        if userDefaults.value(forKey: "useDevBackend") != nil {
+            useDevBackend = userDefaults.bool(forKey: "useDevBackend")
+        }
+        if useDevBackend {
+            config = ConfigType.devConfig
+        } else {
+            config = ConfigType.codeConfig
+        }
         #endif
         return config
     }

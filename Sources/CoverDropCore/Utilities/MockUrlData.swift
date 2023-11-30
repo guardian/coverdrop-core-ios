@@ -11,7 +11,7 @@ enum MockUrlData {
         var publicKeysData = MockUrlData.getKeys()
         var deadDropData = MockUrlData.getDeadDrops()
         var statusData = MockUrlData.getStatusData()
-#if DEBUG
+        #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("EMPTY_KEYS_DATA") {
             publicKeysData = Data()
         } else if ProcessInfo.processInfo.arguments.contains("MULTIPLE_JOURNALIST_SCENARIO") {
@@ -21,7 +21,7 @@ enum MockUrlData {
         if ProcessInfo.processInfo.arguments.contains("STATUS_UNAVAILABLE") {
             statusData = MockUrlData.getStatusUnavailableData()
         }
-#endif
+        #endif
         return [
             URL(string: "http://localhost:3000/v1/public-keys")!: MockResponse(
                 error: nil,

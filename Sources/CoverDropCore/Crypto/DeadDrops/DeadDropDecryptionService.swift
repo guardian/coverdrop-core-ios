@@ -11,8 +11,7 @@ public struct DeadDropDecryptionService {
     /// If a message within the dead drops is succesfully decrypted it is added to the user mailbox
     ///
     public func decryptStoredDeadDrops(secretDataRepository: SecretDataRepository = SecretDataRepository.shared,
-                                       publicDataRepository: PublicDataRepository = PublicDataRepository.shared, dateReceived: Date) async throws
-    {
+                                       publicDataRepository: PublicDataRepository = PublicDataRepository.shared, dateReceived: Date) async throws {
         let journalistPublicKeys: [String: [VerifiedJournalistPublicKeysGroup]]? = publicDataRepository.verifiedPublicKeysData?.allPublicKeysForJournalistsFromAllHierarchies()
 
         let profiles = publicDataRepository.verifiedPublicKeysData?.journalistProfiles

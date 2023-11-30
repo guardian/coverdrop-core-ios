@@ -35,15 +35,15 @@ extension StatusWebRepository {
 extension StatusWebRepository.API: APICall {
     var path: String? {
         switch self {
-            case .status:
-                return "/status"
+        case .status:
+            return "/status"
         }
     }
 
     var method: HttpMethod {
         switch self {
-            case .status:
-                return .GET
+        case .status:
+            return .GET
         }
     }
 

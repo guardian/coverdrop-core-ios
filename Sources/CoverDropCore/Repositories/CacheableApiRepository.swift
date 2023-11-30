@@ -6,8 +6,7 @@ public class CacheableApiRepository<T: Codable> {
          urlSessionConfig: URLSession,
          defaultResponse: T? = nil,
          localRepository: any LocalCacheFileRepository<T>,
-         cacheableWebRepository: any CacheableWebRepository<T>)
-    {
+         cacheableWebRepository: any CacheableWebRepository<T>) {
         self.maxCacheAge = maxCacheAge
         self.now = now
         self.urlSessionConfig = urlSessionConfig

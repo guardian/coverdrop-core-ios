@@ -82,15 +82,15 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     public func getMailboxRecipients() -> [JournalistKeyData] {
         let recipients = messageMailbox.compactMap { message in
             switch message {
-                case .outboundMessage(message: let message):
-                    return message.recipient
-                case .incomingMessage(message: let messageType):
-                    switch messageType {
-                        case .textMessage(message: let message):
-                            return message.sender
-                        case .handoverMessage(message: let handover):
-                            return UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo)
-                    }
+            case .outboundMessage(message: let message):
+                return message.recipient
+            case .incomingMessage(message: let messageType):
+                switch messageType {
+                case .textMessage(message: let message):
+                    return message.sender
+                case .handoverMessage(message: let handover):
+                    return UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo)
+                }
             }
         }
         let uniqueRecipients = Set(recipients)

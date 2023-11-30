@@ -15,8 +15,7 @@ public actor PrivateSendingQueueRepository: ObservableObject {
 
     /// A `fileprivate` initializer for the `PrivateSendingQueueRepository`. Do not create instances of the repository directly, other than thorugh the `TestablePrivateSendingQueueRepository` protocol methods for testing purposes. Access the shared singelton instance instead.
     fileprivate init(dataStore: PrivateSendingQueueDataStoring = PrivateSendingQueueDataStore(),
-                     queue: PrivateSendingQueue? = nil)
-    {
+                     queue: PrivateSendingQueue? = nil) {
         self.dataStore = dataStore
         if let queue {
             self.queue = queue
@@ -94,8 +93,7 @@ protocol TestablePrivateSendingQueueRepository {
 
 extension PrivateSendingQueueRepository: TestablePrivateSendingQueueRepository {
     static func createTestableInstance(dataStore: PrivateSendingQueueDataStoring = PrivateSendingQueueDataStore(),
-                                       queue: PrivateSendingQueue? = nil, coverMessageFactory: () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> PrivateSendingQueueRepository
-    {
+                                       queue: PrivateSendingQueue? = nil, coverMessageFactory: () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> PrivateSendingQueueRepository {
         let repo = PrivateSendingQueueRepository(dataStore: dataStore, queue: queue)
         return repo
     }

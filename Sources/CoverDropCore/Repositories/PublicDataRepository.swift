@@ -44,8 +44,7 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.configNotAvailable
         }
         if let config = PublicDataRepository.appConfig,
-           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
-        {
+           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
             coverDropServiceStatus = currentStatus
         }
     }
@@ -57,8 +56,7 @@ public class PublicDataRepository: ObservableObject {
 
         // Load dead drops from journalists
         if let deadDrops = try await DeadDropRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled),
-           let verifiedPublicKeys = verifiedPublicKeysData
-        {
+           let verifiedPublicKeys = verifiedPublicKeysData {
             let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDrops, verifiedKeys: verifiedPublicKeys)
 
             self.deadDrops = verifiedDeadDropData
@@ -76,8 +74,7 @@ public class PublicDataRepository: ObservableObject {
 
         if let config = PublicDataRepository.appConfig,
            let publicKeysData = try? await PublicKeyRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled),
-           let trustedRootKeys = try? config.organizationPublicKeys()
-        {
+           let trustedRootKeys = try? config.organizationPublicKeys() {
             let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: config.currentKeysPublishedTime())
             self.verifiedPublicKeysData = verifiedPublicKeysData
             areKeysAvailable = true
@@ -101,12 +98,10 @@ public class PublicDataRepository: ObservableObject {
     /// 2. send to the api
     public func dequeueMessageAndSend(privateSendingQueue: PrivateSendingQueueRepository = PrivateSendingQueueRepository.shared) async throws {
         if let message = try? await privateSendingQueue.peek(),
-           let allCoverNodes = try? verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
-        {
+           let allCoverNodes = try? verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies() {
             if let messageResult = try? await sendMessage(message: message) {
                 if let validVerifiedPublicKeysData = verifiedPublicKeysData,
-                   let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: validVerifiedPublicKeysData)
-                {
+                   let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: validVerifiedPublicKeysData) {
                     guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessage) else {
                         throw UserToJournalistMessagingError.failedToDequeue
                     }

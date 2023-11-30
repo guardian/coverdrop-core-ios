@@ -18,8 +18,7 @@ import Foundation
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
         if let recipientUnwrapped = recipient,
-           let otherRecipientUnwrapped = otherRecipient
-        {
+           let otherRecipientUnwrapped = otherRecipient {
             let nonExpiredMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 2))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
 
             let realMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey outbound \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 12))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))

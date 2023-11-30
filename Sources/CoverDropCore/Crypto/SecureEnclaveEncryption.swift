@@ -40,8 +40,7 @@ enum SecureEnclaveEncryption {
         let cipherTextData = Data(cipherText)
         if let plainTextData = (SecKeyCreateDecryptedData(key, algorithm,
                                                           cipherTextData as CFData,
-                                                          &error) as Data?)
-        {
+                                                          &error) as Data?) {
             return Array(plainTextData)
         } else {
             throw EncryptionError.failedToDecrypt

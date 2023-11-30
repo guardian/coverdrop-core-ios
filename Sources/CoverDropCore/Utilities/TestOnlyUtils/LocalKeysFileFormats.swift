@@ -1,4 +1,3 @@
-
 public struct UnverifiedSignedPublicSigningKeyPairData: Codable, Equatable {
     public static func == (lhs: UnverifiedSignedPublicSigningKeyPairData, rhs: UnverifiedSignedPublicSigningKeyPairData) -> Bool {
         return lhs.secretKey == rhs.secretKey

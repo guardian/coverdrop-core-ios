@@ -21,15 +21,13 @@ public struct MessageRecipients {
     ///   - verifiedPublicKeys:
     ///   - excludingDefaultRecipient: Exclude the default recipient from the `journalists` and `desks` arrays. Defaults to `true`.
     public init(verifiedPublicKeys: VerifiedPublicKeys? = PublicDataRepository.shared.verifiedPublicKeysData,
-                excludingDefaultRecipient: Bool = true) throws
-    {
+                excludingDefaultRecipient: Bool = true) throws {
         try setupMessageRecipients(with: verifiedPublicKeys, excludingDefaultRecipient: excludingDefaultRecipient)
     }
 
     private mutating
     func setupMessageRecipients(with verifiedPublicKeys: VerifiedPublicKeys?,
-                                excludingDefaultRecipient: Bool = true) throws
-    {
+                                excludingDefaultRecipient: Bool = true) throws {
         guard let verifiedPublicKeys else {
             throw RecipientsError.recipientsUnavailable
         }

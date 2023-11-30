@@ -33,7 +33,7 @@ final class DeadDropLocalRepositoryTests: XCTestCase {
 
         // Add dead drops on April 10 that range from April 1 to April 10
         let newDeadDropsApril10 = DeadDropData(deadDrops:
-            [deadDropApril01, deadDropApril05, deadDropApril06, deadDropApril10]
+                                                [deadDropApril01, deadDropApril05, deadDropApril06, deadDropApril10]
         )
 
         // After merging and trimming we expect that we only have dead drops that range from
@@ -48,28 +48,28 @@ final class DeadDropLocalRepositoryTests: XCTestCase {
 
         // Add dead drops on April 20 that range from April 11 to April 20
         let newDeadDropsApril20 = DeadDropData(deadDrops:
-            [deadDropApril11, deadDropApril20]
+                                                [deadDropApril11, deadDropApril20]
         )
 
         // After merging and trimming we expect that we only have dead drops that range from
         // April 6 to April 20 (i.e. deadDropCacheTTL).
         existingDeadDrops = await DeadDropLocalRepository().mergeAndTrim(existingDeadDrops: existingDeadDrops, newDeadDrops: newDeadDropsApril20)
         XCTAssertTrue(existingDeadDrops.deadDrops.containsExactly(
-            [deadDropApril06, // just barely in by 1 second because the cut-off-date is inclusive
-             deadDropApril10,
-             deadDropApril11,
-             deadDropApril20]))
+                        [deadDropApril06, // just barely in by 1 second because the cut-off-date is inclusive
+                         deadDropApril10,
+                         deadDropApril11,
+                         deadDropApril20]))
 
         // Add dead drops on June 7 that range from June 1 to June 7
         let newDeadDropsJune07 = DeadDropData(deadDrops:
-            [deadDropJune01, deadDropJune07]
+                                                [deadDropJune01, deadDropJune07]
         )
 
         // After merging and trimming we expect that we only have dead drops that range from
         // June 1 to June 7.
         existingDeadDrops = await DeadDropLocalRepository().mergeAndTrim(existingDeadDrops: existingDeadDrops, newDeadDrops: newDeadDropsJune07)
         XCTAssertTrue(existingDeadDrops.deadDrops.containsExactly(
-            [deadDropJune01,
-             deadDropJune07]))
+                        [deadDropJune01,
+                         deadDropJune07]))
     }
 }

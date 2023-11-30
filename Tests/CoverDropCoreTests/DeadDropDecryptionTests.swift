@@ -24,8 +24,7 @@ final class DeadDropDecryptionTests: XCTestCase {
         if let journalistKey {
             let result = DeadDropMessageParser.parseMessage(messageBytes: textMessage, journalistKey: journalistKey, deadDropId: 1, dateReceived: Date())
             if case let .incomingMessage(message: incomingMessage) = result,
-               case let .textMessage(message: messageText) = incomingMessage
-            {
+               case let .textMessage(message: messageText) = incomingMessage {
                 XCTAssertEqual(messageText.messageText, initalMessage)
             } else {
                 XCTFail("Failed to parse message")
@@ -52,8 +51,7 @@ final class DeadDropDecryptionTests: XCTestCase {
         if let journalistKey {
             let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistKey: journalistKey, deadDropId: 1, dateReceived: Date())
             if case let .incomingMessage(message: incomingMessage) = result,
-               case let .handoverMessage(message: messageData) = incomingMessage
-            {
+               case let .handoverMessage(message: messageData) = incomingMessage {
                 XCTAssertEqual(messageData.handoverTo, journalistId)
             } else {
                 XCTFail("Failed to parse message")

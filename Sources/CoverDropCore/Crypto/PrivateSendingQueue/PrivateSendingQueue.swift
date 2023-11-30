@@ -147,8 +147,7 @@ struct PrivateSendingQueue: Equatable {
     /// - throws: if the queue is full  of real messages or an incorrect size
     mutating func enqueue(secret: PrivateSendingQueueSecret,
                           message: MultiAnonymousBox<UserToCoverNodeMessageData>,
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> HintHmac
-    {
+                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> HintHmac {
         let fillLevel = getFillLevel(secret: secret)
 
         if fillLevel == totalQueueSize {
@@ -204,8 +203,7 @@ struct PrivateSendingQueue: Equatable {
     /// - Returns: a `PrivateSendingQueue`
     /// - throws: if the `bytes` were not able to be deserialized to the expected length
     static func fromBytes(bytes: [UInt8],
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> PrivateSendingQueue
-    {
+                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> PrivateSendingQueue {
         var buffer = Data(bytes)
 
         let numberOfMessages: Int32 = popInt(byteLength: currentMessagesIntBytes, buffer: &buffer)

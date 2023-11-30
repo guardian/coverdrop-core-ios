@@ -110,8 +110,7 @@ public struct VerifiedDeadDrop {
     /// - Returns: `true` if the verfication is sucessful, `false` if verification fails
     static func verify(signingPk: CoverNodeIdPublicKey,
                        data: [UInt8],
-                       signature: Signature<CoverNodeId>) -> Bool
-    {
+                       signature: Signature<CoverNodeId>) -> Bool {
         return Sodium().sign.verify(message: data, publicKey: signingPk.key, signature: signature.certificate)
     }
 }

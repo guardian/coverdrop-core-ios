@@ -10,8 +10,7 @@ struct DeadDropWebRepository: CacheableWebRepository {
     let baseURL: String
 
     init(session: URLSession,
-         baseUrl: String = ApplicationConfig.config.apiBaseUrl)
-    {
+         baseUrl: String = ApplicationConfig.config.apiBaseUrl) {
         self.session = session
         baseURL = baseUrl
     }

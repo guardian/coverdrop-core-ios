@@ -26,7 +26,7 @@ final class TwoPartyBoxTests: XCTestCase {
         let recipientKeypair: EncryptionKeypair<JournalistMessaging> = try EncryptionKeypair<JournalistMessaging>.generateEncryptionKeypair()
 
         guard let encrypted: TwoPartyBox<String> =
-            try? TwoPartyBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, senderSk: myKeypair.secretKey, data: input)
+                try? TwoPartyBox<String>.encrypt(recipientPk: recipientKeypair.publicKey, senderSk: myKeypair.secretKey, data: input)
         else {
             XCTFail("Failed to encrypt two party box")
             return

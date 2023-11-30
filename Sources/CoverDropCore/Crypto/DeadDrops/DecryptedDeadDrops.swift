@@ -34,8 +34,7 @@ extension DecryptedDeadDrops {
         // We try to decrypt the message with all the available keys for a journalist,
         for messageKey in journalistKey.messageKeys {
             if let maybeMessageBytes: [UInt8]? = try? TwoPartyBox<[UInt8]>.decrypt(senderPk: messageKey.key, recipientSk: userSecretKey, data: message),
-               let messageBytes = maybeMessageBytes
-            {
+               let messageBytes = maybeMessageBytes {
                 if let message = DeadDropMessageParser.parseMessage(messageBytes: messageBytes, journalistKey: journalistKey, deadDropId: deadDropId, dateReceived: dateReceived) {
                     foundMessage = message
                     break

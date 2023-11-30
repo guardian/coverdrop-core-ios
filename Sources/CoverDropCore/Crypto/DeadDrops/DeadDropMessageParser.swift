@@ -36,7 +36,7 @@ struct DeadDropMessageParser {
               let handoverMessage = HandoverMessageData(sender: journalistKey, timestamp: dateReceived, handoverTo: journalistIdentityString)
         else { return nil }
         return .incomingMessage(message:
-            .handoverMessage(message: handoverMessage)
+                                    .handoverMessage(message: handoverMessage)
         )
     }
 }
