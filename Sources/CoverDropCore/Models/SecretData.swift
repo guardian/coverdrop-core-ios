@@ -34,12 +34,12 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
 
         uuid = try container.decode(UUID.self, forKey: .uuid)
         passphrase = try container.decode(ValidPassword.self, forKey: .passphrase)
-        messageMailbox = try container.decode([Message].self, forKey: .messageMailbox)
+        messageMailbox = try container.decode(Set<Message>.self, forKey: .messageMailbox)
         userKey = try container.decode(EncryptionKeypair<User>.self, forKey: .userKey)
         privateSendingQueueSecret = try container.decode(PrivateSendingQueueSecret.self, forKey: .privateSendingQueueSecret)
     }
 
-    public init(uuid: UUID = UUID(), passphrase: ValidPassword, messageMailbox: [Message], userKey: EncryptionKeypair<User>, privateSendingQueueSecret: PrivateSendingQueueSecret) {
+    public init(uuid: UUID = UUID(), passphrase: ValidPassword, messageMailbox: Set<Message>, userKey: EncryptionKeypair<User>, privateSendingQueueSecret: PrivateSendingQueueSecret) {
         self.uuid = uuid
         self.passphrase = passphrase
         self.messageMailbox = messageMailbox
@@ -57,22 +57,16 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
 
     public var uuid: UUID = .init()
     public var passphrase: ValidPassword
-    @Published public var messageMailbox: [Message]
+    @Published public var messageMailbox: Set<Message>
     public var userKey: EncryptionKeypair<User>
     public var privateSendingQueueSecret: PrivateSendingQueueSecret
 
     public func addMessage(message: Message) {
-        messageMailbox.append(message)
+        messageMailbox.insert(message)
     }
 
-    public func addMessages(messages: [Message]) {
-        messages.forEach { message in
-            messageMailbox.append(message)
-        }
-    }
-
-    public func prependMessage(message: Message) {
-        messageMailbox.insert(message, at: 0)
+    public func addMessages(messages: Set<Message>) {
+        messageMailbox.formUnion(messages)
     }
 
     /// This gets the journalist or desks that the user has had converstations with

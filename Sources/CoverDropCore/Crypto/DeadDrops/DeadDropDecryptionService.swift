@@ -30,14 +30,13 @@ public struct DeadDropDecryptionService {
 
             let currentConversationJournalists = await secretData.getMailboxRecipients()
 
-            // loop over all the journalist keys and return the dead drop ids that have been processed
-            let allMessages: [Message] = currentConversationJournalists.flatMap { key in
-                DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userSecretKey, journalistKey: key, verifiedDeadDropData: verifiedDeadDrops, dateReceived: dateReceived)
+            var messages: Set<Message> = []
+            for key in currentConversationJournalists {
+                let message = await DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userSecretKey, journalistKey: key, verifiedDeadDropData: verifiedDeadDrops, dateReceived: dateReceived)
+                messages.formUnion(message)
             }
 
-            await MainActor.run {
-                secretData.addMessages(messages: allMessages)
-            }
+            await secretData.addMessages(messages: messages)
         }
     }
 }

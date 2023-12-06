@@ -12,7 +12,7 @@ import Foundation
 
         let otherRecipient = PublicKeysHelper.shared.getTestDesk
         // setup the message mailbox to be empty
-        var messages: [Message] = []
+        var messages: Set<Message> = []
 
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
@@ -29,27 +29,21 @@ import Foundation
 
             let inactiveMessage2 = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: otherRecipientUnwrapped, messageText: "hey user from \(otherRecipientUnwrapped.displayName)", dateReceived: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 13))))))
             // add a message to the inbox
-            messages.append(realMessage)
-            messages.append(nonExpiredMessage)
-            messages.append(realReplyMessage)
-            messages.append(inactiveMessage1)
-            messages.append(inactiveMessage2)
+            messages.insert(realMessage)
+            messages.insert(nonExpiredMessage)
+            messages.insert(realReplyMessage)
+            messages.insert(inactiveMessage1)
+            messages.insert(inactiveMessage2)
         }
 
         return .unlockedSecretData(unlockedData: UnlockedSecretData(passphrase: passphrase, messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
     }
 
-    public static func loadMessagesFromDeadDrop() throws -> SecretData {
+    public static func loadMessagesFromDeadDrop() async throws -> SecretData {
         let passphrase = ValidPassword(password: "external jersey squeeze luckiness collector")
 
         let journalistMessageKey = PublicKeysHelper.shared.testDefaultJournalist
         let publicKeys = PublicKeysHelper.shared.testKeys
-
-        let recipient = PublicKeysHelper.shared.testDefaultJournalist
-
-        let otherRecipient = PublicKeysHelper.shared.getTestDesk
-        // setup the message mailbox to be empty
-        var messages: [Message] = []
 
         let userMessageSecretKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
         let userMessagePublicKey = try PublicKeysHelper.shared.getTestUserMessagePublicKey()
@@ -58,18 +52,22 @@ import Foundation
 
         let deadDropData = try DeadDropDataHelper.shared.readLocalDataFile()
         let verifiedDeadDrops = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDropData, verifiedKeys: publicKeys)
-        let secretDataRepository = SecretDataRepository.shared
-        let publicDataRepository = PublicDataRepository.shared
 
-        let userMessages: [[Message]] = try [journalistMessageKey].compactMap { keys in
-            let messages: [Message]? = try keys.flatMap { key in
-                try DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userMessageSecretKey, journalistKey: key, verifiedDeadDropData: verifiedDeadDrops, dateReceived: PublicKeysHelper.readLocalGeneratedAtFile()!)
+        var userMessages: Set<Message> = []
+
+        for maybeMessageKeys in [journalistMessageKey] {
+            if let messageKeys = maybeMessageKeys {
+                try await userMessages.formUnion(
+                    DecryptedDeadDrops.decryptWithUserKey(
+                        userSecretKey: userMessageSecretKey,
+                        journalistKey: messageKeys,
+                        verifiedDeadDropData: verifiedDeadDrops,
+                        dateReceived: PublicKeysHelper.readLocalGeneratedAtFile()!
+                    )
+                )
             }
-            return messages
         }
 
-        let flattenedMessage = userMessages.flatMap { $0 }
-
-        return .unlockedSecretData(unlockedData: UnlockedSecretData(passphrase: passphrase, messageMailbox: flattenedMessage, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+        return .unlockedSecretData(unlockedData: UnlockedSecretData(passphrase: passphrase, messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
     }
 }

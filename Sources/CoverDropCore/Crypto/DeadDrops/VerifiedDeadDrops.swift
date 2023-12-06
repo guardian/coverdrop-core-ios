@@ -44,10 +44,6 @@ public extension VerifiedDeadDrops {
 
         return verifiedDeadDrops
     }
-
-    internal func getMostRecentId() -> Int? {
-        deadDrops.map { $0.id }.max()
-    }
 }
 
 /// An individual dead drop that has been verified against the CoverNodeId Public Signing Key.

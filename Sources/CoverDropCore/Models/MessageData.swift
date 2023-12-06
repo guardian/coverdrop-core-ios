@@ -5,6 +5,20 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
     case outboundMessage(message: OutboundMessageData)
     case incomingMessage(message: IncomingMessageType)
 
+    public func getDate() -> Date {
+        switch self {
+            case let .incomingMessage(message: incomingMessage):
+                switch incomingMessage {
+                    case let .handoverMessage(message: message):
+                        return message.timestamp
+                    case let .textMessage(message: message):
+                        return message.dateReceived
+                }
+            case let .outboundMessage(message: message):
+                return message.dateQueued
+        }
+    }
+
     static func formatExpiryDate(messageDate: Date, expiry: Date) -> String? {
         let timeTillExpiry = expiry.distance(to: messageDate)
         let formatter = DateComponentsFormatter()
