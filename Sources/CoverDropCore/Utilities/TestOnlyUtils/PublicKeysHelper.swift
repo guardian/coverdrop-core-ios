@@ -34,7 +34,7 @@ public class PublicKeysHelper {
         PublicDataRepository.setup(config)
         let publicKeysData = try! PublicKeysHelper.readLocalKeysFile()
         let trustedOrganizationSigningKeys = try! PublicKeysHelper.readLocalTrustedOrganizationKeys()
-        let verifiedPublicKeysData = try! VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedOrganizationSigningKeys, currentTime: MockDate.currentTime())
+        let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedOrganizationSigningKeys, currentTime: MockDate.currentTime())
         testKeys = verifiedPublicKeysData!
     }
 

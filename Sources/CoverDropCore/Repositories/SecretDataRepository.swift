@@ -4,40 +4,38 @@ import Sodium
 
 @MainActor
 public class SecretDataRepository: ObservableObject {
-    @Published public var secretData: SecretData = .lockedSecretData(lockedData: LockedSecretData(encryptedData: "".asBytes()))
-    // Making the initialiser private is a way to achieve the sington pattern
-    private init() {
-        // Create a Task and do any async stuff for this here.
-    }
+    @Published public var secretData: SecretData = .lockedSecretData(lockedData: LockedSecretData())
+    private var encryptedStorageSession: EncryptedStorageSession?
 
     public static let shared = SecretDataRepository()
-    public func unlock(passphrase: ValidPassword, key: SecureEnclavePrivateKey) async throws -> Bool {
-        do {
-            // load data from Encrypted Storage
-            let storage: Storage = try await EncryptedStorage.loadStorageFromDisk(passphrase: passphrase, withSecureEnclave: SecureEnclave.isAvailable, secureEnclaveKey: key)
-
-            if case let .plaintext(unlockedSecretData) = storage.blobData {
-                secretData = .unlockedSecretData(unlockedData: unlockedSecretData)
-                return true
-            } else {
-                return false
-            }
-        } catch {
-            return false
-        }
+    private init() {
+        // Making the initialiser private is a way to achieve the sington pattern
     }
 
-    public func saveMessages(data: UnlockedSecretData, withSecureEnclave: Bool) async throws -> Storage {
-        let storage = try EncryptedStorage.initialiseStorage()
-        let key = try await SecureEnclavePrivateKey.loadKey(name: EncryptedStorage.fileName)
-        let newData = try await EncryptedStorage.updateStorageOnDisk(storage: storage, passphrase: data.passphrase, newState: data, withSecureEnclave: withSecureEnclave, secureEnclaveKey: key)
-        return newData
+    public func createOrReset(passphrase: ValidPassword) async throws {
+        self.encryptedStorageSession = try await EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        try await self.loadData()
     }
 
-    public func lock(data: UnlockedSecretData, withSecureEnclave: Bool) async throws {
-        let savedData = try await saveMessages(data: data, withSecureEnclave: withSecureEnclave)
-        if case let .encrypted(lockedData) = savedData.blobData {
-            secretData = .lockedSecretData(lockedData: LockedSecretData(encryptedData: Array(lockedData)))
-        }
+    public func unlock(passphrase: ValidPassword) async throws {
+        // unlock session and use it to load the inital data
+        self.encryptedStorageSession = try await EncryptedStorage.unlockStorageWithPassphrase(passphrase: passphrase)
+        try await self.loadData()
+    }
+
+    private func loadData() async throws {
+        let unlockedData = try await EncryptedStorage.loadStorageFromDisk(session: self.encryptedStorageSession!)
+        self.secretData = .unlockedSecretData(unlockedData: unlockedData)
+    }
+
+    public func lock(unlockedData: UnlockedSecretData) async throws {
+        try await storeData(unlockedData: unlockedData)
+        self.secretData = .lockedSecretData(lockedData: LockedSecretData())
+
+    }
+
+    public func storeData(unlockedData: UnlockedSecretData) async throws {
+        self.secretData = .unlockedSecretData(unlockedData: unlockedData)
+        try await EncryptedStorage.updateStorageOnDisk(session: self.encryptedStorageSession!, state: unlockedData)
     }
 }

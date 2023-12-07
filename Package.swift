@@ -17,7 +17,8 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         .package(url: "https://github.com/jedisct1/swift-sodium.git", from: "0.9.1"),
-        .package(url: "https://github.com/1024jp/GzipSwift", from: "5.2.0")
+        .package(url: "https://github.com/1024jp/GzipSwift", from: "5.2.0"),
+        .package(url: "https://github.com/lambdapioneer/sloth-ios.git", from: "0.3.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -26,7 +27,8 @@ let package = Package(
             name: "CoverDropCore",
             dependencies: [
                 .product(name: "Sodium", package: "swift-sodium"),
-                .product(name: "Gzip", package: "GzipSwift")
+                .product(name: "Gzip", package: "GzipSwift"),
+                .product(name: "RainbowSloth", package: "sloth-ios")
             ],
             resources: [
                 .copy("Resources/eff_large_wordlist.txt"),

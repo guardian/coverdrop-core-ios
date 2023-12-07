@@ -14,8 +14,8 @@ public enum BackgroundLogoutService {
 
         let timeIntervalSinceLastBackground = Date().timeIntervalSince(lastBackgroundDate)
         if timeIntervalSinceLastBackground > TimeInterval(appConfig.maxBackgroundDurationInSeconds) {
-            if case let .unlockedSecretData(unlockedData: unlockedSecretData) = await SecretDataRepository.shared.secretData {
-                try await SecretDataRepository.shared.lock(data: unlockedSecretData, withSecureEnclave: SecureEnclave.isAvailable)
+            if case let .unlockedSecretData(unlockedData: unlockedData) = await SecretDataRepository.shared.secretData {
+                try await SecretDataRepository.shared.lock(unlockedData: unlockedData)
             }
         }
     }

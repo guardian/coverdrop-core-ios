@@ -7,7 +7,7 @@ protocol WebRepository {
 
 extension WebRepository {
     func call<Value>(endpoint: APICall, httpCodes _: HTTPCodes = .success) async throws -> Value
-        where Value: Decodable {
+    where Value: Decodable {
         do {
             let request = try endpoint.urlRequest(baseURL: baseURL)
 

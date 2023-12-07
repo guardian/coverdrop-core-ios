@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 
 enum CoverDropServicesError: Error {
@@ -48,7 +47,7 @@ public class CoverDropServices: ObservableObject {
         let privateSendingQueueIsReady = await PrivateSendingQueueRepository.shared.isReady
 
         // Check Encrypted Storage exists, and create if not
-        _ = try await EncryptedStorage.onAppStart(withSecureEnclave: SecureEnclave.isAvailable)
+        _ = try await EncryptedStorage.onAppStart()
         _ = SecretDataRepository.shared
 
         await MainActor.run {

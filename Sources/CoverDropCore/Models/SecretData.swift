@@ -5,25 +5,18 @@ public enum SecretData {
     case unlockedSecretData(unlockedData: UnlockedSecretData)
 }
 
-public class LockedSecretData: Codable {
-    init(encryptedData: [UInt8]) {
-        self.encryptedData = encryptedData
-    }
-
-    public var encryptedData: [UInt8]
-}
+public class LockedSecretData: Codable { }
 
 @MainActor
 public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     enum CodingKeys: CodingKey {
-        case uuid, passphrase, messageMailbox, userKey, privateSendingQueueSecret
+        case uuid, messageMailbox, userKey, privateSendingQueueSecret
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(uuid, forKey: .uuid)
-        try container.encode(passphrase, forKey: .passphrase)
         try container.encode(messageMailbox, forKey: .messageMailbox)
         try container.encode(userKey, forKey: .userKey)
         try container.encode(privateSendingQueueSecret, forKey: .privateSendingQueueSecret)
@@ -33,30 +26,32 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         uuid = try container.decode(UUID.self, forKey: .uuid)
-        passphrase = try container.decode(ValidPassword.self, forKey: .passphrase)
         messageMailbox = try container.decode(Set<Message>.self, forKey: .messageMailbox)
         userKey = try container.decode(EncryptionKeypair<User>.self, forKey: .userKey)
         privateSendingQueueSecret = try container.decode(PrivateSendingQueueSecret.self, forKey: .privateSendingQueueSecret)
     }
 
-    public init(uuid: UUID = UUID(), passphrase: ValidPassword, messageMailbox: Set<Message>, userKey: EncryptionKeypair<User>, privateSendingQueueSecret: PrivateSendingQueueSecret) {
+    public init(uuid: UUID = UUID(), messageMailbox: Set<Message>, userKey: EncryptionKeypair<User>, privateSendingQueueSecret: PrivateSendingQueueSecret) {
         self.uuid = uuid
-        self.passphrase = passphrase
         self.messageMailbox = messageMailbox
         self.userKey = userKey
         self.privateSendingQueueSecret = privateSendingQueueSecret
     }
 
+    public static func createNewEmpty() throws -> UnlockedSecretData {
+        let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
+        let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
+        return UnlockedSecretData(messageMailbox: [], userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret)
+    }
+
     public static func == (lhs: UnlockedSecretData, rhs: UnlockedSecretData) -> Bool {
-        return lhs.passphrase.password == rhs.passphrase.password &&
-            lhs.messageMailbox == rhs.messageMailbox &&
+        return lhs.messageMailbox == rhs.messageMailbox &&
             lhs.userKey.publicKey.key == rhs.userKey.publicKey.key &&
             lhs.userKey.secretKey.key == rhs.userKey.secretKey.key &&
             lhs.privateSendingQueueSecret == rhs.privateSendingQueueSecret
     }
 
     public var uuid: UUID = .init()
-    public var passphrase: ValidPassword
     @Published public var messageMailbox: Set<Message>
     public var userKey: EncryptionKeypair<User>
     public var privateSendingQueueSecret: PrivateSendingQueueSecret
@@ -109,7 +104,6 @@ extension UnlockedSecretData: CustomStringConvertible {
     public var description: String {
         """
             uuid: \(uuid)
-            passphrase: \(passphrase)
             messageMailbox: \(messageMailbox)
             userKey: \(userKey)
         """

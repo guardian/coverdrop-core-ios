@@ -4,8 +4,6 @@ import Foundation
 /// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency of them all
 @MainActor public enum MessageHelper {
     public static func addMessagesToInbox() throws -> SecretData {
-        let passphrase = ValidPassword(password: "external jersey squeeze luckiness collector")
-
         let journalistMessageKey = PublicKeysHelper.shared.getTestJournalistMessageKey
 
         let recipient = PublicKeysHelper.shared.testDefaultJournalist
@@ -36,12 +34,10 @@ import Foundation
             messages.insert(inactiveMessage2)
         }
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretData(passphrase: passphrase, messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+        return .unlockedSecretData(unlockedData: UnlockedSecretData(messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
     }
 
     public static func loadMessagesFromDeadDrop() async throws -> SecretData {
-        let passphrase = ValidPassword(password: "external jersey squeeze luckiness collector")
-
         let journalistMessageKey = PublicKeysHelper.shared.testDefaultJournalist
         let publicKeys = PublicKeysHelper.shared.testKeys
 
@@ -68,6 +64,6 @@ import Foundation
             }
         }
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretData(passphrase: passphrase, messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+        return .unlockedSecretData(unlockedData: UnlockedSecretData(messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
     }
 }

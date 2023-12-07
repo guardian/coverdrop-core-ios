@@ -7,15 +7,15 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
 
     public func getDate() -> Date {
         switch self {
-            case let .incomingMessage(message: incomingMessage):
-                switch incomingMessage {
-                    case let .handoverMessage(message: message):
-                        return message.timestamp
-                    case let .textMessage(message: message):
-                        return message.dateReceived
-                }
-            case let .outboundMessage(message: message):
-                return message.dateQueued
+        case let .incomingMessage(message: incomingMessage):
+            switch incomingMessage {
+            case let .handoverMessage(message: message):
+                return message.timestamp
+            case let .textMessage(message: message):
+                return message.dateReceived
+            }
+        case let .outboundMessage(message: message):
+            return message.dateQueued
         }
     }
 

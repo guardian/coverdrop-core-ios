@@ -6,10 +6,11 @@ public protocol ConfigProtocol {
     var apiBaseUrl: String { get }
     var messageBaseUrl: String { get }
     var cacheEnabled: Bool { get }
-    var passphraseLowWordCount: Int { get }
-    var passphraseHighWordCount: Int { get }
+    var passphraseWordCount: Int { get }
     var currentKeysPublishedTime: () -> Date { get }
+    var startWithTestMessages: Bool { get }
     var startWithTestStorage: Bool { get }
+    var maxBackgroundDurationInSeconds: Int { get }
     func currentTime() -> Date
 }
 
@@ -18,125 +19,55 @@ public enum ConfigType: ConfigProtocol {
     case codeConfig
     case prodConfig
 
-    public func urlSessionConfig() -> URLSession {
+    private func internalGetConfig() -> ConfigProtocol {
         switch self {
-        case .devConfig:
-            return DevConfig().urlSessionConfig()
-        case .codeConfig:
-            return CodeConfig().urlSessionConfig()
-        case .prodConfig:
-            return ProdConfig().urlSessionConfig()
+        case.devConfig:
+            return DevConfig()
+        case.codeConfig:
+            return CodeConfig()
+        case.prodConfig:
+            return ProdConfig()
         }
+    }
+
+    public func urlSessionConfig() -> URLSession {
+        return self.internalGetConfig().urlSessionConfig()
     }
 
     public var apiBaseUrl: String {
-        switch self {
-        case .devConfig:
-            return DevConfig().apiBaseUrl
-        case .codeConfig:
-            return CodeConfig().apiBaseUrl
-        case .prodConfig:
-            return ProdConfig().apiBaseUrl
-        }
+        return self.internalGetConfig().apiBaseUrl
     }
 
     public var messageBaseUrl: String {
-        switch self {
-        case .devConfig:
-            return DevConfig().messageBaseUrl
-        case .codeConfig:
-            return CodeConfig().messageBaseUrl
-        case .prodConfig:
-            return ProdConfig().messageBaseUrl
-        }
+        return self.internalGetConfig().messageBaseUrl
     }
 
     public var cacheEnabled: Bool {
-        switch self {
-        case .devConfig:
-            return DevConfig().cacheEnabled
-        case .codeConfig:
-            return CodeConfig().cacheEnabled
-        case .prodConfig:
-            return ProdConfig().cacheEnabled
-        }
+        return self.internalGetConfig().cacheEnabled
     }
 
     public var currentKeysPublishedTime: () -> Date {
-        switch self {
-        case .devConfig:
-            return DevConfig().currentKeysPublishedTime
-        case .codeConfig:
-            return CodeConfig().currentKeysPublishedTime
-        case .prodConfig:
-            return ProdConfig().currentKeysPublishedTime
-        }
+        return self.internalGetConfig().currentKeysPublishedTime
     }
 
     public var startWithTestStorage: Bool {
-        switch self {
-        case .devConfig:
-            return DevConfig().startWithTestStorage
-        case .codeConfig:
-            return CodeConfig().startWithTestStorage
-        case .prodConfig:
-            return ProdConfig().startWithTestStorage
-        }
+        return self.internalGetConfig().startWithTestStorage
     }
 
     public var startWithTestMessages: Bool {
-        switch self {
-        case .devConfig:
-            return DevConfig().startWithTestMessages
-        case .codeConfig:
-            return CodeConfig().startWithTestMessages
-        case .prodConfig:
-            return ProdConfig().startWithTestMessages
-        }
+        return self.internalGetConfig().startWithTestMessages
     }
 
     public func currentTime() -> Date {
-        switch self {
-        case .devConfig:
-            return DevConfig().currentTime()
-        case .codeConfig:
-            return CodeConfig().currentTime()
-        case .prodConfig:
-            return ProdConfig().currentTime()
-        }
+        return self.internalGetConfig().currentTime()
     }
 
     public var maxBackgroundDurationInSeconds: Int {
-        switch self {
-        case .devConfig:
-            return DevConfig().maxBackgroundDurationInSeconds
-        case .codeConfig:
-            return CodeConfig().maxBackgroundDurationInSeconds
-        case .prodConfig:
-            return ProdConfig().maxBackgroundDurationInSeconds
-        }
+        return self.internalGetConfig().maxBackgroundDurationInSeconds
     }
 
-    public var passphraseLowWordCount: Int {
-        switch self {
-        case .devConfig:
-            return DevConfig().passphraseLowWordCount
-        case .codeConfig:
-            return CodeConfig().passphraseLowWordCount
-        case .prodConfig:
-            return ProdConfig().passphraseLowWordCount
-        }
-    }
-
-    public var passphraseHighWordCount: Int {
-        switch self {
-        case .devConfig:
-            return DevConfig().passphraseHighWordCount
-        case .codeConfig:
-            return CodeConfig().passphraseHighWordCount
-        case .prodConfig:
-            return ProdConfig().passphraseHighWordCount
-        }
+    public var passphraseWordCount: Int {
+        return self.internalGetConfig().passphraseWordCount
     }
 
     public var envString: String {
@@ -177,8 +108,7 @@ public enum ConfigType: ConfigProtocol {
 }
 
 public struct ProdConfig: ConfigProtocol {
-    public var passphraseLowWordCount = 4
-    public var passphraseHighWordCount = 10
+    public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
@@ -212,8 +142,7 @@ public struct ProdConfig: ConfigProtocol {
 }
 
 public struct CodeConfig: ConfigProtocol {
-    public var passphraseLowWordCount = 4
-    public var passphraseHighWordCount = 10
+    public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
@@ -246,8 +175,7 @@ public struct CodeConfig: ConfigProtocol {
 }
 
 public struct DevConfig: ConfigProtocol {
-    public var passphraseLowWordCount = 4
-    public var passphraseHighWordCount = 10
+    public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
