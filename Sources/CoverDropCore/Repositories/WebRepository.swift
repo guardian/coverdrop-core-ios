@@ -7,10 +7,10 @@ protocol WebRepository {
 
 extension WebRepository {
     func call<Value>(endpoint: APICall, httpCodes _: HTTPCodes = .success) async throws -> Value
-    where Value: Decodable {
+        where Value: Decodable
+    {
         do {
             let request = try endpoint.urlRequest(baseURL: baseURL)
-
             let (data, response) = try await session.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse,
                   HTTPCodes.success.contains(httpResponse.statusCode)
@@ -27,6 +27,7 @@ extension WebRepository {
     func post(endpoint: APICall, httpCodes _: HTTPCodes = .success, body: Data?) async throws {
         let request = try endpoint.urlRequest(baseURL: baseURL, body: body)
         let (body, response) = try await session.data(for: request)
+        Debug.println("Made successful post to \(request.url)")
         guard let httpResponse = response as? HTTPURLResponse,
               HTTPCodes.success.contains(httpResponse.statusCode)
         else {

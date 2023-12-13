@@ -20,7 +20,7 @@ public struct VerifiedPublicKeys {
     ///   - trustedOrganizationPublicKeys: A list of `TrustedOrganizationPublicKey`, these are got from the app package bundle, so baked into the build.
     ///   - currentTime: the current time the app is running in
     /// - Returns: An instance of `VerifiedPublicKeys`
-    init?(publicKeysData: PublicKeysData, trustedOrganizationPublicKeys: [TrustedOrganizationPublicKey], currentTime: Date) {
+    init(publicKeysData: PublicKeysData, trustedOrganizationPublicKeys: [TrustedOrganizationPublicKey], currentTime: Date) {
         let verifiedHierarchies: [VerifiedPublicKeysHierarchy] = publicKeysData.keys.compactMap { keyHierarchy in
             VerifiedPublicKeysHierarchy(keyHierarchy: keyHierarchy, trustedOrganizationPublicKeys: trustedOrganizationPublicKeys, currentTime: currentTime)
         }
@@ -89,6 +89,16 @@ public struct VerifiedPublicKeys {
         } else {
             return nil
         }
+    }
+
+    public func allMessageKeysForJournalistId(journalistId: String) -> [JournalistMessagingPublicKey] {
+        guard let journalistPublicKeyData = self.allPublicKeysForJournalistId(journalistId: journalistId) else {
+            return []
+        }
+        let allMessagingKeys: [JournalistMessagingPublicKey] = journalistPublicKeyData.flatMap { keyData in
+            keyData.msg
+        }
+        return allMessagingKeys
     }
 
     /// This gets all the coverNode Id keys for each CoverNode instance regardless of the key hierarchy the keys are in.

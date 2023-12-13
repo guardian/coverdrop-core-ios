@@ -35,7 +35,7 @@ public class PublicKeysHelper {
         let publicKeysData = try! PublicKeysHelper.readLocalKeysFile()
         let trustedOrganizationSigningKeys = try! PublicKeysHelper.readLocalTrustedOrganizationKeys()
         let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedOrganizationSigningKeys, currentTime: MockDate.currentTime())
-        testKeys = verifiedPublicKeysData!
+        testKeys = verifiedPublicKeysData
     }
 
     public static func readLocalKeysFile() throws -> PublicKeysData {
@@ -118,14 +118,14 @@ public class PublicKeysHelper {
         return mostRecentCoverNodeId?.getMostRecentMessageKey()
     }
 
-    public var testDefaultJournalist: JournalistKeyData? {
+    public var testDefaultJournalist: JournalistData? {
         let keys = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false).journalists
         return keys?.first(where: { value -> Bool in
             value.recipientId == "static_test_journalist"
         })
     }
 
-    public var getTestDesk: JournalistKeyData? {
+    public var getTestDesk: JournalistData? {
         let keys = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false).desks
 
         return keys?.first(where: { value -> Bool in
@@ -134,7 +134,7 @@ public class PublicKeysHelper {
         )
     }
 
-    public var getTestJournalistMessageKey: JournalistMessagingPublicKey? {
+    public func getTestJournalistMessageKey() -> JournalistMessagingPublicKey? {
         return testDefaultJournalist?.getMessageKey()
     }
 

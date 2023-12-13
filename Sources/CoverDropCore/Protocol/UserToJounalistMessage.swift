@@ -58,8 +58,11 @@ public enum UserToCoverNodeMessage {
     ///   - userPublicKey: The current users public key, this is generated and stored in the Apps secret data storage
     /// - Returns: an AnonymousBox of byte array which is the ciphertext for the outer covernode message. This can be sent as is to the covernode service.
     public static func createMessage(message: String, recipientPublicKey: JournalistMessagingPublicKey, coverNodesToMostRecentMessagePublicKey: VerifiedPublicKeys, userPublicKey: PublicEncryptionKey<User>, tag: RecipientTag) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+        Debug.println("Recipient public key \(recipientPublicKey.key.toBytes().hexStr)")
+
         let innerMessage: AnonymousBox<UserToJournalistMessageData> = try await UserToCoverNodeMessage.encryptRealMessageFromUserToJournalistViaCovernode(recipentPublicKeyData: recipientPublicKey, userPublicKey: userPublicKey, message: message)
         let keys = coverNodesToMostRecentMessagePublicKey.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+        Debug.println("coverNodesToMostRecentMessagePublicKey \(keys.mapValues { $0.key.toBytes().hexStr })")
         let message = try UserToCoverNodeMessage.encryptRealMessageFromUserToCovernode(coverNodesToMostRecentMessagePublicKey: keys, userToJournalistMessage: innerMessage, recipientIdenitfierTag: tag)
         return message
     }

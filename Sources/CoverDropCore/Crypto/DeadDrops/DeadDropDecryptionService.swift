@@ -12,10 +12,6 @@ public struct DeadDropDecryptionService {
     ///
     public func decryptStoredDeadDrops(secretDataRepository: SecretDataRepository = SecretDataRepository.shared,
                                        publicDataRepository: PublicDataRepository = PublicDataRepository.shared, dateReceived: Date) async throws {
-        let journalistPublicKeys: [String: [VerifiedJournalistPublicKeysGroup]]? = publicDataRepository.verifiedPublicKeysData?.allPublicKeysForJournalistsFromAllHierarchies()
-
-        let profiles = publicDataRepository.verifiedPublicKeysData?.journalistProfiles
-
         guard let verifiedDeadDrops = publicDataRepository.deadDrops
         else {
             throw DeadDropDecryptionServiceError.failedToGetKeysOrDeadDrops
@@ -31,8 +27,8 @@ public struct DeadDropDecryptionService {
             let currentConversationJournalists = await secretData.getMailboxRecipients()
 
             var messages: Set<Message> = []
-            for key in currentConversationJournalists {
-                let message = await DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userSecretKey, journalistKey: key, verifiedDeadDropData: verifiedDeadDrops, dateReceived: dateReceived)
+            for journalistData in currentConversationJournalists {
+                let message = await DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userSecretKey, journalistData: journalistData, verifiedDeadDropData: verifiedDeadDrops, dateReceived: dateReceived)
                 messages.formUnion(message)
             }
 

@@ -61,7 +61,7 @@ enum OutboundMessageError: Error {
 }
 
 public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObject {
-    public var recipient: JournalistKeyData
+    public var recipient: JournalistData
     public var messageText: String = ""
     public var dateQueued: Date = .now
     // Note that hint is optional as it cannot be known on first initalisation
@@ -78,7 +78,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
 
     @MainActor public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        recipient = try container.decode(JournalistKeyData.self, forKey: .recipient)
+        recipient = try container.decode(JournalistData.self, forKey: .recipient)
         messageText = try container.decode(String.self, forKey: .messageText)
         dateQueued = try container.decode(Date.self, forKey: .dateQueued)
         isPending = try container.decode(Bool.self, forKey: .isPending)
@@ -119,7 +119,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         return Message.getExpiredStatus(dateSentOrReceived: dateQueued)
     }
 
-    @MainActor public init(recipient: JournalistKeyData, messageText: String, dateSent: Date, hint: HintHmac? = nil) {
+    @MainActor public init(recipient: JournalistData, messageText: String, dateSent: Date, hint: HintHmac? = nil) {
         self.recipient = recipient
         self.messageText = messageText
         dateQueued = dateSent
@@ -169,7 +169,7 @@ public struct HandoverMessageData: Hashable, Codable, Comparable {
             lhs.timestamp == rhs.timestamp
     }
 
-    init?(sender: JournalistKeyData, timestamp: Date, handoverTo: String) {
+    init?(sender: JournalistData, timestamp: Date, handoverTo: String) {
         if handoverTo.count > DeadDropMessageParser.journalistIdentityMaxLength {
             return nil
         }
@@ -178,13 +178,13 @@ public struct HandoverMessageData: Hashable, Codable, Comparable {
         self.timestamp = timestamp
     }
 
-    public var sender: JournalistKeyData
+    public var sender: JournalistData
     public var timestamp: Date
     public var handoverTo: String
 }
 
 public struct IncomingMessageData: Hashable, Codable, Comparable {
-    public var sender: JournalistKeyData
+    public var sender: JournalistData
     public var messageText: String
     public var dateReceived: Date
     public var deadDropId: Int
@@ -197,7 +197,7 @@ public struct IncomingMessageData: Hashable, Codable, Comparable {
         return Message.getExpiredStatus(dateSentOrReceived: dateReceived)
     }
 
-    public init(sender: JournalistKeyData, messageText: String, dateReceived: Date, deadDropId: Int = 0) {
+    public init(sender: JournalistData, messageText: String, dateReceived: Date, deadDropId: Int = 0) {
         self.sender = sender
         self.messageText = messageText
         self.dateReceived = dateReceived

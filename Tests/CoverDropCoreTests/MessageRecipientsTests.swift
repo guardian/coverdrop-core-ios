@@ -1,8 +1,6 @@
 @testable import CoverDropCore
 import XCTest
 
-// swiftlint:disable force_try
-
 final class MessageRecipientsTests: XCTestCase {
     override func setUp() async throws {
         let config = ApplicationConfig.config

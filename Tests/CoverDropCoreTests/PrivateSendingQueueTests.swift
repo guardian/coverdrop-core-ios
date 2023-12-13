@@ -10,7 +10,7 @@ final class PrivateSendingQueueTests: XCTestCase {
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
 
         let encryptedMessage = try await UserToCoverNodeMessage.createMessage(message: message,
-                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey!,
+                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey()!,
                                                                               coverNodesToMostRecentMessagePublicKey: PublicKeysHelper.shared.testKeys,
                                                                               userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [2, 3, 3, 3]))
         return encryptedMessage
@@ -29,7 +29,6 @@ final class PrivateSendingQueueTests: XCTestCase {
     }
 
     func emptyCoverdropQueue() throws -> PrivateSendingQueue {
-        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
         guard let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Failed to get cover message")
             throw PublicDataRepositoryError.failedToCreateCoverMessage

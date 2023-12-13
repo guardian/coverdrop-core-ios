@@ -23,7 +23,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let encryptedMessage = try await UserToCoverNodeMessage.createMessage(message: "message 1",
-                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey!,
+                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey()!,
                                                                               coverNodesToMostRecentMessagePublicKey: PublicKeysHelper.shared.testKeys,
                                                                               userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [1, 2, 3, 4]))
         let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
@@ -209,7 +209,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let encryptedMessage = try await UserToCoverNodeMessage.createMessage(message: "message 1",
-                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey!,
+                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey()!,
                                                                               coverNodesToMostRecentMessagePublicKey: PublicKeysHelper.shared.testKeys,
                                                                               userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [1, 2, 3, 4]))
 

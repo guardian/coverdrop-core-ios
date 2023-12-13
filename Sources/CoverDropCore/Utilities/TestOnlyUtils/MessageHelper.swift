@@ -16,7 +16,8 @@ import Foundation
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
         if let recipientUnwrapped = recipient,
-           let otherRecipientUnwrapped = otherRecipient {
+           let otherRecipientUnwrapped = otherRecipient
+        {
             let nonExpiredMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 2))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
 
             let realMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey outbound \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 12))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
@@ -38,7 +39,7 @@ import Foundation
     }
 
     public static func loadMessagesFromDeadDrop() async throws -> SecretData {
-        let journalistMessageKey = PublicKeysHelper.shared.testDefaultJournalist
+        let maybeJournalistData = PublicKeysHelper.shared.testDefaultJournalist
         let publicKeys = PublicKeysHelper.shared.testKeys
 
         let userMessageSecretKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
@@ -51,17 +52,15 @@ import Foundation
 
         var userMessages: Set<Message> = []
 
-        for maybeMessageKeys in [journalistMessageKey] {
-            if let messageKeys = maybeMessageKeys {
-                try await userMessages.formUnion(
-                    DecryptedDeadDrops.decryptWithUserKey(
-                        userSecretKey: userMessageSecretKey,
-                        journalistKey: messageKeys,
-                        verifiedDeadDropData: verifiedDeadDrops,
-                        dateReceived: PublicKeysHelper.readLocalGeneratedAtFile()!
-                    )
+        if let journalistData = maybeJournalistData {
+            try await userMessages.formUnion(
+                DecryptedDeadDrops.decryptWithUserKey(
+                    userSecretKey: userMessageSecretKey,
+                    journalistData: journalistData,
+                    verifiedDeadDropData: verifiedDeadDrops,
+                    dateReceived: PublicKeysHelper.readLocalGeneratedAtFile()!
                 )
-            }
+            )
         }
 
         return .unlockedSecretData(unlockedData: UnlockedSecretData(messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))

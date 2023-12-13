@@ -38,8 +38,6 @@ final class KeyVerificationTests: XCTestCase {
         let journoKey = JournalistIdPublicKey(key: Sign.KeyPair.PublicKey(journalistIdKey!), certificate: journalistIdCertObj, signingKey: journalistProvisioningKeyObj!, notValidAfter: journalistIdCertNotValidAfterDate, now: journalistIdCertNotValidAfterDate.advanced(by: TimeInterval(-20)))
 
         XCTAssertTrue(journoKey != nil)
-
-        XCTAssertTrue(journoKey != nil)
     }
 
     func testUnSuccessfullOrgKeyInitialisation() throws {

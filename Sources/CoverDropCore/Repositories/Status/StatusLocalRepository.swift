@@ -14,7 +14,7 @@ actor StatusLocalRepository: LocalCacheFileRepository {
 
     func load() async throws -> StatusData {
         let fileURL = try fileURL()
-        var data = try Data(contentsOf: fileURL)
+        let data = try Data(contentsOf: fileURL)
         return try JSONDecoder().decode(StatusData.self, from: data)
     }
 

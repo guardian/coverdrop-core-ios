@@ -3,28 +3,24 @@ import Sodium
 import XCTest
 
 final class DeadDropDecryptionTests: XCTestCase {
-    static var testerJournalistKeyData: JournalistKeyData? {
-        guard let messageKey = PublicKeysHelper.shared.getTestJournalistMessageKey else {
-            XCTFail("Failed to get key")
-            return nil
-        }
-        return JournalistKeyData(recipientId: "tester_journalist",
-                                 displayName: "tester",
-                                 isDesk: false,
-                                 messageKeys: [messageKey],
-                                 recipientDescription: "This is a tester journalist", tag: RecipientTag(tag: [1, 2, 3, 4]))
+    static var testerJournalistData: JournalistData? {
+        return JournalistData(recipientId: "static_test_journalist",
+                              displayName: "tester",
+                              isDesk: false,
+                              recipientDescription: "This is a tester journalist", tag: RecipientTag(tag: [1, 2, 3, 4]))
     }
 
     func testDecryptMessageParsesTextMessage() async throws {
         let initalMessage = "This is a test message"
         let textMessage = try PaddedCompressedString.fromString(text: initalMessage).asUnencryptedBytes()
 
-        let journalistKey = DeadDropDecryptionTests.testerJournalistKeyData
+        let journalistData = DeadDropDecryptionTests.testerJournalistData
 
-        if let journalistKey {
-            let result = DeadDropMessageParser.parseMessage(messageBytes: textMessage, journalistKey: journalistKey, deadDropId: 1, dateReceived: Date())
+        if let journalistData {
+            let result = DeadDropMessageParser.parseMessage(messageBytes: textMessage, journalistData: journalistData, deadDropId: 1, dateReceived: Date())
             if case let .incomingMessage(message: incomingMessage) = result,
-               case let .textMessage(message: messageText) = incomingMessage {
+               case let .textMessage(message: messageText) = incomingMessage
+            {
                 XCTAssertEqual(messageText.messageText, initalMessage)
             } else {
                 XCTFail("Failed to parse message")
@@ -46,12 +42,13 @@ final class DeadDropDecryptionTests: XCTestCase {
 
         handoverMessage.append(contentsOf: padding)
 
-        let journalistKey = DeadDropDecryptionTests.testerJournalistKeyData
+        let journalistKey = DeadDropDecryptionTests.testerJournalistData
 
         if let journalistKey {
-            let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistKey: journalistKey, deadDropId: 1, dateReceived: Date())
+            let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistData: journalistKey, deadDropId: 1, dateReceived: Date())
             if case let .incomingMessage(message: incomingMessage) = result,
-               case let .handoverMessage(message: messageData) = incomingMessage {
+               case let .handoverMessage(message: messageData) = incomingMessage
+            {
                 XCTAssertEqual(messageData.handoverTo, journalistId)
             } else {
                 XCTFail("Failed to parse message")
@@ -63,10 +60,10 @@ final class DeadDropDecryptionTests: XCTestCase {
 
     func testDecryptMessageFailsOnEmptyMessage() async throws {
         let handoverMessage: [UInt8] = []
-        let journalistKey = DeadDropDecryptionTests.testerJournalistKeyData
+        let journalistData = DeadDropDecryptionTests.testerJournalistData
 
-        if let journalistKey {
-            let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistKey: journalistKey, deadDropId: 1, dateReceived: Date())
+        if let journalistData {
+            let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistData: journalistData, deadDropId: 1, dateReceived: Date())
             XCTAssertNil(result)
         } else {
             XCTFail("Failed to get Key")

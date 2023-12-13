@@ -2,8 +2,6 @@
 import Sodium
 import XCTest
 
-// swiftlint:disable force_try identifier_name
-
 final class AnonymouseBoxTests: XCTestCase {
     func testRoundTrip() throws {
         let input = "안녕하세요"
@@ -46,10 +44,10 @@ final class AnonymouseBoxTests: XCTestCase {
             return
         }
 
-        let raw_bytes = encrypted.pkTagAndCiphertext
+        let rawBytes = encrypted.pkTagAndCiphertext
 
-        let from_bytes = AnonymousBox<String>.fromVecUnchecked(bytes: raw_bytes)
-        guard let decrypted: String = try? AnonymousBox<String>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: from_bytes) else {
+        let fromBytes = AnonymousBox<String>.fromVecUnchecked(bytes: rawBytes)
+        guard let decrypted: String = try? AnonymousBox<String>.decrypt(myPk: recipientKeypair.publicKey, mySk: recipientKeypair.secretKey, data: fromBytes) else {
             XCTFail("Failed to decrypt anonymous box")
             return
         }

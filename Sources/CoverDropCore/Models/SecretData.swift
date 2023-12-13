@@ -5,7 +5,7 @@ public enum SecretData {
     case unlockedSecretData(unlockedData: UnlockedSecretData)
 }
 
-public class LockedSecretData: Codable { }
+public class LockedSecretData: Codable {}
 
 @MainActor
 public class UnlockedSecretData: Codable, Equatable, ObservableObject {
@@ -68,7 +68,7 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     /// This is used when we decrypt incoming dead drops so that we only try with keys for journalists
     /// we've been in converstations with.
     /// - Returns: A list of JournalistKeyData
-    public func getMailboxRecipients() -> [JournalistKeyData] {
+    public func getMailboxRecipients() -> [JournalistData] {
         let recipients = messageMailbox.compactMap { message in
             switch message {
             case .outboundMessage(message: let message):
@@ -86,17 +86,11 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
         return Array(uniqueRecipients)
     }
 
-    public static func getJournalistKeyDataForJournalistId(journalistId: String) -> JournalistKeyData? {
-        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData,
-              let journalistPublicKeyData = publicKeyData.allPublicKeysForJournalistId(journalistId: journalistId) else { return nil }
-
-        let recentKeys: [JournalistMessagingPublicKey] = journalistPublicKeyData.compactMap { keyData in
-            keyData.getMostRecentMessageKey()
-        }
-
+    public static func getJournalistKeyDataForJournalistId(journalistId: String) -> JournalistData? {
+        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData else { return nil }
         guard let profileData = publicKeyData.journalistProfiles.first(where: { $0.id == journalistId }) else { return nil }
 
-        return JournalistKeyData(recipientId: journalistId, displayName: profileData.displayName, isDesk: profileData.isDesk, messageKeys: recentKeys, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes))
+        return JournalistData(recipientId: journalistId, displayName: profileData.displayName, isDesk: profileData.isDesk, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes))
     }
 }
 
@@ -110,14 +104,17 @@ extension UnlockedSecretData: CustomStringConvertible {
     }
 }
 
-public struct JournalistKeyData: Hashable, Codable, Comparable {
-    public static func < (lhs: JournalistKeyData, rhs: JournalistKeyData) -> Bool {
-        return lhs.recipientId == rhs.recipientId &&
-            lhs.tag == rhs.tag
+public struct JournalistData: Hashable, Codable, Comparable {
+    public static func < (lhs: JournalistData, rhs: JournalistData) -> Bool {
+        return lhs.recipientId < rhs.recipientId &&
+            lhs.displayName < rhs.displayName
     }
 
-    public static func == (lhs: JournalistKeyData, rhs: JournalistKeyData) -> Bool {
-        return lhs.recipientId == rhs.recipientId
+    public static func == (lhs: JournalistData, rhs: JournalistData) -> Bool {
+        return lhs.recipientId == rhs.recipientId &&
+            lhs.displayName == rhs.displayName &&
+            lhs.tag == rhs.tag &&
+            lhs.isDesk == rhs.isDesk
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -128,26 +125,25 @@ public struct JournalistKeyData: Hashable, Codable, Comparable {
     public let displayName: String
     public let isDesk: Bool
     public func getMessageKey() -> JournalistMessagingPublicKey? {
-        let sortedKeys = messageKeys.max { $0.notValidAfter > $1.notValidAfter }
-        return sortedKeys ?? messageKeys.first
+        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData else { return nil }
+        let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
+        return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }
 
-    public let messageKeys: [JournalistMessagingPublicKey]
     public let recipientDescription: String
     public let tag: RecipientTag
 
-    public init(recipientId: String, displayName: String, isDesk: Bool, messageKeys: [JournalistMessagingPublicKey], recipientDescription: String, tag: RecipientTag) {
+    public init(recipientId: String, displayName: String, isDesk: Bool, recipientDescription: String, tag: RecipientTag) {
         self.recipientId = recipientId
         self.displayName = displayName
         self.isDesk = isDesk
-        self.messageKeys = messageKeys
         self.recipientDescription = recipientDescription
         self.tag = tag
     }
 
-    public static func fromPublicKeysData(name: String, keysGroup: VerifiedJournalistPublicKeysGroup, profileData: JournalistProfile) -> JournalistKeyData {
-        return JournalistKeyData(
-            recipientId: name, displayName: profileData.displayName, isDesk: profileData.isDesk, messageKeys: keysGroup.msg, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes)
+    public static func fromPublicKeysData(name: String, keysGroup: VerifiedJournalistPublicKeysGroup, profileData: JournalistProfile) -> JournalistData {
+        return JournalistData(
+            recipientId: name, displayName: profileData.displayName, isDesk: profileData.isDesk, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes)
         )
     }
 }

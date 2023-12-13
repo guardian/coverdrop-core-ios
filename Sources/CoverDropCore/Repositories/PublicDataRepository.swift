@@ -9,10 +9,10 @@ enum PublicDataRepositoryError: Error {
 }
 
 public class PublicDataRepository: ObservableObject {
-    @Published public var verifiedPublicKeysData: VerifiedPublicKeys?
-    @Published public var coverDropServiceStatus: StatusData?
+    public var verifiedPublicKeysData: VerifiedPublicKeys?
+    @MainActor @Published public var coverDropServiceStatus: StatusData?
     @Published public var deadDrops: VerifiedDeadDrops?
-    @Published public var areKeysAvailable: Bool = false
+    @MainActor @Published public var areKeysAvailable: Bool = false
     @Published public var cacheEnabled: Bool = true
     public private(set) static var appConfig: ConfigType?
 
@@ -23,11 +23,8 @@ public class PublicDataRepository: ObservableObject {
     public static let shared = PublicDataRepository()
 
     private init() {
-        guard let config = PublicDataRepository.appConfig else {
+        guard PublicDataRepository.appConfig != nil else {
             fatalError("Error - you must call setup before accessing PublicDataRepository.shared")
-        }
-        Task {
-            try await pollDataSources()
         }
     }
 
@@ -44,8 +41,11 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.configNotAvailable
         }
         if let config = PublicDataRepository.appConfig,
-           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
-            coverDropServiceStatus = currentStatus
+           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+        {
+            await MainActor.run {
+                coverDropServiceStatus = currentStatus
+            }
         }
     }
 
@@ -56,7 +56,8 @@ public class PublicDataRepository: ObservableObject {
 
         // Load dead drops from journalists
         if let deadDrops = try await DeadDropRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled),
-           let verifiedPublicKeys = verifiedPublicKeysData {
+           let verifiedPublicKeys = verifiedPublicKeysData
+        {
             let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDrops, verifiedKeys: verifiedPublicKeys)
 
             self.deadDrops = verifiedDeadDropData
@@ -74,7 +75,8 @@ public class PublicDataRepository: ObservableObject {
 
         if let config = PublicDataRepository.appConfig,
            let publicKeysData = try? await PublicKeyRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled),
-           let trustedRootKeys = try? config.organizationPublicKeys() {
+           let trustedRootKeys = try? config.organizationPublicKeys()
+        {
             let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: config.currentKeysPublishedTime())
             self.verifiedPublicKeysData = verifiedPublicKeysData
             areKeysAvailable = true
@@ -97,11 +99,11 @@ public class PublicDataRepository: ObservableObject {
     /// 1. dequeue message from privateSendingQueue
     /// 2. send to the api
     public func dequeueMessageAndSend(privateSendingQueue: PrivateSendingQueueRepository = PrivateSendingQueueRepository.shared) async throws {
-        if let message = try? await privateSendingQueue.peek(),
-           let allCoverNodes = try? verifiedPublicKeysData?.mostRecentCoverNodeMessagingKeysFromAllHierarchies() {
+        if let message = try? await privateSendingQueue.peek() {
             if let messageResult = try? await sendMessage(message: message) {
                 if let validVerifiedPublicKeysData = verifiedPublicKeysData,
-                   let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: validVerifiedPublicKeysData) {
+                   let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: validVerifiedPublicKeysData)
+                {
                     guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessage) else {
                         throw UserToJournalistMessagingError.failedToDequeue
                     }

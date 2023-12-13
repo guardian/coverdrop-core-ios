@@ -12,15 +12,15 @@ public struct MessageRecipients {
         }
     }
 
-    public private(set) var journalists: [JournalistKeyData] = []
-    public private(set) var desks: [JournalistKeyData] = []
-    public private(set) var defaultRecipient: JournalistKeyData?
+    public private(set) var journalists: [JournalistData] = []
+    public private(set) var desks: [JournalistData] = []
+    public private(set) var defaultRecipient: JournalistData?
 
     /// Sets up message recipients and sorts into relevant local properties using the provided public keys.
     /// - Parameters:
     ///   - verifiedPublicKeys:
     ///   - excludingDefaultRecipient: Exclude the default recipient from the `journalists` and `desks` arrays. Defaults to `true`.
-    public init(verifiedPublicKeys: VerifiedPublicKeys? = PublicDataRepository.shared.verifiedPublicKeysData,
+    public init(verifiedPublicKeys: VerifiedPublicKeys?,
                 excludingDefaultRecipient: Bool = true) throws {
         try setupMessageRecipients(with: verifiedPublicKeys, excludingDefaultRecipient: excludingDefaultRecipient)
     }
@@ -36,10 +36,9 @@ public struct MessageRecipients {
             guard let allJournalistKeys = verifiedPublicKeys.allPublicKeysForJournalistsFromAllHierarchies()[journalistProfile.id] else { return }
             guard let recentJournalistKey = allJournalistKeys.max(by: { $0.id.notValidAfter < $1.id.notValidAfter }) else { return }
 
-            let journalistKeyData = JournalistKeyData(recipientId: journalistProfile.id,
+            let journalistKeyData = JournalistData(recipientId: journalistProfile.id,
                                                       displayName: journalistProfile.displayName,
                                                       isDesk: journalistProfile.isDesk,
-                                                      messageKeys: recentJournalistKey.msg,
                                                       recipientDescription: journalistProfile.description,
                                                       tag: RecipientTag(tag: journalistProfile.tag.bytes))
 
