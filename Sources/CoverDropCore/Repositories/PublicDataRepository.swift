@@ -139,7 +139,7 @@ public class PublicDataRepository: ObservableObject {
         if allCoverNodes.isEmpty {
             throw PublicDataRepositoryError.failedToGetCoverNodeMessageKeys
         }
-        let coverNodeKeys = UserToCoverNodeMessage.selectCovernodeKeys(coverNodeKeys: allCoverNodes)
+        let coverNodeKeys = UserToCoverNodeMessage.selectCoverNodeKeys(coverNodeKeys: allCoverNodes)
         return {
             try PublicDataRepository.shared.createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys)
         }

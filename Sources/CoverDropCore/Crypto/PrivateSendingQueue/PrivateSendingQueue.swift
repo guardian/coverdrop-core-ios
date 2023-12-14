@@ -161,7 +161,10 @@ struct PrivateSendingQueue: Equatable {
         mStorage.insert(message, at: fillLevel)
         _ = mStorage.popLast()
 
-        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: secret.bytes, message: message.asBytes()))
+        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(
+            secretKey: secret.bytes,
+            message: message.asBytes()
+        ))
 
         mHints.insert(hint, at: fillLevel)
         _ = mHints.popLast()

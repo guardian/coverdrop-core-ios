@@ -135,7 +135,7 @@ public class PublicKeysHelper {
     }
 
     public func getTestJournalistMessageKey() -> JournalistMessagingPublicKey? {
-        return testDefaultJournalist?.getMessageKey()
+        return testDefaultJournalist?.getLatestMessagingKey()
     }
 
     public func getTestJournalistMessageSecretKey() throws -> SecretEncryptionKey<JournalistMessaging> {

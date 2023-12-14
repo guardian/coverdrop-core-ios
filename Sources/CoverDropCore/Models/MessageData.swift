@@ -64,16 +64,13 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
     public var recipient: JournalistData
     public var messageText: String = ""
     public var dateQueued: Date = .now
-    // Note that hint is optional as it cannot be known on first initalisation
-    // this is because the hint is derived from the encrypted form of the message,
-    // so it appended to the message after its been enqueued
-    public var hint: HintHmac?
+    public var hint: HintHmac
 
     @MainActor @Published public var isPending: Bool = true
     private var sendingQueueSubscriber: AnyCancellable?
 
     private enum CodingKeys: String, CodingKey {
-        case recipient, messageText, dateQueued, isPending
+        case recipient, messageText, dateQueued, hint
     }
 
     @MainActor public required init(from decoder: Decoder) throws {
@@ -81,7 +78,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         recipient = try container.decode(JournalistData.self, forKey: .recipient)
         messageText = try container.decode(String.self, forKey: .messageText)
         dateQueued = try container.decode(Date.self, forKey: .dateQueued)
-        isPending = try container.decode(Bool.self, forKey: .isPending)
+        hint = try container.decode(HintHmac.self, forKey: .hint)
     }
 
     @MainActor public func encode(to encoder: Encoder) throws {
@@ -89,7 +86,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         try container.encode(recipient, forKey: .recipient)
         try container.encode(messageText, forKey: .messageText)
         try container.encode(dateQueued, forKey: .dateQueued)
-        try container.encode(isPending, forKey: .isPending)
+        try container.encode(hint, forKey: .hint)
     }
 
     public static func == (lhs: OutboundMessageData, rhs: OutboundMessageData) -> Bool {
@@ -109,18 +106,16 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
     }
 
     @MainActor public func isInQueue() async {
-        if let realHint = hint {
-            let amInQueue = await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: realHint)
-            isPending = amInQueue
-        }
+        let isInQueue = await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint)
+        isPending = isInQueue
     }
 
     public var expiredStatus: MessageStatus {
         return Message.getExpiredStatus(dateSentOrReceived: dateQueued)
     }
 
-    @MainActor public init(recipient: JournalistData, messageText: String, dateSent: Date, hint: HintHmac? = nil) {
-        self.recipient = recipient
+    @MainActor public init(messageRecipient: JournalistData, messageText: String, dateSent: Date, hint: HintHmac) {
+        recipient = messageRecipient
         self.messageText = messageText
         dateQueued = dateSent
         self.hint = hint
@@ -129,14 +124,6 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
                 .sink { [weak self] _ in
                     Task { await self?.isInQueue() }
                 }
-        }
-    }
-
-    public func toCoverNodeMessage(covernodeMessagePublicKey: VerifiedPublicKeys, userPublicKey: UserPublicKey) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        if let messageKey = recipient.getMessageKey() {
-            return try await UserToCoverNodeMessage.createMessage(message: messageText, recipientPublicKey: messageKey, coverNodesToMostRecentMessagePublicKey: covernodeMessagePublicKey, userPublicKey: userPublicKey, tag: recipient.tag)
-        } else {
-            throw KeysError.cannotFindFileError
         }
     }
 }

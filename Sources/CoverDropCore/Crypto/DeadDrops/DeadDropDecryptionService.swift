@@ -32,7 +32,7 @@ public struct DeadDropDecryptionService {
                 messages.formUnion(message)
             }
 
-            await secretData.addMessages(messages: messages)
+            try await secretData.addMessages(messages: messages)
         }
     }
 }

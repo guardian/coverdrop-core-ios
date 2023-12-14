@@ -11,7 +11,7 @@ final class PrivateSendingQueueTests: XCTestCase {
 
         let encryptedMessage = try await UserToCoverNodeMessage.createMessage(message: message,
                                                                               recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey()!,
-                                                                              coverNodesToMostRecentMessagePublicKey: PublicKeysHelper.shared.testKeys,
+                                                                              verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
                                                                               userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [2, 3, 3, 3]))
         return encryptedMessage
     }

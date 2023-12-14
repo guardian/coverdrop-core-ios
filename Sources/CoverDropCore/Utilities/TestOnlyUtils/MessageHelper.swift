@@ -1,9 +1,17 @@
 import Foundation
 
+enum MessageHelperError: Error {
+    case unableToCreateMessage
+}
+
 /// This helper is used to generate a mock user message inbox for the purpose of previewing the UI in xcode
 /// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency of them all
 @MainActor public enum MessageHelper {
     public static func addMessagesToInbox() throws -> SecretData {
+        let twoDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 2))
+        let twelveDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 12))
+        let thirteenDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 13))
+
         let journalistMessageKey = PublicKeysHelper.shared.getTestJournalistMessageKey
 
         let recipient = PublicKeysHelper.shared.testDefaultJournalist
@@ -15,25 +23,60 @@ import Foundation
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
-        if let recipientUnwrapped = recipient,
-           let otherRecipientUnwrapped = otherRecipient
-        {
-            let nonExpiredMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 2))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
+        guard let recipientUnwrapped = recipient,
+              let otherRecipientUnwrapped = otherRecipient else { throw MessageHelperError.unableToCreateMessage }
 
-            let realMessage = Message.outboundMessage(message: OutboundMessageData(recipient: recipientUnwrapped, messageText: "hey outbound \(recipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 12))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
+        let encryptedMessage = try UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
 
-            let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: recipientUnwrapped, messageText: "hey user, from: \(recipientUnwrapped.displayName)", dateReceived: Date())))
+        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage.asBytes()))
+        let outboundMessage = OutboundMessageData(
+            messageRecipient: recipientUnwrapped,
+            messageText: "hey \(recipientUnwrapped.displayName)",
+            dateSent: Date(timeIntervalSinceNow: twoDaysAgo),
+            hint: hint
+        )
 
-            let inactiveMessage1 = Message.outboundMessage(message: OutboundMessageData(recipient: otherRecipientUnwrapped, messageText: "hey \(otherRecipientUnwrapped.displayName)", dateSent: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 13))), hint: HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: "hey".asBytes()))))
+        let nonExpiredMessage = Message.outboundMessage(message: outboundMessage)
 
-            let inactiveMessage2 = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: otherRecipientUnwrapped, messageText: "hey user from \(otherRecipientUnwrapped.displayName)", dateReceived: Date(timeIntervalSinceNow: TimeInterval(1 - (60 * 60 * 24 * 13))))))
-            // add a message to the inbox
-            messages.insert(realMessage)
-            messages.insert(nonExpiredMessage)
-            messages.insert(realReplyMessage)
-            messages.insert(inactiveMessage1)
-            messages.insert(inactiveMessage2)
-        }
+        let realOutboundMessage = OutboundMessageData(
+            messageRecipient: recipientUnwrapped,
+            messageText: "hey outbound \(recipientUnwrapped.displayName)",
+            dateSent: Date(timeIntervalSinceNow: twelveDaysAgo),
+            hint: hint
+        )
+
+        let realMessage = Message.outboundMessage(message: realOutboundMessage)
+
+        let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: recipientUnwrapped, messageText: "hey user, from: \(recipientUnwrapped.displayName)", dateReceived: Date())))
+
+        let encryptedMessage2 = try UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+
+        let hint2 = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage2.asBytes()))
+
+        let inactiveMessageInner = OutboundMessageData(
+            messageRecipient: otherRecipientUnwrapped,
+            messageText: "hey \(otherRecipientUnwrapped.displayName)",
+            dateSent: Date(timeIntervalSinceNow: thirteenDaysAgo),
+            hint: hint2
+        )
+
+        let inactiveMessage1 = Message.outboundMessage(message: inactiveMessageInner)
+
+        let inactiveMessage2 = Message.incomingMessage(
+            message: .textMessage(
+                message: IncomingMessageData(
+                    sender: otherRecipientUnwrapped,
+                    messageText: "hey user from \(otherRecipientUnwrapped.displayName)",
+                    dateReceived: Date(timeIntervalSinceNow: thirteenDaysAgo)
+                )
+            )
+        )
+        // add a message to the inbox
+        messages.insert(realMessage)
+        messages.insert(nonExpiredMessage)
+        messages.insert(realReplyMessage)
+        messages.insert(inactiveMessage1)
+        messages.insert(inactiveMessage2)
 
         return .unlockedSecretData(unlockedData: UnlockedSecretData(messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
     }

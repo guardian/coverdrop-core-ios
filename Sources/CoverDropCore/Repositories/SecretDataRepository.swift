@@ -29,9 +29,8 @@ public class SecretDataRepository: ObservableObject {
     }
 
     public func lock(unlockedData: UnlockedSecretData) async throws {
-        try await storeData(unlockedData: unlockedData)
+        try await self.storeData(unlockedData: unlockedData)
         self.secretData = .lockedSecretData(lockedData: LockedSecretData())
-
     }
 
     public func storeData(unlockedData: UnlockedSecretData) async throws {

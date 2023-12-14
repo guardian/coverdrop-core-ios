@@ -56,12 +56,18 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     public var userKey: EncryptionKeypair<User>
     public var privateSendingQueueSecret: PrivateSendingQueueSecret
 
-    public func addMessage(message: Message) {
+    public func addMessage(message: Message) async throws {
         messageMailbox.insert(message)
+        try await storeData()
     }
 
-    public func addMessages(messages: Set<Message>) {
+    public func addMessages(messages: Set<Message>) async throws {
         messageMailbox.formUnion(messages)
+        try await storeData()
+    }
+
+    public func storeData() async throws {
+        try await SecretDataRepository.shared.storeData(unlockedData: self)
     }
 
     /// This gets the journalist or desks that the user has had converstations with
@@ -124,12 +130,6 @@ public struct JournalistData: Hashable, Codable, Comparable {
     public let recipientId: String
     public let displayName: String
     public let isDesk: Bool
-    public func getMessageKey() -> JournalistMessagingPublicKey? {
-        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData else { return nil }
-        let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
-        return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
-    }
-
     public let recipientDescription: String
     public let tag: RecipientTag
 
@@ -139,6 +139,12 @@ public struct JournalistData: Hashable, Codable, Comparable {
         self.isDesk = isDesk
         self.recipientDescription = recipientDescription
         self.tag = tag
+    }
+
+    public func getLatestMessagingKey() -> JournalistMessagingPublicKey? {
+        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData else { return nil }
+        let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
+        return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }
 
     public static func fromPublicKeysData(name: String, keysGroup: VerifiedJournalistPublicKeysGroup, profileData: JournalistProfile) -> JournalistData {

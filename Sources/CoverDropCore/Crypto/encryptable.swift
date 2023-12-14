@@ -49,7 +49,9 @@ extension [UInt8]: Encryptable {
 extension UnlockedSecretData: Encryptable {
     public func asUnencryptedBytes() -> [UInt8] {
         do {
-            let jsonEncodedState = try JSONEncoder().encode(self)
+            let jsonEncoder = JSONEncoder()
+            jsonEncoder.outputFormatting = .sortedKeys
+            let jsonEncodedState = try jsonEncoder.encode(self)
             return Array(Data(jsonEncodedState))
         } catch {
             return []
