@@ -26,7 +26,8 @@ public class CoverDropServices: ObservableObject {
 
         // Note the app will not be made available if the cache is not enabled in production
         if let appConfig = PublicDataRepository.appConfig,
-           case .prodConfig = appConfig {
+           case .prodConfig = appConfig
+        {
             if !appConfig.cacheEnabled {
                 throw CoverDropServicesError.failedToStartCachingNotEnabledInProd
             }
@@ -49,6 +50,13 @@ public class CoverDropServices: ObservableObject {
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart()
         _ = SecretDataRepository.shared
+
+        // Check app resiliance guards
+        await SecuritySuite.shared.checkForJailbreak()
+        await SecuritySuite.shared.checkForDebuggable()
+        await SecuritySuite.shared.checkForPassphrase()
+        await SecuritySuite.shared.checkForEmulator()
+        await SecuritySuite.shared.checkForReverseEngineering()
 
         await MainActor.run {
             isReady = publicDataRepository.areKeysAvailable && EncryptedStorage.isReady && privateSendingQueueIsReady
