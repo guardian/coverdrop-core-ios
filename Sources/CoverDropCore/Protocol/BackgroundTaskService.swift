@@ -20,12 +20,18 @@ public enum BackgroundTaskService {
 
     static func handleAppRefresh(task: BGAppRefreshTask) {
         Task {
-            do {
-                try await PublicDataRepository.shared.dequeueMessageAndSend()
-                task.setTaskCompleted(success: true)
-            } catch {
+            let coverMessageFactoryOpt = try? await CoverDropServices.getCoverMessageFactoryFromPublicKeysRepository()
+
+            guard let coverMessageFactory = coverMessageFactoryOpt else {
                 task.setTaskCompleted(success: false)
+                return
             }
+
+            let result = try? await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
+
+            var success = result != nil
+
+            task.setTaskCompleted(success: success)
             BackgroundTaskService.scheduleAppRefresh()
         }
     }

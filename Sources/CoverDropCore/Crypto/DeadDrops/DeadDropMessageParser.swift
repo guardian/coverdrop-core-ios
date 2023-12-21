@@ -20,12 +20,12 @@ enum DeadDropMessageParser {
     }
 
     private static func parseTextMessage(messageBytes: [UInt8], journalistData: JournalistData, deadDropId: Int, dateReceived: Date) -> Message? {
-        precondition(messageBytes.count == Constants.messagePaddingLen)
-        if let extractedMessage = try? PaddedCompressedString(value: Array(messageBytes)).toString() {
-            return .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: journalistData, messageText: extractedMessage, dateReceived: dateReceived, deadDropId: deadDropId)))
-        } else {
+        if messageBytes.count != Constants.messagePaddingLen {
+            Debug.println("message bytes did not match messagePaddingLen")
             return nil
         }
+        guard let extractedMessage = try? PaddedCompressedString(value: Array(messageBytes)).toString() else { return nil }
+        return .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: journalistData, messageText: extractedMessage, dateReceived: dateReceived, deadDropId: deadDropId)))
     }
 
     private static func parseHandoverMessage(messageBytes: [UInt8], journalistData: JournalistData, deadDropId _: Int, dateReceived: Date) -> Message? {
@@ -33,8 +33,7 @@ enum DeadDropMessageParser {
               DeadDropMessageParser.journalistIdentityMaxLength >= endPositionOfJournalistIdentity,
               let journalistIdentityString = String(bytes: Array(messageBytes[1 ..< endPositionOfJournalistIdentity]), encoding: .utf8),
               journalistIdentityString.count <= DeadDropMessageParser.journalistIdentityMaxLength,
-              let handoverMessage = HandoverMessageData(sender: journalistData, timestamp: dateReceived, handoverTo: journalistIdentityString)
-        else { return nil }
+              let handoverMessage = HandoverMessageData(sender: journalistData, timestamp: dateReceived, handoverTo: journalistIdentityString) else { return nil }
         return .incomingMessage(message:
             .handoverMessage(message: handoverMessage)
         )

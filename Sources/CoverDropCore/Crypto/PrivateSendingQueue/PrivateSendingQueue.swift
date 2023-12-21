@@ -38,8 +38,8 @@ public struct HintHmac: Codable, Equatable, Hashable {
 ///  included. However, a caller that uses a consistent secret will be able to tell how many real
 ///  messages are currently stored. Also, it ensures that real messages that are enqueued are placed
 ///  before all cover messages.
-struct PrivateSendingQueue: Equatable {
-    static func == (lhs: PrivateSendingQueue, rhs: PrivateSendingQueue) -> Bool {
+public struct PrivateSendingQueue: Equatable {
+    public static func == (lhs: PrivateSendingQueue, rhs: PrivateSendingQueue) -> Bool {
         return lhs.mStorage == rhs.mStorage &&
             lhs.mHints == rhs.mHints
     }
@@ -72,7 +72,7 @@ struct PrivateSendingQueue: Equatable {
     /// - Parameters:
     ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform serialization standard
     ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform serialization standard
-    init(totalQueueSize: Int32, messageSize: Int32, coverMessageFactory: () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>) throws {
+    init(totalQueueSize: Int32, messageSize: Int32, coverMessageFactory: CoverMessageFactory) throws {
         self.totalQueueSize = totalQueueSize
         self.messageSize = messageSize
         initialMessagesAndHints = ([], [])
@@ -90,7 +90,7 @@ struct PrivateSendingQueue: Equatable {
     /// they would be at the front and returned before any cover messages. Afterwards the buffer
     /// is filled up to `self.size` again.
     @discardableResult
-    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: CoverMessageFactory) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let message = mStorage.removeFirst()
         _ = mHints.removeFirst()
 
@@ -147,7 +147,8 @@ struct PrivateSendingQueue: Equatable {
     /// - throws: if the queue is full  of real messages or an incorrect size
     mutating func enqueue(secret: PrivateSendingQueueSecret,
                           message: MultiAnonymousBox<UserToCoverNodeMessageData>,
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> HintHmac {
+                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> HintHmac
+    {
         let fillLevel = getFillLevel(secret: secret)
 
         if fillLevel == totalQueueSize {
@@ -206,7 +207,8 @@ struct PrivateSendingQueue: Equatable {
     /// - Returns: a `PrivateSendingQueue`
     /// - throws: if the `bytes` were not able to be deserialized to the expected length
     static func fromBytes(bytes: [UInt8],
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> PrivateSendingQueue {
+                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> PrivateSendingQueue
+    {
         var buffer = Data(bytes)
 
         let numberOfMessages: Int32 = popInt(byteLength: currentMessagesIntBytes, buffer: &buffer)

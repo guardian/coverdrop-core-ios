@@ -74,17 +74,18 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     /// This is used when we decrypt incoming dead drops so that we only try with keys for journalists
     /// we've been in converstations with.
     /// - Returns: A list of JournalistKeyData
-    public func getMailboxRecipients() -> [JournalistData] {
+    public func getMailboxRecipients() async -> [JournalistData] {
+        guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return [] }
         let recipients = messageMailbox.compactMap { message in
             switch message {
-            case .outboundMessage(message: let message):
+            case let .outboundMessage(message: message):
                 return message.recipient
-            case .incomingMessage(message: let messageType):
+            case let .incomingMessage(message: messageType):
                 switch messageType {
-                case .textMessage(message: let message):
+                case let .textMessage(message: message):
                     return message.sender
-                case .handoverMessage(message: let handover):
-                    return UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo)
+                case let .handoverMessage(message: handover):
+                    return UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo, publicKeyData: publicKeyData)
                 }
             }
         }
@@ -92,8 +93,7 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
         return Array(uniqueRecipients)
     }
 
-    public static func getJournalistKeyDataForJournalistId(journalistId: String) -> JournalistData? {
-        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData else { return nil }
+    public static func getJournalistKeyDataForJournalistId(journalistId: String, publicKeyData: VerifiedPublicKeys) -> JournalistData? {
         guard let profileData = publicKeyData.journalistProfiles.first(where: { $0.id == journalistId }) else { return nil }
 
         return JournalistData(recipientId: journalistId, displayName: profileData.displayName, isDesk: profileData.isDesk, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes))
@@ -141,15 +141,9 @@ public struct JournalistData: Hashable, Codable, Comparable {
         self.tag = tag
     }
 
-    public func getLatestMessagingKey() -> JournalistMessagingPublicKey? {
-        guard let publicKeyData = PublicDataRepository.shared.verifiedPublicKeysData else { return nil }
+    public func getLatestMessagingKey() async -> JournalistMessagingPublicKey? {
+        guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return nil }
         let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
         return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
-    }
-
-    public static func fromPublicKeysData(name: String, keysGroup: VerifiedJournalistPublicKeysGroup, profileData: JournalistProfile) -> JournalistData {
-        return JournalistData(
-            recipientId: name, displayName: profileData.displayName, isDesk: profileData.isDesk, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes)
-        )
     }
 }

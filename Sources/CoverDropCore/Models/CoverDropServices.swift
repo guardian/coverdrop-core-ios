@@ -1,7 +1,7 @@
 import Foundation
 
 enum CoverDropServicesError: Error {
-    case coverNodeKeysNotAvailable
+    case verifiedPublicKeysNotAvailable
     case failedToGenerateCoverMessage
     case failedToStartCachingNotEnabledInProd
 }
@@ -36,20 +36,23 @@ public class CoverDropServices: ObservableObject {
         // 3. request the public keys and any dead drops
         try await publicDataRepository.pollDataSources()
         // 4. get the verified keys
-        guard let verifiedPublicKeys = publicDataRepository.verifiedPublicKeysData else {
-            throw CoverDropServicesError.coverNodeKeysNotAvailable
+        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
+            throw CoverDropServicesError.verifiedPublicKeysNotAvailable
         }
         // 5. generate a coverMessage from the verified Keys
         guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
-        // 6. starte the private sending queue
-        try await PrivateSendingQueueRepository.shared.start(coverMessageFactory: coverMessageFactory)
-        let privateSendingQueueIsReady = await PrivateSendingQueueRepository.shared.isReady
+        // 6. create the private sending queue on disk if it does not exist
+        try await PrivateSendingQueueRepository.shared.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart()
         _ = SecretDataRepository.shared
+
+        // Run foreground checks so that there is the same behaviour when app is started,
+        // as when its foregrounded
+        CoverDropServices.didEnterForeground()
 
         // Check app resiliance guards
         await SecuritySuite.shared.checkForJailbreak()
@@ -59,15 +62,30 @@ public class CoverDropServices: ObservableObject {
         await SecuritySuite.shared.checkForReverseEngineering()
 
         await MainActor.run {
-            isReady = publicDataRepository.areKeysAvailable && EncryptedStorage.isReady && privateSendingQueueIsReady
+            isReady = publicDataRepository.areKeysAvailable && EncryptedStorage.isReady
         }
 
         try await CoverDropServiceHelper.addTestStorage()
     }
 
+    public static func getCoverMessageFactoryFromPublicKeysRepository() async throws -> CoverMessageFactory {
+        PublicDataRepository.setup(ApplicationConfig.config)
+
+        let publicDataRepository = PublicDataRepository.shared
+        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
+            throw CoverDropServicesError.verifiedPublicKeysNotAvailable
+        }
+        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
+            throw CoverDropServicesError.failedToGenerateCoverMessage
+        }
+        return coverMessageFactory
+    }
+
     public static func didEnterForeground() {
         Task {
-            try? await PublicDataRepository.shared.dequeueMessageAndSend()
+            if let coverMessageFactory = try? await getCoverMessageFactoryFromPublicKeysRepository() {
+                try? await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
+            }
             try? await BackgroundLogoutService.logoutIfBackgroundedForTooLong()
             try? await PublicDataRepository.shared.pollDataSources()
         }

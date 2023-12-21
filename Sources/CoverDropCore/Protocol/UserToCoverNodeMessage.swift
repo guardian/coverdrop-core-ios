@@ -25,8 +25,8 @@ public struct UserToCoverNodeMessageData: Equatable, Encryptable {
             lhs.userToJournalistMessage.asBytes() == rhs.userToJournalistMessage.asBytes()
     }
 
-    public static func createMessage(message: String, messageRecipient: JournalistData, covernodeMessagePublicKey: VerifiedPublicKeys, userPublicKey: UserPublicKey) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        if let messageKey = messageRecipient.getLatestMessagingKey() {
+    public static func createMessage(message: String, messageRecipient: JournalistData, covernodeMessagePublicKey: VerifiedPublicKeys, userPublicKey: UserPublicKey) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+        if let messageKey = await messageRecipient.getLatestMessagingKey() {
             return try UserToCoverNodeMessage.createMessage(
                 message: message,
                 recipientPublicKey: messageKey,

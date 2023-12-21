@@ -134,8 +134,8 @@ public class PublicKeysHelper {
         )
     }
 
-    public func getTestJournalistMessageKey() -> JournalistMessagingPublicKey? {
-        return testDefaultJournalist?.getLatestMessagingKey()
+    public func getTestJournalistMessageKey() async -> JournalistMessagingPublicKey? {
+        return await testDefaultJournalist?.getLatestMessagingKey()
     }
 
     public func getTestJournalistMessageSecretKey() throws -> SecretEncryptionKey<JournalistMessaging> {
@@ -143,8 +143,7 @@ public class PublicKeysHelper {
         guard let journalistKeys = testKeys.allPublicKeysForJournalistId(journalistId: "static_test_journalist"),
               let messageKeys = journalistKeys.first,
               let recentKey = messageKeys.getMostRecentMessageKey(),
-              let sha = recentKey.key.key.hexStr?.prefix(8)
-        else {
+              let sha = recentKey.key.key.hexStr?.prefix(8) else {
             throw KeysError.cannotFindKey
         }
         let data = try PublicKeysHelper.readLocalKeypairFile(path: "journalist_msg-\(sha)")
@@ -156,8 +155,7 @@ public class PublicKeysHelper {
         let coverNodeKeys = testKeys.getAllCoverNodeMessagingKeys()
         guard let coverNodeKey = coverNodeKeys.first(where: { $0.key == "covernode_001" }),
               let recentKey = coverNodeKey.value.first,
-              let sha = recentKey.key.key.hexStr?.prefix(8)
-        else {
+              let sha = recentKey.key.key.hexStr?.prefix(8) else {
             throw KeysError.cannotFindKey
         }
         let data = try PublicKeysHelper.readLocalKeypairFile(path: "covernode_msg-\(sha)")

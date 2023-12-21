@@ -6,12 +6,14 @@ enum PublicDataRepositoryError: Error {
     case failedToGenerateRandomBytes
     case failedToGetCoverNodeMessageKeys
     case failedToCreateCoverMessage
+    case failedToLoadDeadDrops
+    case failedToLoadPublicKeys
 }
 
+public typealias CoverMessageFactory = () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>
+
 public class PublicDataRepository: ObservableObject {
-    public var verifiedPublicKeysData: VerifiedPublicKeys?
     @MainActor @Published public var coverDropServiceStatus: StatusData?
-    @Published public var deadDrops: VerifiedDeadDrops?
     @MainActor @Published public var areKeysAvailable: Bool = false
     @Published public var cacheEnabled: Bool = true
     public private(set) static var appConfig: ConfigType?
@@ -32,7 +34,7 @@ public class PublicDataRepository: ObservableObject {
     // We do all actual work in a background Task, so this will not affect UI rendering performance.
     @MainActor public func pollDataSources() async throws {
         try await loadStatus()
-        try await loadPublicKeys()
+        try await loadAndVerifyPublicKeys()
         try await loadDeadDrops()
     }
 
@@ -41,75 +43,87 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.configNotAvailable
         }
         if let config = PublicDataRepository.appConfig,
-           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
+           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+        {
             await MainActor.run {
                 coverDropServiceStatus = currentStatus
             }
         }
     }
 
-    public func loadDeadDrops() async throws {
+    public func loadDeadDrops() async throws -> VerifiedDeadDrops {
         guard let cacheEnabled = PublicDataRepository.appConfig?.cacheEnabled else {
             throw PublicDataRepositoryError.configNotAvailable
         }
 
-        // Load dead drops from journalists
-        if let deadDrops = try await DeadDropRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled),
-           let verifiedPublicKeys = verifiedPublicKeysData {
-            let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDrops, verifiedKeys: verifiedPublicKeys)
+        let deadDropsOpt = try await DeadDropRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled)
+        let verifiedPublicKeysOpt = try? await loadAndVerifyPublicKeys()
 
-            self.deadDrops = verifiedDeadDropData
+        guard let deadDrops = deadDropsOpt,
+              let verifiedPublicKeys = verifiedPublicKeysOpt else
+        {
+            throw PublicDataRepositoryError.failedToLoadDeadDrops
         }
+
+        // Load dead drops from journalists
+        let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDrops, verifiedKeys: verifiedPublicKeys)
+
+        return verifiedDeadDropData
     }
 
     /// This loads and verifies the public key and dead drops from the API.
     /// Once verified, they are added to the `publicData` thus available throughtout the app.
     /// Public keys and dead drops can be updated at any time in the API, so we poll to stay up to date.
-    @MainActor func loadPublicKeys() async throws {
-        guard let cacheEnabled = PublicDataRepository.appConfig?.cacheEnabled else {
+    @MainActor public func loadAndVerifyPublicKeys() async throws -> VerifiedPublicKeys {
+        guard let appConfig = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
         // Load public keys
 
-        if let config = PublicDataRepository.appConfig,
-           let publicKeysData = try? await PublicKeyRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled),
-           let trustedRootKeys = try? config.organizationPublicKeys() {
-            let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: config.currentKeysPublishedTime())
-            self.verifiedPublicKeysData = verifiedPublicKeysData
-            areKeysAvailable = true
+        let publicKeysDataOpt = try? await PublicKeyRepository().downloadAndUpdateAllCaches(cacheEnabled: appConfig.cacheEnabled)
+        let trustedRootKeysOpt = try? appConfig.organizationPublicKeys()
+
+        guard let publicKeysData = publicKeysDataOpt,
+              let trustedRootKeys = trustedRootKeysOpt else
+        {
+            throw PublicDataRepositoryError.failedToLoadPublicKeys
         }
+
+        let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: appConfig.currentKeysPublishedTime())
+        areKeysAvailable = true
+        return verifiedPublicKeysData
     }
 
-    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws {
-        if let data = message.asBytes().base64Encode() {
-            let jsonData: Data = try JSONEncoder().encode(data)
-            guard let postResponse = try? await UserToJournalistMessageWebRepository().sendMessage(jsonData: jsonData) else {
-                throw UserToJournalistMessagingError.failedToSendMessage
-            }
-        } else {
+    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> HTTPURLResponse {
+        let dataOpt = message.asBytes().base64Encode()
+        guard let data = dataOpt,
+              let jsonData: Data = try? JSONEncoder().encode(data) else
+        {
             throw UserToJournalistMessagingError.unableToBase64Encode
         }
+
+        return try await UserToJournalistMessageWebRepository().sendMessage(jsonData: jsonData)
     }
 
     /// This dequeues a message from the `PrivateSendingQueue` and sends it to the user to journalist
     /// message api
     /// 1. dequeue message from privateSendingQueue
     /// 2. send to the api
-    public func dequeueMessageAndSend(privateSendingQueue: PrivateSendingQueueRepository = PrivateSendingQueueRepository.shared) async throws {
-        if let message = try? await privateSendingQueue.peek() {
-            if let messageResult = try? await sendMessage(message: message) {
-                if let validVerifiedPublicKeysData = verifiedPublicKeysData,
-                   let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: validVerifiedPublicKeysData) {
-                    guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessage) else {
-                        throw UserToJournalistMessagingError.failedToDequeue
-                    }
-                }
-            } else {
-                throw UserToJournalistMessagingError.failedToSendMessage
-            }
-        } else {
-            throw UserToJournalistMessagingError.failedToPeekMessage
+    public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async -> Result<Int, UserToJournalistMessagingError> {
+        let privateSendingQueue = PrivateSendingQueueRepository.shared
+
+        guard let message = try? await privateSendingQueue.peek() else {
+            return .failure(UserToJournalistMessagingError.failedToPeekMessage)
         }
+
+        guard let sendResult = try? await sendMessage(message: message) else {
+            return .failure(UserToJournalistMessagingError.failedToSendMessage)
+        }
+
+        guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessageFactory) else {
+            return .failure(UserToJournalistMessagingError.failedToDequeue)
+        }
+        return .success(sendResult.statusCode)
     }
 
     public func createCoverMessageToCoverNode(coverNodeKeys: [PublicEncryptionKey<CoverNodeMessaging>]) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
@@ -117,20 +131,25 @@ public class PublicDataRepository: ObservableObject {
         guard let innerEncryptedPlaceholder = Sodium().randomBytes.buf(length: Constants.userToJournalistEncryptedMessageLen) else {
             throw PublicDataRepositoryError.failedToGenerateRandomBytes
         }
-        precondition(innerEncryptedPlaceholder.count == Constants.userToJournalistEncryptedMessageLen)
+        if innerEncryptedPlaceholder.count != Constants.userToJournalistEncryptedMessageLen {
+            Debug.println("Output length of innerEncryptedPlaceholder was incorrect")
+            throw MultiAnonymousBoxError.badOutputLength
+        }
 
         let coverTrafficRecipientTag = Array(repeating: UInt8(0x00), count: Constants.recipientTagLen)
         // build payload of the outer message (to be read by the CoverNode after decryption)
         let payloadForOuter = coverTrafficRecipientTag + innerEncryptedPlaceholder
 
-        precondition(payloadForOuter.count == Constants.userToCovernodeMessageLen)
+        if payloadForOuter.count != Constants.userToCovernodeMessageLen {
+            throw MultiAnonymousBoxError.badOutputLength
+        }
 
         // encrypt outer message to CoverNode
         let outerEncryptedMessage = try MultiAnonymousBox<UserToCoverNodeMessageData>.encrypt(recipientPks: coverNodeKeys, data: payloadForOuter)
         return outerEncryptedMessage
     }
 
-    public static func getCoverMessageFactory(verifiedPublicKeys: VerifiedPublicKeys) throws -> () throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    public static func getCoverMessageFactory(verifiedPublicKeys: VerifiedPublicKeys) throws -> CoverMessageFactory {
         let allCoverNodes = verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
         if allCoverNodes.isEmpty {
             throw PublicDataRepositoryError.failedToGetCoverNodeMessageKeys

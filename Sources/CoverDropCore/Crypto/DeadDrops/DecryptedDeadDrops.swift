@@ -12,11 +12,11 @@ extension DecryptedDeadDrops {
     ///   - verifiedDeadDropData: a VerifiedDeadDrops wrapper around a list of verified dead drops
     ///   - dateReceived: the date these messages where recieved, usually the current date.
     /// - Returns: A list of messages if there were any successful decryptions, or an empty list.
-    static func decryptWithUserKey(userSecretKey: SecretEncryptionKey<User>, journalistData: JournalistData, verifiedDeadDropData: VerifiedDeadDrops, dateReceived: Date) async -> Set<Message> {
+    static func decryptWithUserKey(userSecretKey: SecretEncryptionKey<User>, journalistData: JournalistData, verifiedDeadDropData: VerifiedDeadDrops, verifiedPublicKeys: VerifiedPublicKeys) async -> Set<Message> {
         var decryptedMessages: Set<Message> = []
         for deadDrop in verifiedDeadDropData.deadDrops {
             for message in deadDrop.data {
-                async let maybeMessage = decryptJournalistToUserMessage(userSecretKey: userSecretKey, journalistData: journalistData, message: message, deadDropId: deadDrop.id, deadDropPublishedDate: deadDrop.publishedDate, dateReceived: dateReceived)
+                async let maybeMessage = decryptJournalistToUserMessage(userSecretKey: userSecretKey, journalistData: journalistData, message: message, verifiedPublicKeys: verifiedPublicKeys, deadDropId: deadDrop.id, deadDropPublishedDate: deadDrop.publishedDate)
                 if let message = await maybeMessage {
                     decryptedMessages.insert(message)
                 }
@@ -33,12 +33,11 @@ extension DecryptedDeadDrops {
     ///   - deadDropId: the dead drop Id the message was found in
     ///   - dateReceived: the date these messages where recieved, usually the current date.
     /// - Returns: A Message if decryption was succesful, or nil
-    private static func decryptJournalistToUserMessage(userSecretKey: SecretEncryptionKey<User>, journalistData: JournalistData, message: JournalistToUserMessage, deadDropId: Int, deadDropPublishedDate: Date, dateReceived: Date) -> Message? {
+    private static func decryptJournalistToUserMessage(userSecretKey: SecretEncryptionKey<User>, journalistData: JournalistData, message: JournalistToUserMessage, verifiedPublicKeys: VerifiedPublicKeys, deadDropId: Int, deadDropPublishedDate: Date) async -> Message? {
         var foundMessage: Message?
 
-        guard let journalistMessagingKeys = PublicDataRepository.shared.verifiedPublicKeysData?.allMessageKeysForJournalistId(journalistId: journalistData.recipientId) else { return nil }
+        let journalistMessagingKeys = verifiedPublicKeys.allMessageKeysForJournalistId(journalistId: journalistData.recipientId)
         // We try to decrypt the message with all the available keys for a journalist,
-
         for messageKey in journalistMessagingKeys {
             if let messageBytes: [UInt8] = try? TwoPartyBox<[UInt8]>.decrypt(senderPk: messageKey.key, recipientSk: userSecretKey, data: message) {
                 if let message = DeadDropMessageParser.parseMessage(messageBytes: messageBytes, journalistData: journalistData, deadDropId: deadDropId, dateReceived: deadDropPublishedDate) {

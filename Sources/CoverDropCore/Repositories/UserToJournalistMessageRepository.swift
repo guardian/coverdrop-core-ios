@@ -1,6 +1,6 @@
 import Foundation
 
-enum UserToJournalistMessagingError: Error {
+public enum UserToJournalistMessagingError: Error {
     case unableToBase64Encode
     case failedToPeekMessage
     case failedToSendMessage
@@ -18,8 +18,8 @@ public struct UserToJournalistMessageWebRepository: WebRepository {
         baseURL = baseUrl
     }
 
-    public func sendMessage(jsonData: Data) async throws {
-        try await post(endpoint: API.sendMessage, body: jsonData)
+    public func sendMessage(jsonData: Data) async throws -> HTTPURLResponse {
+        return try await post(endpoint: API.sendMessage, body: jsonData)
     }
 }
 

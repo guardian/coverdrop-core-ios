@@ -1,7 +1,8 @@
 import Foundation
 
 enum DeadDropDecryptionServiceError: Error {
-    case failedToGetKeysOrDeadDrops
+    case failedToGetKeys
+    case failedToGetDeadDrops
 }
 
 public struct DeadDropDecryptionService {
@@ -11,15 +12,19 @@ public struct DeadDropDecryptionService {
     /// If a message within the dead drops is succesfully decrypted it is added to the user mailbox
     ///
     public func decryptStoredDeadDrops(secretDataRepository: SecretDataRepository = SecretDataRepository.shared,
-                                       publicDataRepository: PublicDataRepository = PublicDataRepository.shared, dateReceived: Date) async throws {
-        guard let verifiedDeadDrops = publicDataRepository.deadDrops
-        else {
-            throw DeadDropDecryptionServiceError.failedToGetKeysOrDeadDrops
+                                       publicDataRepository: PublicDataRepository = PublicDataRepository.shared) async throws
+    {
+        guard let verifiedDeadDrops = try? await publicDataRepository.loadDeadDrops() else {
+            throw DeadDropDecryptionServiceError.failedToGetDeadDrops
+        }
+
+        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
+            throw DeadDropDecryptionServiceError.failedToGetKeys
         }
 
         // we only have access to the user secret key when we are unlocked
         // so this is the only state we can be in to try and decrypt the data
-        if case .unlockedSecretData(unlockedData: let secretData) = await secretDataRepository.secretData {
+        if case let .unlockedSecretData(unlockedData: secretData) = await secretDataRepository.secretData {
             let userSecretKey = await MainActor.run { () -> SecretEncryptionKey<User> in
                 secretData.userKey.secretKey
             }
@@ -28,7 +33,7 @@ public struct DeadDropDecryptionService {
 
             var messages: Set<Message> = []
             for journalistData in currentConversationJournalists {
-                let message = await DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userSecretKey, journalistData: journalistData, verifiedDeadDropData: verifiedDeadDrops, dateReceived: dateReceived)
+                let message = await DecryptedDeadDrops.decryptWithUserKey(userSecretKey: userSecretKey, journalistData: journalistData, verifiedDeadDropData: verifiedDeadDrops, verifiedPublicKeys: verifiedPublicKeys)
                 messages.formUnion(message)
             }
 

@@ -7,12 +7,10 @@ enum MessageHelperError: Error {
 /// This helper is used to generate a mock user message inbox for the purpose of previewing the UI in xcode
 /// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency of them all
 @MainActor public enum MessageHelper {
-    public static func addMessagesToInbox() throws -> SecretData {
+    public static func addMessagesToInbox() async throws -> SecretData {
         let twoDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 2))
         let twelveDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 12))
         let thirteenDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 13))
-
-        let journalistMessageKey = PublicKeysHelper.shared.getTestJournalistMessageKey
 
         let recipient = PublicKeysHelper.shared.testDefaultJournalist
 
@@ -26,7 +24,7 @@ enum MessageHelperError: Error {
         guard let recipientUnwrapped = recipient,
               let otherRecipientUnwrapped = otherRecipient else { throw MessageHelperError.unableToCreateMessage }
 
-        let encryptedMessage = try UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+        let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
 
         let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage.asBytes()))
         let outboundMessage = OutboundMessageData(
@@ -49,7 +47,7 @@ enum MessageHelperError: Error {
 
         let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: recipientUnwrapped, messageText: "hey user, from: \(recipientUnwrapped.displayName)", dateReceived: Date())))
 
-        let encryptedMessage2 = try UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+        let encryptedMessage2 = try await UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
 
         let hint2 = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage2.asBytes()))
 
@@ -83,7 +81,7 @@ enum MessageHelperError: Error {
 
     public static func loadMessagesFromDeadDrop() async throws -> SecretData {
         let maybeJournalistData = PublicKeysHelper.shared.testDefaultJournalist
-        let publicKeys = PublicKeysHelper.shared.testKeys
+        let verifiedPublicKeys = PublicKeysHelper.shared.testKeys
 
         let userMessageSecretKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
         let userMessagePublicKey = try PublicKeysHelper.shared.getTestUserMessagePublicKey()
@@ -91,17 +89,17 @@ enum MessageHelperError: Error {
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
         let deadDropData = try DeadDropDataHelper.shared.readLocalDataFile()
-        let verifiedDeadDrops = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDropData, verifiedKeys: publicKeys)
+        let verifiedDeadDrops = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDropData, verifiedKeys: verifiedPublicKeys)
 
         var userMessages: Set<Message> = []
 
         if let journalistData = maybeJournalistData {
-            try await userMessages.formUnion(
+            await userMessages.formUnion(
                 DecryptedDeadDrops.decryptWithUserKey(
                     userSecretKey: userMessageSecretKey,
                     journalistData: journalistData,
                     verifiedDeadDropData: verifiedDeadDrops,
-                    dateReceived: PublicKeysHelper.readLocalGeneratedAtFile()!
+                    verifiedPublicKeys: verifiedPublicKeys
                 )
             )
         }

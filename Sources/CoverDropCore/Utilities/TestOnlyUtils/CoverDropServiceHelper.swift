@@ -31,7 +31,7 @@ public enum CoverDropServiceHelper {
             let userKeyPair = EncryptionKeypair(publicKey: userPublicMessageKey, secretKey: userSecretMessageKey)
             let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
-            let encryptedMessage = try UserToCoverNodeMessageData.createMessage(message: "Hey", messageRecipient: testDefaultJournalist, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+            let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(message: "Hey", messageRecipient: testDefaultJournalist, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
 
             let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage.asBytes()))
 

@@ -6,9 +6,8 @@ final class SecretDataTests: XCTestCase {
         let journlistId = "static_test_journalist"
 
         PublicDataRepository.setup(ConfigType.devConfig)
-        PublicDataRepository.shared.verifiedPublicKeysData = PublicKeysHelper.shared.testKeys
 
-        let data = await UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: journlistId)
+        let data = await UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: journlistId, publicKeyData: PublicKeysHelper.shared.testKeys)
 
         XCTAssertEqual(data?.recipientId, journlistId)
     }

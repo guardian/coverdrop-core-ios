@@ -21,53 +21,53 @@ public enum ConfigType: ConfigProtocol {
 
     private func internalGetConfig() -> ConfigProtocol {
         switch self {
-        case.devConfig:
+        case .devConfig:
             return DevConfig()
-        case.codeConfig:
+        case .codeConfig:
             return CodeConfig()
-        case.prodConfig:
+        case .prodConfig:
             return ProdConfig()
         }
     }
 
     public func urlSessionConfig() -> URLSession {
-        return self.internalGetConfig().urlSessionConfig()
+        return internalGetConfig().urlSessionConfig()
     }
 
     public var apiBaseUrl: String {
-        return self.internalGetConfig().apiBaseUrl
+        return internalGetConfig().apiBaseUrl
     }
 
     public var messageBaseUrl: String {
-        return self.internalGetConfig().messageBaseUrl
+        return internalGetConfig().messageBaseUrl
     }
 
     public var cacheEnabled: Bool {
-        return self.internalGetConfig().cacheEnabled
+        return internalGetConfig().cacheEnabled
     }
 
     public var currentKeysPublishedTime: () -> Date {
-        return self.internalGetConfig().currentKeysPublishedTime
+        return internalGetConfig().currentKeysPublishedTime
     }
 
     public var startWithTestStorage: Bool {
-        return self.internalGetConfig().startWithTestStorage
+        return internalGetConfig().startWithTestStorage
     }
 
     public var startWithTestMessages: Bool {
-        return self.internalGetConfig().startWithTestMessages
+        return internalGetConfig().startWithTestMessages
     }
 
     public func currentTime() -> Date {
-        return self.internalGetConfig().currentTime()
+        return internalGetConfig().currentTime()
     }
 
     public var maxBackgroundDurationInSeconds: Int {
-        return self.internalGetConfig().maxBackgroundDurationInSeconds
+        return internalGetConfig().maxBackgroundDurationInSeconds
     }
 
     public var passphraseWordCount: Int {
-        return self.internalGetConfig().passphraseWordCount
+        return internalGetConfig().passphraseWordCount
     }
 
     public var envString: String {
@@ -82,7 +82,7 @@ public enum ConfigType: ConfigProtocol {
     }
 
     public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
-        let subpath: String = self.envString
+        let subpath: String = envString
         let resourcePaths: [String] = Bundle.module.paths(forResourcesOfType: "json", inDirectory: "organization_keys/\(subpath)/")
 
         let keys: [TrustedOrganizationPublicKey] = try resourcePaths.compactMap { fullPath in
@@ -198,29 +198,38 @@ public struct DevConfig: ConfigProtocol {
 
     public let cacheEnabled = false
 
-    public let startWithTestStorage = true
+    public var startWithTestStorage: Bool {
+        #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
+                if ProcessInfo.processInfo.arguments.contains("START_WITH_STORAGE") {
+                    return true
+                }
+            }
+        #endif
+        return false
+    }
 
     public var startWithTestMessages: Bool {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
-            if ProcessInfo.processInfo.arguments.contains("START_WITH_MESSAGES") {
-                return true
+            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
+                if ProcessInfo.processInfo.arguments.contains("START_WITH_MESSAGES") {
+                    return true
+                }
             }
-        }
         #endif
         return false
     }
 
     public func currentTime() -> Date {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
-            if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
-                let keysDate = MockDate.currentTime()
-                return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
-            } else {
-                return Date()
+            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
+                if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
+                    let keysDate = MockDate.currentTime()
+                    return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
+                } else {
+                    return Date()
+                }
             }
-        }
         #endif
         return Date()
     }
@@ -232,16 +241,16 @@ public enum ApplicationConfig {
     public static var config: ConfigType {
         var config = ConfigType.prodConfig
         #if DEBUG
-        let userDefaults = UserDefaults.standard
-        var useDevBackend = false
-        if userDefaults.value(forKey: "useDevBackend") != nil {
-            useDevBackend = userDefaults.bool(forKey: "useDevBackend")
-        }
-        if useDevBackend {
-            config = ConfigType.devConfig
-        } else {
-            config = ConfigType.codeConfig
-        }
+            let userDefaults = UserDefaults.standard
+            var useDevBackend = false
+            if userDefaults.value(forKey: "useDevBackend") != nil {
+                useDevBackend = userDefaults.bool(forKey: "useDevBackend")
+            }
+            if useDevBackend {
+                config = ConfigType.devConfig
+            } else {
+                config = ConfigType.codeConfig
+            }
         #endif
         return config
     }

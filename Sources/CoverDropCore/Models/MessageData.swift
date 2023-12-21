@@ -106,8 +106,9 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
     }
 
     @MainActor public func isInQueue() async {
-        let isInQueue = await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint)
-        isPending = isInQueue
+        if let isInQueue = try? await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint) {
+            isPending = isInQueue
+        }
     }
 
     public var expiredStatus: MessageStatus {
