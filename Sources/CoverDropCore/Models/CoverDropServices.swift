@@ -34,7 +34,7 @@ public class CoverDropServices: ObservableObject {
         }
 
         // 3. request the public keys and any dead drops
-        try await publicDataRepository.pollDataSources()
+        try await publicDataRepository.pollPublicKeysAndStatusApis()
         // 4. get the verified keys
         guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
             throw CoverDropServicesError.verifiedPublicKeysNotAvailable
@@ -65,6 +65,10 @@ public class CoverDropServices: ObservableObject {
             isReady = publicDataRepository.areKeysAvailable && EncryptedStorage.isReady
         }
 
+        // We load the dead drops after the service is marked ready
+        // so we do not delay startup
+        try? await PublicDataRepository.shared.loadDeadDrops()
+
         try await CoverDropServiceHelper.addTestStorage()
     }
 
@@ -86,8 +90,13 @@ public class CoverDropServices: ObservableObject {
             if let coverMessageFactory = try? await getCoverMessageFactoryFromPublicKeysRepository() {
                 try? await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
             }
-            try? await BackgroundLogoutService.logoutIfBackgroundedForTooLong()
-            try? await PublicDataRepository.shared.pollDataSources()
+            async let logout = BackgroundLogoutService.logoutIfBackgroundedForTooLong()
+            async let publicKeysAndStatus = PublicDataRepository.shared.pollPublicKeysAndStatusApis()
+            async let deadDrops = PublicDataRepository.shared.loadDeadDrops()
+
+            try? await logout
+            try? await publicKeysAndStatus
+            try? await deadDrops
         }
     }
 

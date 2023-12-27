@@ -30,12 +30,12 @@ public class PublicDataRepository: ObservableObject {
         }
     }
 
-    // This is @MainActor is done as timers are required to be run on the main UI thread.
-    // We do all actual work in a background Task, so this will not affect UI rendering performance.
-    @MainActor public func pollDataSources() async throws {
-        try await loadStatus()
-        try await loadAndVerifyPublicKeys()
-        try await loadDeadDrops()
+    public func pollPublicKeysAndStatusApis() async throws {
+        async let status = loadStatus()
+        async let publicKeys = loadAndVerifyPublicKeys()
+
+        try await status
+        try await publicKeys
     }
 
     public func loadStatus() async throws {
