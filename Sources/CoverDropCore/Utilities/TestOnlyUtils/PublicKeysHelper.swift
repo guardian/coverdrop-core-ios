@@ -97,25 +97,17 @@ public class PublicKeysHelper {
         return PublicKeysHelper.shared.testKeys.allOrganizationKeysFromAllHierarchies().sorted(by: { $0.notValidAfter < $1.notValidAfter }).first!
     }
 
-    public static func getTestCovernodeIdKey() -> CoverNodeIdPublicKey? {
-        let keyHierarchy = PublicKeysHelper.shared.testKeys.allCoverNodeKeysFromAllHierarchies().sorted(by: { $0.provisioningKey.notValidAfter < $1.provisioningKey.notValidAfter }).first!
-
-        let mostRecentCoverNodeId = keyHierarchy.idPublicKeys["covernode_001"]?.max(by: { $0.id.notValidAfter < $1.id.notValidAfter })
-
-        return mostRecentCoverNodeId?.id
-    }
-
     public static func getTestCovernodeKeyHierarchy() -> [VerifiedCoverNodeKeyHierarchy] {
         let keyHierarchy = PublicKeysHelper.shared.testKeys.verifiedHierarchies.first?.verifiedCoverNodeKeyHierarchies
         return keyHierarchy!
     }
 
     public static func getTestCovernodeMessageKey() -> CoverNodeMessagingPublicKey? {
-        let keyHierarchy = PublicKeysHelper.shared.testKeys.allCoverNodeKeysFromAllHierarchies().sorted(by: { $0.provisioningKey.notValidAfter < $1.provisioningKey.notValidAfter }).first!
+        let coverNodeMessagingKeys = PublicKeysHelper.shared.testKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
 
-        let mostRecentCoverNodeId = keyHierarchy.idPublicKeys["covernode_001"]?.max(by: { $0.id.notValidAfter < $1.id.notValidAfter })
+        guard let mostRecentCoverNodeMessagingKey = coverNodeMessagingKeys["covernode_001"] else { return nil }
 
-        return mostRecentCoverNodeId?.getMostRecentMessageKey()
+        return mostRecentCoverNodeMessagingKey
     }
 
     public var testDefaultJournalist: JournalistData? {
@@ -140,10 +132,10 @@ public class PublicKeysHelper {
 
     public func getTestJournalistMessageSecretKey() throws -> SecretEncryptionKey<JournalistMessaging> {
         // this is the secret key for the default recipient
-        guard let journalistKeys = testKeys.allPublicKeysForJournalistId(journalistId: "static_test_journalist"),
-              let messageKeys = journalistKeys.first,
-              let recentKey = messageKeys.getMostRecentMessageKey(),
-              let sha = recentKey.key.key.hexStr?.prefix(8) else {
+        let journalistKeys = testKeys.allMessageKeysForJournalistId(journalistId: "static_test_journalist")
+        guard let messageKeys = journalistKeys.first,
+              let sha = messageKeys.key.key.hexStr?.prefix(8) else
+        {
             throw KeysError.cannotFindKey
         }
         let data = try PublicKeysHelper.readLocalKeypairFile(path: "journalist_msg-\(sha)")
@@ -152,10 +144,10 @@ public class PublicKeysHelper {
 
     public func getTestCovernodeMessageSecretKey() throws -> SecretEncryptionKey<CoverNodeMessaging> {
         // this is the secret key for "covernode_message"
-        let coverNodeKeys = testKeys.getAllCoverNodeMessagingKeys()
-        guard let coverNodeKey = coverNodeKeys.first(where: { $0.key == "covernode_001" }),
-              let recentKey = coverNodeKey.value.first,
-              let sha = recentKey.key.key.hexStr?.prefix(8) else {
+        let coverNodeKeys = testKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+        guard let coverNodeKey = coverNodeKeys["covernode_001"],
+              let sha = coverNodeKey.key.key.hexStr?.prefix(8) else
+        {
             throw KeysError.cannotFindKey
         }
         let data = try PublicKeysHelper.readLocalKeypairFile(path: "covernode_msg-\(sha)")

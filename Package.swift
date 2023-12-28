@@ -11,7 +11,7 @@ let package = Package(
         .library(
             name: "CoverDropCore",
             targets: ["CoverDropCore"]
-        )
+        ),
     ],
 
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/jedisct1/swift-sodium.git", from: "0.9.1"),
         .package(url: "https://github.com/1024jp/GzipSwift", from: "5.2.0"),
         .package(url: "https://github.com/lambdapioneer/sloth-ios.git", from: "0.3.0"),
-        .package(url: "https://github.com/securing/IOSSecuritySuite.git", from: "1.5.0")
+        .package(url: "https://github.com/securing/IOSSecuritySuite.git", from: "1.5.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -30,21 +30,22 @@ let package = Package(
                 .product(name: "Sodium", package: "swift-sodium"),
                 .product(name: "Gzip", package: "GzipSwift"),
                 .product(name: "RainbowSloth", package: "sloth-ios"),
-                .product(name: "IOSSecuritySuite", package: "IOSSecuritySuite")
+                .product(name: "IOSSecuritySuite", package: "IOSSecuritySuite"),
             ],
             resources: [
                 .copy("Resources/eff_large_wordlist.txt"),
                 .copy("Resources/vectors/"),
                 .copy("Resources/keys/"),
-                .copy("Resources/organization_keys/")
+                .copy("Resources/organization_keys/"),
             ]
         ),
         .testTarget(
             name: "CoverDropCoreTests",
             dependencies: ["CoverDropCore", "IOSSecuritySuite"],
             resources: [
-                .copy("Resources/vectors/")
+                .copy("Resources/vectors/"),
+                .copy("Resources/static_vectors/"),
             ]
-        )
+        ),
     ]
 )

@@ -26,22 +26,22 @@ public struct VerifiedPublicKeys {
         }
         let defaultJournalistId = publicKeysData.defaultJournalistId
 
-        self.journalistProfiles = publicKeysData.journalistProfiles
+        journalistProfiles = publicKeysData.journalistProfiles
         self.defaultJournalistId = defaultJournalistId
         self.verifiedHierarchies = verifiedHierarchies
     }
 
     public func allOrganizationKeysFromAllHierarchies() -> [TrustedOrganizationPublicKey] {
         var trustedOrganizationPublicKeys: [TrustedOrganizationPublicKey] = []
-        self.verifiedHierarchies.forEach { verifiedPublicKeysHierarchies in
+        verifiedHierarchies.forEach { verifiedPublicKeysHierarchies in
             trustedOrganizationPublicKeys.append(verifiedPublicKeysHierarchies.organizationPublicKey)
         }
         return trustedOrganizationPublicKeys
     }
 
-    public func allCoverNodeKeysFromAllHierarchies() -> [VerifiedCoverNodeKeyHierarchy] {
+    private func allCoverNodeKeysFromAllHierarchies() -> [VerifiedCoverNodeKeyHierarchy] {
         var verifiedCoverNodeKeyHierarchies: [VerifiedCoverNodeKeyHierarchy] = []
-        self.verifiedHierarchies.forEach { verifiedPublicKeysHierarchies in
+        verifiedHierarchies.forEach { verifiedPublicKeysHierarchies in
             verifiedPublicKeysHierarchies.verifiedCoverNodeKeyHierarchies.forEach { coverNodeKeys in
                 verifiedCoverNodeKeyHierarchies.append(coverNodeKeys)
             }
@@ -50,40 +50,59 @@ public struct VerifiedPublicKeys {
     }
 
     public func mostRecentCoverNodeMessagingKeysFromAllHierarchies() -> [CoverNodeIdentity: CoverNodeMessagingPublicKey] {
-        var coverNodeInstanceMessageKeys: [CoverNodeIdentity: CoverNodeMessagingPublicKey] = [:]
-        let allCoverNodes = self.allCoverNodeKeysFromAllHierarchies()
+        var coverNodeInstanceMessageKeys: [CoverNodeIdentity: [CoverNodeMessagingPublicKey]] = [:]
+        let allCoverNodes = allCoverNodeKeysFromAllHierarchies()
 
+        // get all the messaging from all hierarchies keys first
         for coverNodes in allCoverNodes {
-            if let keysHierarchy = coverNodes.getMostRecentCoverNodeKeyHierarchy() {
-                for (coverNodeId, value) in keysHierarchy {
-                    if let recentKey = value.getMostRecentMessageKey() {
-                        coverNodeInstanceMessageKeys.updateValue(recentKey, forKey: coverNodeId)
+            for (coverNodeId, verifiedCoverNodeKeysFamilies) in coverNodes.idPublicKeys {
+                for verifiedCoverNodeKeysFamily in verifiedCoverNodeKeysFamilies {
+                    if var currentMessageKeys = coverNodeInstanceMessageKeys[coverNodeId] {
+                        currentMessageKeys.append(contentsOf: verifiedCoverNodeKeysFamily.msg)
+                        coverNodeInstanceMessageKeys.updateValue(currentMessageKeys, forKey: coverNodeId)
+                    } else {
+                        coverNodeInstanceMessageKeys.updateValue(verifiedCoverNodeKeysFamily.msg, forKey: coverNodeId)
                     }
                 }
             }
         }
-        return coverNodeInstanceMessageKeys
+
+        // now get the most recent key regardless of hierarchy
+        var coverNodeInstanceMessageKey: [CoverNodeIdentity: CoverNodeMessagingPublicKey] = [:]
+
+        for (coverNodeId, messagePublicKeys) in coverNodeInstanceMessageKeys {
+            if let recentKey = messagePublicKeys.max(by: { $0.notValidAfter < $1.notValidAfter }) {
+                coverNodeInstanceMessageKey.updateValue(recentKey, forKey: coverNodeId)
+            }
+        }
+        return coverNodeInstanceMessageKey
     }
 
     /// This gets all the public keys for each journalist regardless of the key hierarchy the keys are in.
     /// This is required because when we try and decode incoming messages, it is possible for them to be encrypted with older keys, so we must try all keys.
     /// - Returns: An Dictionary of `String` -> `[VerifiedJournalistPublicKeysGroup]` where string is the journalist id.
-    public func allPublicKeysForJournalistsFromAllHierarchies() -> [String: [VerifiedJournalistPublicKeysGroup]] {
+    private func allPublicKeysForJournalistsFromAllHierarchies() -> [String: [VerifiedJournalistPublicKeysGroup]] {
         var journalistPublicKeys: [String: [VerifiedJournalistPublicKeysGroup]] = [:]
 
-        self.verifiedHierarchies.forEach { verifiedPublicKeysHierarchies in
+        verifiedHierarchies.forEach { verifiedPublicKeysHierarchies in
             verifiedPublicKeysHierarchies.verifiedJournalistKeyHierarchies.forEach { verifiedPublicKeysHierarchy in
                 for (journalistId, publicKey) in verifiedPublicKeysHierarchy.keys {
-                    journalistPublicKeys.updateValue(publicKey, forKey: journalistId)
+                    if var existing = journalistPublicKeys[journalistId] {
+                        existing.append(contentsOf: publicKey)
+                        journalistPublicKeys.updateValue(existing, forKey: journalistId)
+                    } else {
+                        journalistPublicKeys.updateValue(publicKey, forKey: journalistId)
+                    }
                 }
             }
         }
         return journalistPublicKeys
     }
 
-    public func allPublicKeysForJournalistId(journalistId: String) -> [VerifiedJournalistPublicKeysGroup]? {
-        if let journalistPublicKeys = self.allPublicKeysForJournalistsFromAllHierarchies()[journalistId],
-           journalistPublicKeys.isEmpty == false {
+    private func allPublicKeysForJournalistId(journalistId: String) -> [VerifiedJournalistPublicKeysGroup]? {
+        if let journalistPublicKeys = allPublicKeysForJournalistsFromAllHierarchies()[journalistId],
+           journalistPublicKeys.isEmpty == false
+        {
             return journalistPublicKeys
 
         } else {
@@ -92,7 +111,7 @@ public struct VerifiedPublicKeys {
     }
 
     public func allMessageKeysForJournalistId(journalistId: String) -> [JournalistMessagingPublicKey] {
-        guard let journalistPublicKeyData = self.allPublicKeysForJournalistId(journalistId: journalistId) else {
+        guard let journalistPublicKeyData = allPublicKeysForJournalistId(journalistId: journalistId) else {
             return []
         }
         let allMessagingKeys: [JournalistMessagingPublicKey] = journalistPublicKeyData.flatMap { keyData in
@@ -103,29 +122,12 @@ public struct VerifiedPublicKeys {
 
     /// This gets all the coverNode Id keys for each CoverNode instance regardless of the key hierarchy the keys are in.
     /// - Returns: An Dictionary of `CoverNodeInstanceId` -> `[CoverNodeIdPublicKey]` where string is the coverNode instance id.
-    func getAllCoverNodeIdKeys() -> [CoverNodeIdentity: [CoverNodeIdPublicKey]] {
+    func getAllCoverNodeIdKeysInAllHierarchies() -> [CoverNodeIdentity: [CoverNodeIdPublicKey]] {
         var coverNodeIdKeys: [String: [CoverNodeIdPublicKey]] = [:]
 
-        self.verifiedHierarchies.forEach { verifiedKeys in
+        verifiedHierarchies.forEach { verifiedKeys in
             verifiedKeys.verifiedCoverNodeKeyHierarchies.forEach { coverNodeKeysFamily in
                 if let newKeys: [String: [CoverNodeIdPublicKey]] = coverNodeKeysFamily.getAllCoverNodeIdKeys() {
-                    coverNodeIdKeys.merge(newKeys, uniquingKeysWith: { current, new in
-                        current + new
-                    })
-                }
-            }
-        }
-        return coverNodeIdKeys
-    }
-
-    /// This gets all the coverNode Id keys for each CoverNode instance regardless of the key hierarchy the keys are in.
-    /// - Returns: An Dictionary of `String` -> `[CoverNodeMessagingPublicKey]` where string is the coverNode instance id.
-    func getAllCoverNodeMessagingKeys() -> [CoverNodeIdentity: [CoverNodeMessagingPublicKey]] {
-        var coverNodeIdKeys: [CoverNodeIdentity: [CoverNodeMessagingPublicKey]] = [:]
-
-        self.verifiedHierarchies.forEach { verifiedKeys in
-            verifiedKeys.verifiedCoverNodeKeyHierarchies.forEach { coverNodeKeysFamily in
-                if let newKeys: [String: [CoverNodeMessagingPublicKey]] = coverNodeKeysFamily.getAllCoverNodeMessagingKeys() {
                     coverNodeIdKeys.merge(newKeys, uniquingKeysWith: { current, new in
                         current + new
                     })
@@ -143,18 +145,12 @@ public struct VerifiedPublicKeysHierarchy {
     public var organizationPublicKey: TrustedOrganizationPublicKey
     public var verifiedCoverNodeKeyHierarchies: [VerifiedCoverNodeKeyHierarchy]
 
-    /// This gets the mst recent verified CoverNode key hierarcy by `notValidAfter` date
-    /// - Returns: A `VerifiedCoverNodeKeyHierarchy`
-    public func getMostRecentCoverNodeHierarchy() -> VerifiedCoverNodeKeyHierarchy? {
-        return self.verifiedCoverNodeKeyHierarchies.max(by: { $0.provisioningKey.notValidAfter < $1.provisioningKey.notValidAfter })
-    }
-
     /// This gets all the public keys for each journalist for this key hierarchy.
     /// - Returns: An Dictionary of `String` -> `[VerifiedJournalistPublicKeysGroup]` where string is the journalist id.
     public func allPublicKeysForJournalists() -> [String: [VerifiedJournalistPublicKeysGroup]] {
         var keys: [String: [VerifiedJournalistPublicKeysGroup]] = [:]
 
-        self.verifiedJournalistKeyHierarchies.forEach { journalistPublicKeys in
+        verifiedJournalistKeyHierarchies.forEach { journalistPublicKeys in
             for (journalistId, publicKey) in journalistPublicKeys.keys {
                 keys.updateValue(publicKey, forKey: journalistId)
             }
@@ -170,11 +166,11 @@ public struct VerifiedPublicKeysHierarchy {
     /// - Returns: Returns a VerifiedPublicKeysHierarchy if successfully verified, or fails if it could not verify.
     init?(keyHierarchy: KeyHierarchy, trustedOrganizationPublicKeys: [TrustedOrganizationPublicKey], currentTime: Date) {
         let unverifiedOrganizationPublicKey = SelfSignedPublicSigningKey<Organization>(key: Sign.KeyPair.PublicKey(keyHierarchy.organizationPublicKey.key.bytes), certificate: Signature<Organization>.fromBytes(
-                                                                                        bytes: keyHierarchy.organizationPublicKey.certificate.bytes), notValidAfter: keyHierarchy.organizationPublicKey.notValidAfter.date, now: currentTime)
+            bytes: keyHierarchy.organizationPublicKey.certificate.bytes), notValidAfter: keyHierarchy.organizationPublicKey.notValidAfter.date, now: currentTime)
 
         guard let orgPublicKey = unverifiedOrganizationPublicKey,
-              let trustedOrganizationPublicKey: TrustedOrganizationPublicKey = VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: orgPublicKey, trustedOrgPks: trustedOrganizationPublicKeys)
-        else {
+              let trustedOrganizationPublicKey: TrustedOrganizationPublicKey = VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: orgPublicKey, trustedOrgPks: trustedOrganizationPublicKeys) else
+        {
             return nil
         }
 
@@ -186,9 +182,9 @@ public struct VerifiedPublicKeysHierarchy {
             if keyHierarchy.journalists.isEmpty {
                 return nil
             } else {
-                self.verifiedJournalistKeyHierarchies = verifiedJournalistPublicKeysHierarchry
-                self.organizationPublicKey = trustedOrganizationPublicKey
-                self.verifiedCoverNodeKeyHierarchies = coverNodesHierarchies
+                verifiedJournalistKeyHierarchies = verifiedJournalistPublicKeysHierarchry
+                organizationPublicKey = trustedOrganizationPublicKey
+                verifiedCoverNodeKeyHierarchies = coverNodesHierarchies
             }
         } catch {
             return nil
@@ -231,7 +227,7 @@ public struct VerifiedPublicKeysHierarchy {
     ///   - currentTime: currentTime: the current time the app is running in
     /// - Returns: A list of VerifiedJournalistPublicKeyHierarchy  if succesfully verified
     /// - Throws: An error if verification was unsuccessful
-    public static func verifyJournalistKeysHierarchy(keyHierarchy: KeyHierarchy, trustedOrganizationPublicKey: TrustedOrganizationPublicKey, currentTime: Date) throws -> [VerifiedJournalistPublicKeyHierarchy] {
+    private static func verifyJournalistKeysHierarchy(keyHierarchy: KeyHierarchy, trustedOrganizationPublicKey: TrustedOrganizationPublicKey, currentTime: Date) throws -> [VerifiedJournalistPublicKeyHierarchy] {
         try keyHierarchy.journalists.map { journalistHierarchy in
 
             let journalistProvisioningKey = journalistHierarchy.provisioningPublicKey
@@ -317,30 +313,12 @@ public struct VerifiedPublicKeysHierarchy {
 public struct VerifiedJournalistPublicKeysGroup {
     let id: JournalistIdPublicKey
     let msg: [JournalistMessagingPublicKey]
-
-    /// This gets the most recent message key by `notValidAfter` date
-    /// - Returns: A `JournalistMessagingPublicKey` if one is available
-    public func getMostRecentMessageKey() -> JournalistMessagingPublicKey? {
-        return self.msg.max(by: { $0.notValidAfter < $1.notValidAfter })
-    }
 }
 
 /// A `VerifiedJournalistPublicKeyHierarchy`
 public struct VerifiedJournalistPublicKeyHierarchy {
     public let keys: [String: [VerifiedJournalistPublicKeysGroup]]
     public let provisioningKey: JournalistProvisioningKey
-
-    /// This gets the most recent journalist public key hierarchy by `notValidAfter` date
-    /// - Returns: A list if journalist id -> VerifiedJournalistPublicKeysGroup
-    public func getMostRecentVerifiedJournalistPublicKeyHierarchy() -> [String: VerifiedJournalistPublicKeysGroup]? {
-        var journalistKey: [String: VerifiedJournalistPublicKeysGroup] = [:]
-        self.keys.forEach { journalist, key in
-            if let mostRecentKey = key.max(by: { $0.id.notValidAfter < $1.id.notValidAfter }) {
-                journalistKey.updateValue(mostRecentKey, forKey: journalist)
-            }
-        }
-        return journalistKey
-    }
 }
 
 public typealias CoverNodeIdentity = String
@@ -349,12 +327,6 @@ public typealias CoverNodeIdentity = String
 public struct VerifiedCoverNodeKeysFamily {
     public let id: CoverNodeIdPublicKey
     public let msg: [CoverNodeMessagingPublicKey]
-
-    /// This gets the most recent message key by `notValidAfter` date
-    /// - Returns: `CoverNodeMessagingPublicKey` if available
-    public func getMostRecentMessageKey() -> CoverNodeMessagingPublicKey? {
-        return self.msg.max(by: { $0.notValidAfter < $1.notValidAfter })
-    }
 }
 
 /// A `VerifiedCoverNodeKeyHierarchy`
@@ -362,40 +334,14 @@ public struct VerifiedCoverNodeKeyHierarchy {
     public let idPublicKeys: [String: [VerifiedCoverNodeKeysFamily]]
     public let provisioningKey: CoverNodeProvisioningKey
 
-    /// This gets the most recent coverNode public key hierarchy by `notValidAfter` date for each coverNode instance
-    /// - Returns: A list if  coverNode instance id -> VerifiedCoverNodeKeysFamily
-    public func getMostRecentCoverNodeKeyHierarchy() -> [CoverNodeIdentity: VerifiedCoverNodeKeysFamily]? {
-        var coverNodeKeys: [CoverNodeIdentity: VerifiedCoverNodeKeysFamily] = [:]
-        self.idPublicKeys.forEach { coverNode, key in
-            if let mostRecentKey = key.max(by: { $0.id.notValidAfter < $1.id.notValidAfter }) {
-                coverNodeKeys.updateValue(mostRecentKey, forKey: coverNode)
-            }
-        }
-        return coverNodeKeys
-    }
-
-    /// This gets all the coverNode Id keys for each CoverNode instance in the current hierarcy
+    /// This gets all the coverNode Id keys for each CoverNode instance in the current hierarchy
     /// - Returns: An Dictionary of `String` -> `[CoverNodeIdPublicKey]` where string is the coverNode instance id.
     public func getAllCoverNodeIdKeys() -> [CoverNodeIdentity: [CoverNodeIdPublicKey]]? {
         var coverNodeKeys: [CoverNodeIdentity: [CoverNodeIdPublicKey]] = [:]
-        self.idPublicKeys.forEach { coverNodeInstanceId, coverNodeKeysFamilies in
+        idPublicKeys.forEach { coverNodeInstanceId, coverNodeKeysFamilies in
             coverNodeKeysFamilies.forEach { coverNodeKeysFamily in
                 let mostRecentKey = coverNodeKeysFamily.id
                 coverNodeKeys[coverNodeInstanceId, default: []].append(mostRecentKey)
-            }
-        }
-        return coverNodeKeys
-    }
-
-    /// This gets all the coverNode Messaging keys for each CoverNode instance in the current hierarcy
-    /// - Returns: An Dictionary of `String` -> `[CoverNodeIdPublicKey]` where string is the coverNode instance id.
-    public func getAllCoverNodeMessagingKeys() -> [CoverNodeIdentity: [CoverNodeMessagingPublicKey]]? {
-        var coverNodeKeys: [CoverNodeIdentity: [CoverNodeMessagingPublicKey]] = [:]
-        self.idPublicKeys.forEach { coverNodeInstanceId, coverNodeKeysFamilies in
-            coverNodeKeysFamilies.forEach { coverNodeKeysFamily in
-                if let mostRecentKey = coverNodeKeysFamily.getMostRecentMessageKey() {
-                    coverNodeKeys[coverNodeInstanceId, default: []].append(mostRecentKey)
-                }
             }
         }
         return coverNodeKeys

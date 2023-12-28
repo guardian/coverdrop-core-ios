@@ -30,7 +30,7 @@ public extension VerifiedDeadDrops {
     static func allVerifiedDeadDropsFromDeadDropData(deadDrops: DeadDropData, verifiedKeys: VerifiedPublicKeys) -> [VerifiedDeadDrop] {
         var verifiedDeadDrops: [VerifiedDeadDrop] = []
 
-        let coverNodeIdKeys: [String: [CoverNodeIdPublicKey]] = verifiedKeys.getAllCoverNodeIdKeys()
+        let coverNodeIdKeys: [String: [CoverNodeIdPublicKey]] = verifiedKeys.getAllCoverNodeIdKeysInAllHierarchies()
 
         deadDrops.deadDrops.forEach { deadDrop in
             coverNodeIdKeys.values.forEach { coverNodeIdKey in
