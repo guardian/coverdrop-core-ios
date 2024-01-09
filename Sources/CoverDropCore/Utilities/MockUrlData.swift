@@ -12,15 +12,17 @@ enum MockUrlData {
         var deadDropData = MockUrlData.getDeadDrops()
         var statusData = MockUrlData.getStatusData()
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("EMPTY_KEYS_DATA") {
-            publicKeysData = Data()
-        } else if ProcessInfo.processInfo.arguments.contains("MULTIPLE_JOURNALIST_SCENARIO") {
-            publicKeysData = MockUrlData.getMultipleJournalistKeys()
-            deadDropData = MockUrlData.getMulitpleJournalistDeadDrops()
-        }
-        if ProcessInfo.processInfo.arguments.contains("STATUS_UNAVAILABLE") {
-            statusData = MockUrlData.getStatusUnavailableData()
-        }
+            if ProcessInfo.processInfo.arguments.contains("EMPTY_KEYS_DATA") {
+                publicKeysData = Data()
+            } else if ProcessInfo.processInfo.arguments.contains("MULTIPLE_JOURNALIST_SCENARIO") {
+                publicKeysData = MockUrlData.getMultipleJournalistKeys()
+                deadDropData = MockUrlData.getMulitpleJournalistDeadDrops()
+            } else if ProcessInfo.processInfo.arguments.contains("NO_DEFAULT_JOURNALIST") {
+                publicKeysData = MockUrlData.getJournalistKeysNoDefaultJournalist()
+            }
+            if ProcessInfo.processInfo.arguments.contains("STATUS_UNAVAILABLE") {
+                statusData = MockUrlData.getStatusUnavailableData()
+            }
         #endif
         return [
             URL(string: "http://localhost:3000/v1/public-keys")!: MockResponse(
@@ -55,7 +57,7 @@ enum MockUrlData {
                 error: nil,
                 data: statusData,
                 response: HTTPURLResponse(url: URL(string: "http://localhost:3000/v1/status")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            )
+            ),
         ]
     }
 
@@ -102,6 +104,14 @@ enum MockUrlData {
     static func getMultipleJournalistKeys() -> Data {
         do {
             return try PublicKeysHelper.readLocalMultipleMessagingKeysJson()
+        } catch {
+            return Data()
+        }
+    }
+
+    static func getJournalistKeysNoDefaultJournalist() -> Data {
+        do {
+            return try PublicKeysHelper.readLocalMessagingKeysNoDefaultJournalistJson()
         } catch {
             return Data()
         }

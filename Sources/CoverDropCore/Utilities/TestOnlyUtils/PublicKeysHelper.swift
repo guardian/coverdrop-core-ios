@@ -58,6 +58,13 @@ public class PublicKeysHelper {
         return data
     }
 
+    public static func readLocalMessagingKeysNoDefaultJournalistJson() throws -> Data {
+        let name = "001_initial_state"
+        guard let resourceUrl = Bundle.module.url(forResource: name, withExtension: ".json", subdirectory: "vectors/messaging_scenario/published_keys") else { throw KeysError.cannotFindFileError }
+        let data = try Data(contentsOf: resourceUrl)
+        return data
+    }
+
     public static func readLocalTrustedOrganizationKeys() throws -> [TrustedOrganizationPublicKey] {
         if let config = PublicDataRepository.appConfig {
             let trustedRootKeys = try config.organizationPublicKeys()
