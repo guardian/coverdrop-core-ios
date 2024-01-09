@@ -273,7 +273,7 @@ public struct DevConfig: ConfigProtocol {
 
 public enum ApplicationConfig {
     public static var config: ConfigType {
-        var config = ConfigType.prodConfig
+        var config = ConfigType.auditConfig
         #if DEBUG
             let userDefaults = UserDefaults.standard
             var useDevBackend = false
