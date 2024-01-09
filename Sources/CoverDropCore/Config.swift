@@ -18,6 +18,7 @@ public enum ConfigType: ConfigProtocol {
     case devConfig
     case codeConfig
     case prodConfig
+    case auditConfig
 
     private func internalGetConfig() -> ConfigProtocol {
         switch self {
@@ -27,6 +28,8 @@ public enum ConfigType: ConfigProtocol {
             return CodeConfig()
         case .prodConfig:
             return ProdConfig()
+        case .auditConfig:
+            return AuditConfig()
         }
     }
 
@@ -78,6 +81,8 @@ public enum ConfigType: ConfigProtocol {
             return "dev"
         case .prodConfig:
             return "prod"
+        case .auditConfig:
+            return "audit"
         }
     }
 
@@ -123,6 +128,35 @@ public struct ProdConfig: ConfigProtocol {
     // (because the expiry times of tokens are static)
     // So MockDate.now returns a date in the past at the current date
     // This is only used for UI and Unit tests that require valid keys
+    public let currentKeysPublishedTime: () -> Date = {
+        var dateFunc = Date()
+        return dateFunc
+    }
+
+    public let cacheEnabled = true
+
+    public var startWithTestStorage = false
+
+    public let startWithTestMessages = false
+
+    public func currentTime() -> Date {
+        return Date()
+    }
+
+    public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
+}
+
+public struct AuditConfig: ConfigProtocol {
+    public var passphraseWordCount = 3
+
+    public func urlSessionConfig() -> URLSession {
+        let urlSessionConfig = URLSessionConfiguration.ephemeral
+        return URLSession(configuration: urlSessionConfig)
+    }
+
+    public let apiBaseUrl = "https://secure-messaging-api-audit.guardianapis.com/v1"
+    public let messageBaseUrl = "https://secure-messaging-msg-audit.guardianapis.com"
+
     public let currentKeysPublishedTime: () -> Date = {
         var dateFunc = Date()
         return dateFunc
@@ -252,6 +286,13 @@ public enum ApplicationConfig {
                 config = ConfigType.codeConfig
             }
         #endif
+        var useAuditBackend = false
+        if UserDefaults.standard.value(forKey: "useAuditBackend") != nil {
+            useAuditBackend = UserDefaults.standard.bool(forKey: "useAuditBackend")
+        }
+        if useAuditBackend {
+            config = ConfigType.auditConfig
+        }
         return config
     }
 }
