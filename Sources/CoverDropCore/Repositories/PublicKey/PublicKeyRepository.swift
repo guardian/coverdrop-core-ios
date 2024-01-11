@@ -8,12 +8,13 @@ protocol PublicKeyRepositoryProtocol {
 /// This repository tries to load the keys data from disk, if this fails it will then try and reload the data from the web api
 /// and store the results to file before returning them
 public class PublicKeyRepository: CacheableApiRepository<PublicKeysData> {
-    init(now: Date = Date(), urlSessionConfig: URLSession = ApplicationConfig.config.urlSessionConfig()) {
+    init(now: Date = Date(), config: ConfigType, urlSessionConfig: URLSession) {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,
             urlSessionConfig: urlSessionConfig,
             localRepository: PublicKeyLocalRepository(),
-            cacheableWebRepository: PublicKeyWebRepository(session: urlSessionConfig))
+            cacheableWebRepository: PublicKeyWebRepository(config: config, urlSession: urlSessionConfig)
+        )
     }
 }

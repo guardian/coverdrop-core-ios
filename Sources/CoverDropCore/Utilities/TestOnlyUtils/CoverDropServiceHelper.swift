@@ -13,8 +13,8 @@ public enum CoverDropServiceHelper {
         } while ready == false
     }
 
-    public static func addTestStorage() async throws {
-        if ApplicationConfig.config.startWithTestStorage {
+    public static func addTestStorage(config: ConfigType) async throws {
+        if config.startWithTestStorage {
             // If we are in UI_TEST_MODE, we want to initialise the storage with a known passphase
             // and set of user keys, so we can work with UI
 
@@ -36,7 +36,7 @@ public enum CoverDropServiceHelper {
             let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage.asBytes()))
 
             var messages: Set<Message> = []
-            if ApplicationConfig.config.startWithTestMessages {
+            if config.startWithTestMessages {
                 let outboundMessage = await OutboundMessageData(
                     messageRecipient: testDefaultJournalist,
                     messageText: "Hey",
@@ -46,7 +46,7 @@ public enum CoverDropServiceHelper {
 
                 messages = [
                     .outboundMessage(message: outboundMessage),
-                    .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date())))
+                    .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date()))),
                 ]
             }
 

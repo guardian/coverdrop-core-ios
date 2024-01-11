@@ -11,16 +11,16 @@ public enum BackgroundTaskService {
         try? BGTaskScheduler.shared.submit(request)
     }
 
-    static func registerAppRefresh() {
+    static func registerAppRefresh(config: ConfigType) {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: serviceName, using: nil) { task in
             // Downcast the parameter to an app refresh task as this identifier is used for a refresh request.
-            BackgroundTaskService.handleAppRefresh(task: task as! BGAppRefreshTask)
+            BackgroundTaskService.handleAppRefresh(task: task as! BGAppRefreshTask, config: config)
         }
     }
 
-    static func handleAppRefresh(task: BGAppRefreshTask) {
+    static func handleAppRefresh(task: BGAppRefreshTask, config: ConfigType) {
         Task {
-            let coverMessageFactoryOpt = try? await CoverDropServices.getCoverMessageFactoryFromPublicKeysRepository()
+            let coverMessageFactoryOpt = try? await CoverDropServices.getCoverMessageFactoryFromPublicKeysRepository(config: config)
 
             guard let coverMessageFactory = coverMessageFactoryOpt else {
                 task.setTaskCompleted(success: false)

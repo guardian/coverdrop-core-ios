@@ -10,7 +10,8 @@ struct DeadDropWebRepository: CacheableWebRepository {
     let baseURL: String
 
     init(session: URLSession,
-         baseUrl: String = ApplicationConfig.config.apiBaseUrl) {
+         baseUrl: String)
+    {
         self.session = session
         baseURL = baseUrl
     }
@@ -34,8 +35,8 @@ extension DeadDropWebRepository.API: APICall {
         switch self {
         case let .allDeadDrops(params: params):
             guard let params,
-                  let id = params["ids_greater_than"]
-            else {
+                  let id = params["ids_greater_than"] else
+            {
                 return nil
             }
             return "/user/dead-drops?ids_greater_than=\(id)"

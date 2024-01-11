@@ -270,29 +270,3 @@ public struct DevConfig: ConfigProtocol {
 
     public let maxBackgroundDurationInSeconds = 10
 }
-
-public enum ApplicationConfig {
-    public static var config: ConfigType {
-        var config = ConfigType.auditConfig
-        #if DEBUG
-            let userDefaults = UserDefaults.standard
-            var useDevBackend = false
-            if userDefaults.value(forKey: "useDevBackend") != nil {
-                useDevBackend = userDefaults.bool(forKey: "useDevBackend")
-            }
-            if useDevBackend {
-                config = ConfigType.devConfig
-            } else {
-                config = ConfigType.codeConfig
-            }
-        #endif
-        var useAuditBackend = false
-        if UserDefaults.standard.value(forKey: "useAuditBackend") != nil {
-            useAuditBackend = UserDefaults.standard.bool(forKey: "useAuditBackend")
-        }
-        if useAuditBackend {
-            config = ConfigType.auditConfig
-        }
-        return config
-    }
-}

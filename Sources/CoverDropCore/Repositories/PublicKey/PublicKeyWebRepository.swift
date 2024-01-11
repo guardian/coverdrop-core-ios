@@ -6,7 +6,7 @@ import Foundation
 struct PublicKeyWebRepository: CacheableWebRepository {
     typealias T = PublicKeysData
 
-    func get(params: [String: String]? = [:]) async throws -> PublicKeysData {
+    func get(params _: [String: String]? = [:]) async throws -> PublicKeysData {
         let result: PublicKeysData = try await call(endpoint: API.allKeys)
         return result
     }
@@ -14,14 +14,9 @@ struct PublicKeyWebRepository: CacheableWebRepository {
     let session: URLSession
     let baseURL: String
 
-    init() {
-        session = ApplicationConfig.config.urlSessionConfig()
-        baseURL = ApplicationConfig.config.apiBaseUrl
-    }
-
-    init(session: URLSession, baseUrl: String = ApplicationConfig.config.apiBaseUrl) {
-        self.session = session
-        baseURL = baseUrl
+    init(config: ConfigType, urlSession: URLSession) {
+        session = urlSession
+        baseURL = config.apiBaseUrl
     }
 }
 

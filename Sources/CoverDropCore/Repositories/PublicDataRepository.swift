@@ -8,6 +8,7 @@ enum PublicDataRepositoryError: Error {
     case failedToCreateCoverMessage
     case failedToLoadDeadDrops
     case failedToLoadPublicKeys
+    case failedToGetConfig
 }
 
 public typealias CoverMessageFactory = () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>
@@ -39,11 +40,11 @@ public class PublicDataRepository: ObservableObject {
     }
 
     public func loadStatus() async throws {
-        guard let cacheEnabled = PublicDataRepository.appConfig?.cacheEnabled else {
+        guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
         if let config = PublicDataRepository.appConfig,
-           let currentStatus = try? await StatusRepository().downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+           let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         {
             await MainActor.run {
                 coverDropServiceStatus = currentStatus
@@ -52,11 +53,11 @@ public class PublicDataRepository: ObservableObject {
     }
 
     public func loadDeadDrops() async throws -> VerifiedDeadDrops {
-        guard let cacheEnabled = PublicDataRepository.appConfig?.cacheEnabled else {
+        guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
 
-        let deadDropsOpt = try await DeadDropRepository().downloadAndUpdateAllCaches(cacheEnabled: cacheEnabled)
+        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let verifiedPublicKeysOpt = try? await loadAndVerifyPublicKeys()
 
         guard let deadDrops = deadDropsOpt,
@@ -80,7 +81,7 @@ public class PublicDataRepository: ObservableObject {
         }
         // Load public keys
 
-        let publicKeysDataOpt = try? await PublicKeyRepository().downloadAndUpdateAllCaches(cacheEnabled: appConfig.cacheEnabled)
+        let publicKeysDataOpt = try? await PublicKeyRepository(config: appConfig, urlSessionConfig: appConfig.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: appConfig.cacheEnabled)
         let trustedRootKeysOpt = try? appConfig.organizationPublicKeys()
 
         guard let publicKeysData = publicKeysDataOpt,
@@ -102,7 +103,11 @@ public class PublicDataRepository: ObservableObject {
             throw UserToJournalistMessagingError.unableToBase64Encode
         }
 
-        return try await UserToJournalistMessageWebRepository().sendMessage(jsonData: jsonData)
+        guard let config = PublicDataRepository.appConfig else {
+            throw UserToJournalistMessagingError.failedToGetConfig
+        }
+
+        return try await UserToJournalistMessageWebRepository(session: config.urlSessionConfig(), baseUrl: config.messageBaseUrl).sendMessage(jsonData: jsonData)
     }
 
     /// This dequeues a message from the `PrivateSendingQueue` and sends it to the user to journalist
@@ -111,6 +116,10 @@ public class PublicDataRepository: ObservableObject {
     /// 2. send to the api
     public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async -> Result<Int, UserToJournalistMessagingError> {
         let privateSendingQueue = PrivateSendingQueueRepository.shared
+
+        guard let config = PublicDataRepository.appConfig else {
+            return .failure(UserToJournalistMessagingError.failedToGetConfig)
+        }
 
         guard let message = try? await privateSendingQueue.peek() else {
             return .failure(UserToJournalistMessagingError.failedToPeekMessage)

@@ -13,14 +13,14 @@ public class CoverDropServices: ObservableObject {
 
     public static var shared = CoverDropServices()
 
-    public func didLaunch() throws {
-        BackgroundTaskService.registerAppRefresh()
+    public func didLaunch(config: ConfigType) throws {
+        BackgroundTaskService.registerAppRefresh(config: config)
     }
 
-    public func didLaunchAsync() async throws {
+    public func didLaunchAsync(config: ConfigType) async throws {
         // To initialise the CoverDrop service we need to:
         // 1. Setup the public data repository
-        PublicDataRepository.setup(ApplicationConfig.config)
+        PublicDataRepository.setup(config)
         // 2. Get the shared instance of public data repository
         let publicDataRepository = PublicDataRepository.shared
 
@@ -47,12 +47,12 @@ public class CoverDropServices: ObservableObject {
         try await PrivateSendingQueueRepository.shared.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
         // Check Encrypted Storage exists, and create if not
-        _ = try await EncryptedStorage.onAppStart()
+        _ = try await EncryptedStorage.onAppStart(config: config)
         _ = SecretDataRepository.shared
 
         // Run foreground checks so that there is the same behaviour when app is started,
         // as when its foregrounded
-        CoverDropServices.didEnterForeground()
+        CoverDropServices.didEnterForeground(config: config)
 
         // Check app resiliance guards
         await SecuritySuite.shared.checkForJailbreak()
@@ -69,11 +69,11 @@ public class CoverDropServices: ObservableObject {
         // so we do not delay startup
         try? await PublicDataRepository.shared.loadDeadDrops()
 
-        try await CoverDropServiceHelper.addTestStorage()
+        try await CoverDropServiceHelper.addTestStorage(config: config)
     }
 
-    public static func getCoverMessageFactoryFromPublicKeysRepository() async throws -> CoverMessageFactory {
-        PublicDataRepository.setup(ApplicationConfig.config)
+    public static func getCoverMessageFactoryFromPublicKeysRepository(config: ConfigType) async throws -> CoverMessageFactory {
+        PublicDataRepository.setup(config)
 
         let publicDataRepository = PublicDataRepository.shared
         guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
@@ -85,9 +85,9 @@ public class CoverDropServices: ObservableObject {
         return coverMessageFactory
     }
 
-    public static func didEnterForeground() {
+    public static func didEnterForeground(config: ConfigType) {
         Task {
-            if let coverMessageFactory = try? await getCoverMessageFactoryFromPublicKeysRepository() {
+            if let coverMessageFactory = try? await getCoverMessageFactoryFromPublicKeysRepository(config: config) {
                 try? await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
             }
             async let logout = BackgroundLogoutService.logoutIfBackgroundedForTooLong()

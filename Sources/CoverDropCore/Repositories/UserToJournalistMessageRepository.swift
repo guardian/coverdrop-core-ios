@@ -5,6 +5,7 @@ public enum UserToJournalistMessagingError: Error {
     case failedToPeekMessage
     case failedToSendMessage
     case failedToDequeue
+    case failedToGetConfig
 }
 
 // MARK: - Implementation
@@ -13,9 +14,9 @@ public struct UserToJournalistMessageWebRepository: WebRepository {
     let session: URLSession
     let baseURL: String
 
-    public init(session: URLSession = ApplicationConfig.config.urlSessionConfig(), baseUrl: String = ApplicationConfig.config.messageBaseUrl) {
-        self.session = session
+    public init(session: URLSession, baseUrl: String) {
         baseURL = baseUrl
+        self.session = session
     }
 
     public func sendMessage(jsonData: Data) async throws -> HTTPURLResponse {

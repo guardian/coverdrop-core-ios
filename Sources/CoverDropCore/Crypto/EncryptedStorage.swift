@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
-import Sodium
 import RainbowSloth
+import Sodium
 
 /// The information to be stored on disk
 public struct Storage: Codable {
@@ -48,7 +48,7 @@ public actor EncryptedStorage {
     /// To be called on every app start. If no storage exists, a new one is created with an undisclosed passphrase. If one already exists, its last-modified date is updated.
     /// - Returns: `Storage` object with encrypted `blob`
     /// - Throws: if touching or creating storage fails
-    public static func onAppStart() async throws {
+    public static func onAppStart(config: ConfigType) async throws {
         let fileURL = try EncryptedStorage.secureStorageFileURL()
 
         if FileManager.default.fileExists(atPath: fileURL.path) {
@@ -56,7 +56,7 @@ public actor EncryptedStorage {
             try touchExistingStorage(fileUrl: fileURL)
         } else {
             // Else there is no storage yet and we create it with a random passphrase
-            try await createOrResetStorageWithRandomPassphrase()
+            try await createOrResetStorageWithRandomPassphrase(passphraseWordCount: config.passphraseWordCount)
         }
     }
 
@@ -71,8 +71,8 @@ public actor EncryptedStorage {
         try FileManager.default.setAttributes([FileAttributeKey.creationDate: date], ofItemAtPath: fileUrl.path)
     }
 
-    public static func createOrResetStorageWithRandomPassphrase() async throws {
-        let passphrase = newStoragePassphrase()
+    public static func createOrResetStorageWithRandomPassphrase(passphraseWordCount: Int) async throws {
+        let passphrase = newStoragePassphrase(passphraseWordCount: passphraseWordCount)
         _ = try await createOrResetStorageWithPassphrase(passphrase: passphrase)
     }
 
@@ -111,8 +111,7 @@ public actor EncryptedStorage {
         // Encrypt using an AEAD algorithm.
         // This sets an IV/nonce internally making it CPA and CCA secure.
         // The nonce is included in the returned ciphertext.
-        guard let ciphertext: Bytes = Sodium().aead.xchacha20poly1305ietf.encrypt(message: statePadded, secretKey: session.cachedKey)
-        else { throw EncryptionError.failedToEncrypt }
+        guard let ciphertext: Bytes = Sodium().aead.xchacha20poly1305ietf.encrypt(message: statePadded, secretKey: session.cachedKey) else { throw EncryptionError.failedToEncrypt }
 
         // create the `Storage` object that encodes all our information that we need to persist on disk
         let storage = Storage(salt: session.salt, blobData: ciphertext)
@@ -133,11 +132,9 @@ public actor EncryptedStorage {
         // retrieve our `Storage` information from disk
         let fileURL = try EncryptedStorage.secureStorageFileURL()
 
-        guard let readData = try? Data(contentsOf: fileURL)
-        else { throw EncryptedStorageError.storageFileMissing }
+        guard let readData = try? Data(contentsOf: fileURL) else { throw EncryptedStorageError.storageFileMissing }
 
-        guard let storage: Storage = try? JSONDecoder().decode(Storage.self, from: readData)
-        else { throw EncryptedStorageError.storageFileDeserializationFailed }
+        guard let storage: Storage = try? JSONDecoder().decode(Storage.self, from: readData) else { throw EncryptedStorageError.storageFileDeserializationFailed }
 
         // rederive the encryption key `k` using RainbowSloth
         let slothPersistedState = RainbowSlothStorageState(handle: rainbowSlothKeyHandle, salt: storage.salt)
@@ -165,8 +162,7 @@ public actor EncryptedStorage {
         let storage: Storage = try JSONDecoder().decode(Storage.self, from: readData)
 
         // Try decrypting... this will fail both when the passphrase is wrong or the file has been tampered with.
-        guard var plaintext: Bytes = Sodium().aead.xchacha20poly1305ietf.decrypt(nonceAndAuthenticatedCipherText: storage.blobData, secretKey: [UInt8](session.cachedKey))
-        else { throw EncryptedStorageError.decryptionFailed }
+        guard var plaintext: Bytes = Sodium().aead.xchacha20poly1305ietf.decrypt(nonceAndAuthenticatedCipherText: storage.blobData, secretKey: [UInt8](session.cachedKey)) else { throw EncryptedStorageError.decryptionFailed }
 
         // Unpad and decode
         Sodium().utils.unpad(bytes: &plaintext, blockSize: EncryptedStorage.storagePaddingToSize)
@@ -180,8 +176,8 @@ public actor EncryptedStorage {
 
     /// Creates a new passphrase.
     /// - Returns: `ValidPassword` with the relevant word count
-    public static func newStoragePassphrase(withSecureEnclave: Bool = true) -> ValidPassword {
+    public static func newStoragePassphrase(passphraseWordCount: Int) -> ValidPassword {
         let generator = PasswordGenerator.shared
-        return generator.generate(wordCount: ApplicationConfig.config.passphraseWordCount)
+        return generator.generate(wordCount: passphraseWordCount)
     }
 }

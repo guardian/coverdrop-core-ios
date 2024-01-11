@@ -5,14 +5,15 @@ import Foundation
 ///
 
 class DeadDropRepository: CacheableApiRepository<DeadDropData> {
-    init(now: Date = Date(), urlSession: URLSession = ApplicationConfig.config.urlSessionConfig()) {
+    init(now: Date = Date(), config: ConfigType, urlSession: URLSession) {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,
             urlSessionConfig: urlSession,
             defaultResponse: DeadDropData(deadDrops: []),
             localRepository: DeadDropLocalRepository(),
-            cacheableWebRepository: DeadDropWebRepository(session: urlSession))
+            cacheableWebRepository: DeadDropWebRepository(session: urlSession, baseUrl: config.apiBaseUrl)
+        )
     }
 
     /// This loads dead drops from the `/user/dead-drops/` endpoint and caches the response.

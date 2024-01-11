@@ -8,17 +8,14 @@ struct StatusWebRepository: CacheableWebRepository {
     let session: URLSession
     let baseURL: String
 
-    init() {
-        session = ApplicationConfig.config.urlSessionConfig()
-        baseURL = ApplicationConfig.config.apiBaseUrl
-    }
-
-    init(session: URLSession, baseUrl: String = ApplicationConfig.config.apiBaseUrl) {
+    init(session: URLSession,
+         baseUrl: String)
+    {
         self.session = session
         baseURL = baseUrl
     }
 
-    func get(params: [String: String]?) async throws -> StatusData {
+    func get(params _: [String: String]?) async throws -> StatusData {
         let response: StatusData = try await call(endpoint: API.status)
         return response
     }

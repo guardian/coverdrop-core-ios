@@ -3,7 +3,7 @@ import XCTest
 
 final class MessageRecipientsTests: XCTestCase {
     override func setUp() async throws {
-        let config = ApplicationConfig.config
+        let config: ConfigType = .devConfig
         PublicDataRepository.setup(config)
     }
 
