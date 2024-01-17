@@ -19,6 +19,7 @@ public enum ConfigType: ConfigProtocol {
     case codeConfig
     case prodConfig
     case auditConfig
+    case demoConfig
 
     private func internalGetConfig() -> ConfigProtocol {
         switch self {
@@ -30,6 +31,8 @@ public enum ConfigType: ConfigProtocol {
             return ProdConfig()
         case .auditConfig:
             return AuditConfig()
+        case .demoConfig:
+            return DemoConfig()
         }
     }
 
@@ -83,6 +86,8 @@ public enum ConfigType: ConfigProtocol {
             return "prod"
         case .auditConfig:
             return "audit"
+        case .demoConfig:
+            return "demo"
         }
     }
 
@@ -122,6 +127,40 @@ public struct ProdConfig: ConfigProtocol {
 
     public let apiBaseUrl = "https://coverdrop-api.code.dev-gutools.co.uk/v1"
     public let messageBaseUrl = "https://secure-messaging.code.dev-guardianapis.com"
+
+    // This supplies a date function, which is used to determine the current date
+    // This is required as our mock keys data cannot be guarenteed to be valid
+    // (because the expiry times of tokens are static)
+    // So MockDate.now returns a date in the past at the current date
+    // This is only used for UI and Unit tests that require valid keys
+    public let currentKeysPublishedTime: () -> Date = {
+        var dateFunc = Date()
+        return dateFunc
+    }
+
+    public let cacheEnabled = true
+
+    public var startWithTestStorage = false
+
+    public let startWithTestMessages = false
+
+    public func currentTime() -> Date {
+        return Date()
+    }
+
+    public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
+}
+
+public struct DemoConfig: ConfigProtocol {
+    public var passphraseWordCount = 3
+
+    public func urlSessionConfig() -> URLSession {
+        let urlSessionConfig = URLSessionConfiguration.ephemeral
+        return URLSession(configuration: urlSessionConfig)
+    }
+
+    public let apiBaseUrl = "https://secure-messaging-api-demo.guardianapis.com/v1"
+    public let messageBaseUrl = "https://secure-messaging-msg-demo.guardianapis.com"
 
     // This supplies a date function, which is used to determine the current date
     // This is required as our mock keys data cannot be guarenteed to be valid
