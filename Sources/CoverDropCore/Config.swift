@@ -172,7 +172,7 @@ public struct DemoConfig: ConfigProtocol {
         return dateFunc
     }
 
-    public let cacheEnabled = true
+    public let cacheEnabled = false
 
     public var startWithTestStorage = false
 
