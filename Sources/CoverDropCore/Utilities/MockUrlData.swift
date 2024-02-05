@@ -57,7 +57,7 @@ enum MockUrlData {
                 error: nil,
                 data: statusData,
                 response: HTTPURLResponse(url: URL(string: "http://localhost:3000/v1/status")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            ),
+            )
         ]
     }
 

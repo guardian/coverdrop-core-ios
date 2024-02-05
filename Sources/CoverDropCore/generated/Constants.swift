@@ -3,6 +3,7 @@
 //
 // The Rust code is here: common/src/protocol/constants.rs
 
+// swiftlint:disable identifier_name 
 public enum Constants {
     public static let journalistProvisioningKeyValidDurationSeconds = 14515200
     public static let journalistIdKeyValidDurationSeconds = 4838400
@@ -32,3 +33,4 @@ public enum Constants {
     public static let localCacheDurationBetweenDownloadsSeconds = 3600
     public static let covernodeWrappingKeyCount = 2
 }
+ // swiftlint:enable identifier_name

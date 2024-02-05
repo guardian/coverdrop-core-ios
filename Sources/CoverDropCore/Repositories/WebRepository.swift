@@ -24,8 +24,8 @@ extension WebRepository {
 
     func post(endpoint: APICall, httpCodes _: HTTPCodes = .success, body: Data?) async throws -> HTTPURLResponse {
         let request = try endpoint.urlRequest(baseURL: baseURL, body: body)
-        let (body, response) = try await session.data(for: request)
-        Debug.println("Made successful post to \(request.url)")
+        let (_, response) = try await session.data(for: request)
+        Debug.println("Made successful post to \(String(describing: request.url))")
         guard let httpResponse = response as? HTTPURLResponse,
               HTTPCodes.success.contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
@@ -34,7 +34,9 @@ extension WebRepository {
     }
 }
 
+    // swiftlint:disable type_name
 protocol CacheableWebRepository<T>: WebRepository {
     associatedtype T: Codable
     func get(params: [String: String]?) async throws -> T
 }
+    // swiftlint:enable type_name 

@@ -141,8 +141,7 @@ public class PublicKeysHelper {
         // this is the secret key for the default recipient
         let journalistKeys = testKeys.allMessageKeysForJournalistId(journalistId: "static_test_journalist")
         guard let messageKeys = journalistKeys.first,
-              let sha = messageKeys.key.key.hexStr?.prefix(8) else
-        {
+              let sha = messageKeys.key.key.hexStr?.prefix(8) else {
             throw KeysError.cannotFindKey
         }
         let data = try PublicKeysHelper.readLocalKeypairFile(path: "journalist_msg-\(sha)")
@@ -153,8 +152,7 @@ public class PublicKeysHelper {
         // this is the secret key for "covernode_message"
         let coverNodeKeys = testKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
         guard let coverNodeKey = coverNodeKeys["covernode_001"],
-              let sha = coverNodeKey.key.key.hexStr?.prefix(8) else
-        {
+              let sha = coverNodeKey.key.key.hexStr?.prefix(8) else {
             throw KeysError.cannotFindKey
         }
         let data = try PublicKeysHelper.readLocalKeypairFile(path: "covernode_msg-\(sha)")
@@ -172,4 +170,5 @@ public class PublicKeysHelper {
         let data = try PublicKeysHelper.readLocalKeypairKeyOnlyFile(path: "user")
         return PublicEncryptionKey(key: Box.KeyPair.SecretKey(data.publicKey.key.bytes))
     }
+    // swiftlint:enable force_try
 }

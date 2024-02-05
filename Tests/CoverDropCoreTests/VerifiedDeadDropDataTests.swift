@@ -2,8 +2,6 @@
 import Sodium
 import XCTest
 
-// swiftlint:disable force_try
-
 final class VerifiedDeadDropDataTests: XCTestCase {
     func testVerification() throws {
         let data = try DeadDropDataHelper.shared.readLocalDataFile()

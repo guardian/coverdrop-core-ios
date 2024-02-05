@@ -14,7 +14,7 @@ actor PublicKeyLocalRepository: LocalCacheFileRepository {
 
     func load() async throws -> PublicKeysData {
         let fileURL = try fileURL()
-        var data = try Data(contentsOf: fileURL)
+        let data = try Data(contentsOf: fileURL)
         return try JSONDecoder().decode(PublicKeysData.self, from: data)
     }
 

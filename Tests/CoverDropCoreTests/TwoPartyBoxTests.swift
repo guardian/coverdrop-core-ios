@@ -2,8 +2,6 @@
 import Sodium
 import XCTest
 
-// swiftlint:disable force_try
-
 final class TwoPartyBoxTests: XCTestCase {
     func testRoundTrip() throws {
         let input = "こんにちは"
@@ -34,7 +32,7 @@ final class TwoPartyBoxTests: XCTestCase {
 
         let rawBytes = encrypted.tagCiphertextAndNonce
 
-        let fromBytes: TwoPartyBox<String> = try TwoPartyBox<String>.fromVecUnchecked(bytes: rawBytes)
+        let fromBytes: TwoPartyBox<String> = TwoPartyBox<String>.fromVecUnchecked(bytes: rawBytes)
         let decrypted: String = try TwoPartyBox<String>.decrypt(senderPk: recipientKeypair.publicKey, recipientSk: myKeypair.secretKey, data: fromBytes)
 
         XCTAssertEqual(input, decrypted)

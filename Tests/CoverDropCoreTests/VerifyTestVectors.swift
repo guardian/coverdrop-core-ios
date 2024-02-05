@@ -6,7 +6,7 @@ final class VerifyTestVectors: XCTestCase {
     func testAnonymousBoxTest() throws {
         let recipientPk = try PublicEncryptionKey<JournalistMessaging>(key: FileHelper().bytesFromFile(filePath: "vectors/anonymous_box/01_recipient_pk")!)
 
-        var recipientSk = try SecretEncryptionKey<JournalistMessaging>(key: Box.SecretKey(FileHelper().bytesFromFile(filePath: "vectors/anonymous_box/02_recipient_sk")!))
+        let recipientSk = try SecretEncryptionKey<JournalistMessaging>(key: Box.SecretKey(FileHelper().bytesFromFile(filePath: "vectors/anonymous_box/02_recipient_sk")!))
 
         let message = try FileHelper().bytesFromFile(filePath: "vectors/anonymous_box/03_message")!
 

@@ -3,14 +3,14 @@ import Foundation
 
 // MARK: - Implimentation
 
+    // swiftlint:disable type_name
 struct StatusWebRepository: CacheableWebRepository {
     typealias T = StatusData
     let session: URLSession
     let baseURL: String
 
     init(session: URLSession,
-         baseUrl: String)
-    {
+         baseUrl: String) {
         self.session = session
         baseURL = baseUrl
     }
@@ -20,6 +20,7 @@ struct StatusWebRepository: CacheableWebRepository {
         return response
     }
 }
+    // swiftlint:enable type_name 
 
 // MARK: - Endpoints
 

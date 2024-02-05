@@ -1,8 +1,6 @@
 @testable import CoverDropCore
 import XCTest
 
-// swiftlint:disable force_try
-
 final class PasswordGeneratorTests: XCTestCase {
     func testLoadsFileSuccessfully() throws {
         let generator = PasswordGenerator.shared

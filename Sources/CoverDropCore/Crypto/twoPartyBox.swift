@@ -21,8 +21,8 @@ public struct TwoPartyBox<T> {
 }
 
 public extension TwoPartyBox {
-    static func fromVecUnchecked<T: Encryptable>(bytes: [UInt8]) -> TwoPartyBox<T> {
-        return TwoPartyBox<T>(
+    static func fromVecUnchecked<S: Encryptable>(bytes: [UInt8]) -> TwoPartyBox<S> {
+        return TwoPartyBox<S>(
             tagCiphertextAndNonce: bytes
         )
     }
@@ -31,11 +31,11 @@ public extension TwoPartyBox {
         tagCiphertextAndNonce
     }
 
-    static func encrypt<T: Encryptable>(
+    static func encrypt<S: Encryptable>(
         recipientPk: PublicEncryptionKey<JournalistMessaging>,
         senderSk: SecretEncryptionKey<User>,
-        data: T
-    ) throws -> TwoPartyBox<T> {
+        data: S
+    ) throws -> TwoPartyBox<S> {
         let nonce = Sodium().box.nonce()
 
         if var tagAndCiphertext: [UInt8] = Sodium().box.seal(message: data.asUnencryptedBytes(), recipientPublicKey: recipientPk.key, senderSecretKey: senderSk.key, nonce: nonce) {
@@ -43,17 +43,17 @@ public extension TwoPartyBox {
 
             let tagCiphertextAndNonce = tagAndCiphertext
 
-            return TwoPartyBox<T>(tagCiphertextAndNonce: tagCiphertextAndNonce)
+            return TwoPartyBox<S>(tagCiphertextAndNonce: tagCiphertextAndNonce)
         } else {
             throw EncryptionError.failedToDecrypt
         }
     }
 
-    static func decrypt<T: Encryptable>(
+    static func decrypt<S: Encryptable>(
         senderPk: PublicEncryptionKey<JournalistMessaging>,
         recipientSk: SecretEncryptionKey<User>,
-        data: TwoPartyBox<T>
-    ) throws -> T {
+        data: TwoPartyBox<S>
+    ) throws -> S {
         let bytes = data.tagCiphertextAndNonce
         let nonceStart = bytes.count - Sodium().box.NonceBytes
         // get the nonce from the end of tagCiphertextAndNonce
@@ -62,7 +62,7 @@ public extension TwoPartyBox {
         let cipherTestBytes = Array(bytes.prefix(nonceStart))
 
         if let plaintextBytes = Sodium().box.open(authenticatedCipherText: cipherTestBytes, senderPublicKey: senderPk.key, recipientSecretKey: recipientSk.key, nonce: nonce) {
-            return try T.fromUnencryptedBytes(bytes: plaintextBytes) as! T
+            return try S.fromUnencryptedBytes(bytes: plaintextBytes) as! S
         } else {
             throw EncryptionError.failedToDecrypt
         }

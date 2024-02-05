@@ -25,6 +25,6 @@ final class Base64Test: XCTestCase {
 
     func testJsonDecode() throws {
         let data = try DeadDropDataHelper.shared.readLoadDeadDropJson()
-        let decodedData = try JSONDecoder().decode(DeadDropData.self, from: data)
+        _ = try JSONDecoder().decode(DeadDropData.self, from: data)
     }
 }

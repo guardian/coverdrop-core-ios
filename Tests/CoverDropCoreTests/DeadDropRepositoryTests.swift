@@ -148,7 +148,7 @@ final class DeadDropRepositoryTests: XCTestCase {
         // add a dead drop every 3 mins over 14 days but 2 weeks in the past
         let threeMinsInSeconds = TimeInterval(3 * 60)
 
-        var cachedDeadDrops: [DeadDrop] = generateBulkDeadDrops(maxDeadDropId: maxDeadDropId, idOffset: 0, timeSpan: threeMinsInSeconds, timeOffset: TimeInterval(twoWeeksInSeconds))
+        let cachedDeadDrops: [DeadDrop] = generateBulkDeadDrops(maxDeadDropId: maxDeadDropId, idOffset: 0, timeSpan: threeMinsInSeconds, timeOffset: TimeInterval(twoWeeksInSeconds))
 
         // store the dead drops in the cache
         let cached = DeadDropData(deadDrops: cachedDeadDrops)
@@ -160,7 +160,7 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         // generate more dead drops to be returned as part of the dead drop api mock response
         let apiResponseDeadDropIdOffset = 2000
-        var apiResponseDeadDrops: [DeadDrop] = generateBulkDeadDrops(maxDeadDropId: maxDeadDropId, idOffset: apiResponseDeadDropIdOffset, timeSpan: threeMinsInSeconds, timeOffset: TimeInterval(0))
+        let apiResponseDeadDrops: [DeadDrop] = generateBulkDeadDrops(maxDeadDropId: maxDeadDropId, idOffset: apiResponseDeadDropIdOffset, timeSpan: threeMinsInSeconds, timeOffset: TimeInterval(0))
         guard let deadDropJsonResponse = try? JSONEncoder().encode(DeadDropData(deadDrops: apiResponseDeadDrops)) else {
             XCTFail("Unable to create mock json dead drop response")
             return

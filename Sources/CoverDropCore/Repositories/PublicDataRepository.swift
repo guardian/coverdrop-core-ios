@@ -31,21 +31,19 @@ public class PublicDataRepository: ObservableObject {
         }
     }
 
-    public func pollPublicKeysAndStatusApis() async throws {
-        async let status = loadStatus()
+    public func  pollPublicKeysAndStatusApis() async throws {
+        async let status: () = loadStatus()
         async let publicKeys = loadAndVerifyPublicKeys()
 
         try await status
-        try await publicKeys
+        _ = try await publicKeys
     }
 
     public func loadStatus() async throws {
         guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
-        if let config = PublicDataRepository.appConfig,
-           let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
-        {
+        if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
             await MainActor.run {
                 coverDropServiceStatus = currentStatus
             }
@@ -61,8 +59,7 @@ public class PublicDataRepository: ObservableObject {
         let verifiedPublicKeysOpt = try? await loadAndVerifyPublicKeys()
 
         guard let deadDrops = deadDropsOpt,
-              let verifiedPublicKeys = verifiedPublicKeysOpt else
-        {
+              let verifiedPublicKeys = verifiedPublicKeysOpt else {
             throw PublicDataRepositoryError.failedToLoadDeadDrops
         }
 
@@ -85,8 +82,7 @@ public class PublicDataRepository: ObservableObject {
         let trustedRootKeysOpt = try? appConfig.organizationPublicKeys()
 
         guard let publicKeysData = publicKeysDataOpt,
-              let trustedRootKeys = trustedRootKeysOpt else
-        {
+              let trustedRootKeys = trustedRootKeysOpt else {
             throw PublicDataRepositoryError.failedToLoadPublicKeys
         }
 
@@ -98,8 +94,7 @@ public class PublicDataRepository: ObservableObject {
     public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> HTTPURLResponse {
         let dataOpt = message.asBytes().base64Encode()
         guard let data = dataOpt,
-              let jsonData: Data = try? JSONEncoder().encode(data) else
-        {
+              let jsonData: Data = try? JSONEncoder().encode(data) else {
             throw UserToJournalistMessagingError.unableToBase64Encode
         }
 
@@ -117,7 +112,7 @@ public class PublicDataRepository: ObservableObject {
     public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async -> Result<Int, UserToJournalistMessagingError> {
         let privateSendingQueue = PrivateSendingQueueRepository.shared
 
-        guard let config = PublicDataRepository.appConfig else {
+        guard PublicDataRepository.appConfig != nil else {
             return .failure(UserToJournalistMessagingError.failedToGetConfig)
         }
 
@@ -129,7 +124,7 @@ public class PublicDataRepository: ObservableObject {
             return .failure(UserToJournalistMessagingError.failedToSendMessage)
         }
 
-        guard let dequeueResult = try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessageFactory) else {
+        guard (try? await privateSendingQueue.dequeue(coverMessageFactory: coverMessageFactory)) != nil else {
             return .failure(UserToJournalistMessagingError.failedToDequeue)
         }
         return .success(sendResult.statusCode)

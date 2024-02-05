@@ -1,5 +1,6 @@
 import Foundation
 
+// swiftlint:disable type_name
 protocol LocalCacheFileRepository<T> {
     associatedtype T: Codable
     var fileLocation: String { get }
@@ -20,3 +21,4 @@ protocol LocalCacheFileRepository<T> {
     /// - Throws: if writing to the output file fails or JSON encoding fails
     func save(data: T) async throws
 }
+// swiftlint:enable type_name 

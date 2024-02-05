@@ -2,7 +2,7 @@ import Foundation
 
 public enum FileHelper {
     public static func getPath(fileName: String) throws -> URL {
-        var url = try FileManager.default.url(for: .applicationSupportDirectory,
+        let url = try FileManager.default.url(for: .applicationSupportDirectory,
                                               in: .userDomainMask,
                                               appropriateFor: nil,
                                               create: true)
@@ -41,7 +41,7 @@ public enum FileHelper {
     // This is for testing purposes.
     public static func setLastUpdatedDate(fileUrl: URL, now: Date) throws -> Bool {
         let attributes = [FileAttributeKey.modificationDate: now]
-        if let setSuccess = try? FileManager.default.setAttributes(attributes, ofItemAtPath: fileUrl.path) {
+        if (try? FileManager.default.setAttributes(attributes, ofItemAtPath: fileUrl.path)) != nil {
             return true
         } else {
             return false

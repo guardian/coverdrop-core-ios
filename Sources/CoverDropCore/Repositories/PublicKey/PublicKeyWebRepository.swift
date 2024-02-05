@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 // MARK: - Implimentation
-
+// swiftlint:disable type_name
 struct PublicKeyWebRepository: CacheableWebRepository {
     typealias T = PublicKeysData
 
@@ -51,3 +51,4 @@ extension PublicKeyWebRepository.API: APICall {
         return nil
     }
 }
+    // swiftlint:enable type_name

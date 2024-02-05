@@ -1,5 +1,6 @@
 import Foundation
 
+    // swiftlint:disable identifier_name
 enum UserToCoverNodeMessageError: Error {
     case doesNotMatchUserToCoverNodeEncryptedMessageLength
 }
@@ -95,3 +96,4 @@ public enum UserToCoverNodeMessage {
         return Array(1 ... Constants.covernodeWrappingKeyCount).compactMap { coverNodeKeysData[$0 % coverNodeKeysData.count] }
     }
 }
+    // swiftlint:enable identifier_name 

@@ -27,12 +27,15 @@ public enum BackgroundTaskService {
                 return
             }
 
-            let result = try? await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
+            let result = await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
 
-            var success = result != nil
-
-            task.setTaskCompleted(success: success)
-            BackgroundTaskService.scheduleAppRefresh()
+            switch result {
+                case .success:
+                    task.setTaskCompleted(success: true)
+                    BackgroundTaskService.scheduleAppRefresh()
+                case .failure:
+                    task.setTaskCompleted(success: false)
+            }
         }
     }
 }

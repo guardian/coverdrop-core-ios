@@ -101,8 +101,7 @@ public struct VerifiedPublicKeys {
 
     private func allPublicKeysForJournalistId(journalistId: String) -> [VerifiedJournalistPublicKeysGroup]? {
         if let journalistPublicKeys = allPublicKeysForJournalistsFromAllHierarchies()[journalistId],
-           journalistPublicKeys.isEmpty == false
-        {
+           journalistPublicKeys.isEmpty == false {
             return journalistPublicKeys
 
         } else {
@@ -169,8 +168,7 @@ public struct VerifiedPublicKeysHierarchy {
             bytes: keyHierarchy.organizationPublicKey.certificate.bytes), notValidAfter: keyHierarchy.organizationPublicKey.notValidAfter.date, now: currentTime)
 
         guard let orgPublicKey = unverifiedOrganizationPublicKey,
-              let trustedOrganizationPublicKey: TrustedOrganizationPublicKey = VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: orgPublicKey, trustedOrgPks: trustedOrganizationPublicKeys) else
-        {
+              let trustedOrganizationPublicKey: TrustedOrganizationPublicKey = VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: orgPublicKey, trustedOrgPks: trustedOrganizationPublicKeys) else {
             return nil
         }
 

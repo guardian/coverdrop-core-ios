@@ -17,7 +17,7 @@ actor DeadDropLocalRepository: LocalCacheFileRepository {
     /// - Throws: If decoding fails or file is not available
     func load() async throws -> DeadDropData {
         let fileURL = try fileURL()
-        var data = try Data(contentsOf: fileURL)
+        let data = try Data(contentsOf: fileURL)
         return try JSONDecoder().decode(DeadDropData.self, from: data)
     }
 
@@ -41,7 +41,7 @@ actor DeadDropLocalRepository: LocalCacheFileRepository {
     func mergeAndTrim(existingDeadDrops: DeadDropData, newDeadDrops: DeadDropData) -> DeadDropData {
         let deadDropCacheTTL = TimeInterval(Constants.clientDeadDropCacheTtlSeconds)
 
-        var mergedDeadDrops: [DeadDrop] = existingDeadDrops.deadDrops + newDeadDrops.deadDrops
+        let mergedDeadDrops: [DeadDrop] = existingDeadDrops.deadDrops + newDeadDrops.deadDrops
 
         let uniqueDeadDrops = Set(mergedDeadDrops)
 

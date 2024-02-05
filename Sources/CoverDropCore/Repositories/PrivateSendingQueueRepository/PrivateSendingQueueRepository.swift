@@ -75,7 +75,7 @@ public actor PrivateSendingQueueRepository: ObservableObject {
 
     /// Checks a message in still in the outbound queue using `PrivateSendingQueue`'s `isMessageStillInQueue(..)` method.
     public func isMessageInQueue(hint: HintHmac) async throws -> Bool {
-        guard var queue = try await loadQueue() else {
+        guard let queue = try await loadQueue() else {
             throw PrivateSendingQueueRepositoryError.queueNotAvailable
         }
         let message = queue.isMessageStillInQueue(hint: hint)

@@ -18,7 +18,7 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         }
         let jsonData: Data = try JSONEncoder().encode(data)
         do {
-            let results = try await UserToJournalistMessageWebRepository(session: urlSessionConfig, baseUrl: ConfigType.devConfig.messageBaseUrl).sendMessage(jsonData: jsonData)
+            _ = try await UserToJournalistMessageWebRepository(session: urlSessionConfig, baseUrl: ConfigType.devConfig.messageBaseUrl).sendMessage(jsonData: jsonData)
             XCTFail("API error should have failed")
         } catch {}
     }
@@ -38,7 +38,7 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         }
         let jsonData: Data = try JSONEncoder().encode(data)
         do {
-            let results = try await UserToJournalistMessageWebRepository(session: urlSessionConfig, baseUrl: ConfigType.devConfig.messageBaseUrl).sendMessage(jsonData: jsonData)
+            _ = try await UserToJournalistMessageWebRepository(session: urlSessionConfig, baseUrl: ConfigType.devConfig.messageBaseUrl).sendMessage(jsonData: jsonData)
         } catch {
             XCTFail("API error should have failed")
         }

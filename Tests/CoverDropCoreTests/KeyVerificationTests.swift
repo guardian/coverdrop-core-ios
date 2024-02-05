@@ -2,6 +2,7 @@
 import Sodium
 import XCTest
 
+// swiftlint:disable identifier_name
 final class KeyVerificationTests: XCTestCase {
     func testSuccessfullVerification() throws {
         let orgIdKey = "f9162ddd3609f1985b9d00c1701c2dfa046c819eefc81d5b3a8b6799c27827ee".hexStringToBytes()
@@ -86,14 +87,7 @@ final class KeyVerificationTests: XCTestCase {
 
         let organizationSigningKey = OrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<Organization>.fromBytes(
                                                             bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
-
-        let trustedOrgIdKey1 = "f9162ddd3609f1985b9d00c1701c2dfa046c819eefc81d5b3a8b6799c27827ee".hexStringToBytes()
-        let certificate1 = "a05beac4862a73bc56243c91686bad92bf209131d34d0225f1c7832c96931f3cdeed011203ffe95a9fea74428735c22f2f3a8092ca65f1521192b38be8060d0c".hexStringToBytes()!
         let notValidAfter1 = "2024-09-02T17:16:49.896447Z"
-
-        let date1 = DateFormats.validateDate(date: notValidAfter1)!
-
-        let now1 = date.advanced(by: TimeInterval(-50))
 
         let organizationSigningKey1 = TrustedOrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<TrustedOrganization>.fromBytes(
                                                                     bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
@@ -122,3 +116,4 @@ final class KeyVerificationTests: XCTestCase {
         XCTAssertNil(VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: organizationSigningKey, trustedOrgPks: trustedOrgPks))
     }
 }
+    // swiftlint:enable identifier_name 

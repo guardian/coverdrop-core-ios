@@ -33,15 +33,15 @@ public extension AnonymousBox {
     }
 
     /// Encrypts data with supplied `PublicEncryptionKey`
-    static func encrypt<T: Encryptable, R: EncryptionKey>(
+    static func encrypt<S: Encryptable, R: EncryptionKey>(
         recipientPk: R,
-        data: T
-    ) throws -> AnonymousBox<T> {
+        data: S
+    ) throws -> AnonymousBox<S> {
         let bytes = data.asUnencryptedBytes()
 
         let pkTagAndCiphertext = Sodium().box.seal(message: bytes, recipientPublicKey: recipientPk.key)
 
-        return AnonymousBox<T>(pkTagAndCiphertext: pkTagAndCiphertext!)
+        return AnonymousBox<S>(pkTagAndCiphertext: pkTagAndCiphertext!)
     }
 
     /// Decrypts data with supplied `PublicEncryptionKey` and `SecretEncryptionKey`
@@ -49,15 +49,15 @@ public extension AnonymousBox {
     /// `throws` a `EncryptionError.failedToDecrypt` if `open`ing the `AnonymousBox` fails,
     /// or if converting the resulting data to `T`  `fromUnencryptedBytes` fails
     ///
-    internal static func decrypt<T: Encryptable, R: Role>(
+    internal static func decrypt<S: Encryptable, R: Role>(
         myPk: PublicEncryptionKey<R>,
         mySk: SecretEncryptionKey<R>,
-        data: AnonymousBox<T>
-    ) throws -> T {
+        data: AnonymousBox<S>
+    ) throws -> S {
         let ciphertext = data.pkTagAndCiphertext
 
         if let plaintextBytes = Sodium().box.open(anonymousCipherText: ciphertext, recipientPublicKey: myPk.key, recipientSecretKey: mySk.key) {
-            return try T.fromUnencryptedBytes(bytes: plaintextBytes) as! T
+            return try S.fromUnencryptedBytes(bytes: plaintextBytes) as! S
 
         } else {
             throw EncryptionError.failedToDecrypt

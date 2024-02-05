@@ -18,12 +18,12 @@ public class EncryptionKeypair<T: Role>: Codable {
     public var secretKey: SecretEncryptionKey<T>
 
     /// Create a keypair to be used for encryption
-    public static func generateEncryptionKeypair<T: Role>() throws -> EncryptionKeypair<T> {
+    public static func generateEncryptionKeypair<R: Role>() throws -> EncryptionKeypair<R> {
         if let keypair = Sodium().box.keyPair() {
             let secretKey = keypair.secretKey
             let publicKey = keypair.publicKey
 
-            return EncryptionKeypair<T>(publicKey: PublicEncryptionKey<T>(key: publicKey), secretKey: SecretEncryptionKey<T>(key: secretKey))
+            return EncryptionKeypair<R>(publicKey: PublicEncryptionKey<R>(key: publicKey), secretKey: SecretEncryptionKey<R>(key: secretKey))
         } else {
             throw EncryptionError.failedToGenerateKeys
         }

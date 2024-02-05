@@ -46,7 +46,7 @@ public enum CoverDropServiceHelper {
 
                 messages = [
                     .outboundMessage(message: outboundMessage),
-                    .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date()))),
+                    .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date())))
                 ]
             }
 

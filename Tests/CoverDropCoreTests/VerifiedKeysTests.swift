@@ -5,14 +5,12 @@ import XCTest
 final class VerifiedKeysTests: XCTestCase {
     func testPublicKeysData() -> PublicKeysData? {
         let testData = try? FileHelper.dataFromFile(filePath: "static_vectors/verifiedKeys", fileExtension: "json")
-        guard let data = testData else { return nil }
         return try? JSONDecoder().decode(PublicKeysData.self, from: testData!)
     }
 
     func getVerifiedKeysFromVector() -> VerifiedPublicKeys? {
         guard let publicKeysData = testPublicKeysData(),
-              let key = publicKeysData.keys.first?.organizationPublicKey else
-        {
+              let key = publicKeysData.keys.first?.organizationPublicKey else {
             return nil
         }
         // this sets the current date in the correct time period for the static vector
@@ -20,8 +18,7 @@ final class VerifiedKeysTests: XCTestCase {
         let currentDate = key.notValidAfter.date.advanced(by: yearAgo)
 
         guard let trustedOrganizationPublicKey = SelfSignedPublicSigningKey<TrustedOrganization>.init(key: Sign.KeyPair.PublicKey(key.key.bytes), certificate: Signature<TrustedOrganization>.fromBytes(
-            bytes: key.certificate.bytes), notValidAfter: key.notValidAfter.date, now: currentDate) else
-        {
+            bytes: key.certificate.bytes), notValidAfter: key.notValidAfter.date, now: currentDate) else {
             return nil
         }
 
@@ -36,6 +33,7 @@ final class VerifiedKeysTests: XCTestCase {
             XCTFail("Failed to get verified keys")
             return
         }
+        // swiftlint:disable:next identifier_name 
         let mostRecentCoverNodeMessagingKeysFromAllHierarchies: [CoverNodeIdentity: CoverNodeMessagingPublicKey] = verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
         let expectedKey = "0ce3afeaad3930e9f40555d119c09efcbcf215b7553b08889a4920b8c55a241e"
 

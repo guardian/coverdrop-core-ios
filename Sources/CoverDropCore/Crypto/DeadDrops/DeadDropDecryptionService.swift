@@ -12,8 +12,7 @@ public struct DeadDropDecryptionService {
     /// If a message within the dead drops is succesfully decrypted it is added to the user mailbox
     ///
     public func decryptStoredDeadDrops(secretDataRepository: SecretDataRepository = SecretDataRepository.shared,
-                                       publicDataRepository: PublicDataRepository = PublicDataRepository.shared) async throws
-    {
+                                       publicDataRepository: PublicDataRepository = PublicDataRepository.shared) async throws {
         guard let verifiedDeadDrops = try? await publicDataRepository.loadDeadDrops() else {
             throw DeadDropDecryptionServiceError.failedToGetDeadDrops
         }
