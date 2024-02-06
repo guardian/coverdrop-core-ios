@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-// MARK: - Implimentation
+// MARK: - Implementation
 
     // swiftlint:disable type_name
 struct StatusWebRepository: CacheableWebRepository {
