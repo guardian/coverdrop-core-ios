@@ -60,4 +60,12 @@ final class PaddiedCompressedStringTests: XCTestCase {
             XCTAssertEqual(error as! PaddedCompressedStringError, PaddedCompressedStringError.decompressionRatioTooHigh)
         }
     }
+
+    func nondeterministicTestPaddingIsNonZero() throws {
+        let pcs = try PaddedCompressedString.fromString(text: "")
+
+        let suffix = pcs.asUnencryptedBytes().suffix(Constants.messagePaddingLen - 100)
+        XCTAssertGreaterThanOrEqual(suffix.count, 100)
+        XCTAssertLessThan(suffix.filter {$0 == 0x00}.count, 10)
+    }
 }

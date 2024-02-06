@@ -9,6 +9,7 @@ public enum PaddedCompressedStringError: Error {
     case invaidUTF8StringConversion
     case decompressionRatioTooHigh
     case incorrectByteLength
+    case failedToGenerateRandomBytes
 }
 
 public struct PaddedCompressedString: Equatable, Encryptable {
@@ -56,9 +57,14 @@ public struct PaddedCompressedString: Equatable, Encryptable {
 
         var buffer: [UInt8] = Array(header)
 
-        // append the compressed data and pad to
+        // append the compressed data
         buffer.append(contentsOf: Array(compressedData))
-        Sodium().utils.pad(bytes: &buffer, blockSize: Int(padToSize))
+
+        // pad with random bytes to meet the specified length requirement
+        guard let paddingBytes = Sodium().randomBytes.buf(length: padToSize - buffer.count) else {
+            throw PaddedCompressedStringError.failedToGenerateRandomBytes
+        }
+        buffer.append(contentsOf: Array(paddingBytes))
 
         return PaddedCompressedString(value: buffer)
     }
