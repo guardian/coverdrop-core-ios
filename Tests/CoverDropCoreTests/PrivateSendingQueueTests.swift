@@ -155,7 +155,6 @@ final class PrivateSendingQueueTests: XCTestCase {
 
     func testCanCheckMessageStillInQueue() async throws {
         let message1 = try await message1()
-        let message2 = try await message2()
 
         var original = try emptyCoverdropQueue()
         let hint1 = try original.enqueue(secret: secret!, message: message1)

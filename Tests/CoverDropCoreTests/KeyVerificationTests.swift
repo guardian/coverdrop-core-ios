@@ -14,7 +14,7 @@ final class KeyVerificationTests: XCTestCase {
         let now = date.advanced(by: TimeInterval(-50))
 
         let organizationSigningKey = OrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<Organization>.fromBytes(
-                                                            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
+            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
 
         let journalistProvisioningKey = "452bd05993423cff2e63dc625885d230c9b9cdfb7e703bc7671875d4d0d39fe9".hexStringToBytes()
 
@@ -51,7 +51,7 @@ final class KeyVerificationTests: XCTestCase {
         let now = date.advanced(by: TimeInterval(-50))
 
         XCTAssertNil(OrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<Organization>.fromBytes(
-                                            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now))
+            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now))
     }
 
     func testUnSuccessfullInitialisation() throws {
@@ -64,7 +64,7 @@ final class KeyVerificationTests: XCTestCase {
         let now = date.advanced(by: TimeInterval(-50))
 
         let organizationSigningKey = OrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<Organization>.fromBytes(
-                                                            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
+            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
 
         let journalistIdKey = "c098c0ee644534b310683165dee4f1551081cad1ee579acf2dc3c277144d97fa".hexStringToBytes()
 
@@ -86,11 +86,10 @@ final class KeyVerificationTests: XCTestCase {
         let now = date.advanced(by: TimeInterval(-50))
 
         let organizationSigningKey = OrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<Organization>.fromBytes(
-                                                            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
-        let notValidAfter1 = "2024-09-02T17:16:49.896447Z"
+            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
 
         let organizationSigningKey1 = TrustedOrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<TrustedOrganization>.fromBytes(
-                                                                    bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
+            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
 
         let trustedOrgPks = [organizationSigningKey1]
 
@@ -109,11 +108,12 @@ final class KeyVerificationTests: XCTestCase {
         let now = date.advanced(by: TimeInterval(-50))
 
         let organizationSigningKey = OrganizationPublicKey(key: Sign.KeyPair.PublicKey(orgIdKey!), certificate: Signature<Organization>.fromBytes(
-                                                            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
+            bytes: certificate), notValidAfter: DateFormats.validateDate(date: notValidAfter)!, now: now)!
 
         let trustedOrgPks: [TrustedOrganizationPublicKey] = []
 
         XCTAssertNil(VerifiedPublicKeysHierarchy.verifyOrganizationPublicKey(orgPk: organizationSigningKey, trustedOrgPks: trustedOrgPks))
     }
 }
-    // swiftlint:enable identifier_name 
+
+// swiftlint:enable identifier_name
