@@ -50,12 +50,12 @@ public enum CoverDropServiceHelper {
                 ]
             }
 
-            let data = await UnlockedSecretData(
+            let data = UnlockedSecretData(
                 messageMailbox: messages,
                 userKey: userKeyPair,
                 privateSendingQueueSecret: privateSendingQueueSecret
             )
-            try await EncryptedStorage.updateStorageOnDisk(session: session, state: data)
+            try await EncryptedStorage.updateStorageOnDisk(session: session, state: UnlockedSecretDataService(unlockedData: data))
         }
     }
 }

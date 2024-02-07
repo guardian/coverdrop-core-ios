@@ -76,7 +76,7 @@ enum MessageHelperError: Error {
         messages.insert(inactiveMessage1)
         messages.insert(inactiveMessage2)
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretData(messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret)))
     }
 
     public static func loadMessagesFromDeadDrop() async throws -> SecretData {
@@ -104,6 +104,6 @@ enum MessageHelperError: Error {
             )
         }
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretData(messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret)))
     }
 }

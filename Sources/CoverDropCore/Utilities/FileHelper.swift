@@ -41,10 +41,6 @@ public enum FileHelper {
     // This is for testing purposes.
     public static func setLastUpdatedDate(fileUrl: URL, now: Date) throws -> Bool {
         let attributes = [FileAttributeKey.modificationDate: now]
-        if (try? FileManager.default.setAttributes(attributes, ofItemAtPath: fileUrl.path)) != nil {
-            return true
-        } else {
-            return false
-        }
+        return (try? FileManager.default.setAttributes(attributes, ofItemAtPath: fileUrl.path)) != nil
     }
 }

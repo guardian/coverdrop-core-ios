@@ -31,7 +31,7 @@ public class PublicDataRepository: ObservableObject {
         }
     }
 
-    public func  pollPublicKeysAndStatusApis() async throws {
+    public func pollPublicKeysAndStatusApis() async throws {
         async let status: () = loadStatus()
         async let publicKeys = loadAndVerifyPublicKeys()
 
@@ -162,5 +162,11 @@ public class PublicDataRepository: ObservableObject {
         return {
             try PublicDataRepository.shared.createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys)
         }
+    }
+
+    public static func getLatestMessagingKey(recipientId: String) async -> JournalistMessagingPublicKey? {
+        guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return nil }
+        let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
+        return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }
 }

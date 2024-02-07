@@ -1,6 +1,6 @@
 import Foundation
 
-    // swiftlint:disable identifier_name
+// swiftlint:disable identifier_name
 enum UserToCoverNodeMessageError: Error {
     case doesNotMatchUserToCoverNodeEncryptedMessageLength
 }
@@ -27,7 +27,7 @@ public struct UserToCoverNodeMessageData: Equatable, Encryptable {
     }
 
     public static func createMessage(message: String, messageRecipient: JournalistData, covernodeMessagePublicKey: VerifiedPublicKeys, userPublicKey: UserPublicKey) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        if let messageKey = await messageRecipient.getLatestMessagingKey() {
+        if let messageKey = await PublicDataRepository.getLatestMessagingKey(recipientId: messageRecipient.recipientId) {
             return try UserToCoverNodeMessage.createMessage(
                 message: message,
                 recipientPublicKey: messageKey,
@@ -96,4 +96,5 @@ public enum UserToCoverNodeMessage {
         return Array(1 ... Constants.covernodeWrappingKeyCount).compactMap { coverNodeKeysData[$0 % coverNodeKeysData.count] }
     }
 }
-    // swiftlint:enable identifier_name 
+
+// swiftlint:enable identifier_name

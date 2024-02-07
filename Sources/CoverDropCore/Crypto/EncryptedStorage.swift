@@ -87,7 +87,7 @@ public actor EncryptedStorage {
         let session = EncryptedStorageSession(cachedKey: [UInt8](kUser), salt: [UInt8](slothStorageState.salt))
 
         // Create an initial empty state
-        let emptyState = try await UnlockedSecretData.createNewEmpty()
+        let emptyState = try await UnlockedSecretDataService.createNewEmpty()
 
         // Store on disk using our newly derived session
         try await EncryptedStorage.updateStorageOnDisk(
@@ -103,9 +103,9 @@ public actor EncryptedStorage {
     ///   - session: an `EncryptedStorageSession` previously derived via`createOrResetStorageWithPassphrase` or `unlockStorageWithPassphrase`
     ///   - state: a `UnlockedSecretData` with the new state we want to update storage with, Any existing data will be overwritten.
     ///  - Throws: if password derivation, key loading, encryption, json encoding or file writing fail
-    public static func updateStorageOnDisk(session: EncryptedStorageSession, state: UnlockedSecretData) async throws {
+    public static func updateStorageOnDisk(session: EncryptedStorageSession, state: UnlockedSecretDataService) async throws {
         // Pad the new state to a fixed size
-        var statePadded: [UInt8] = await state.asUnencryptedBytes()
+        var statePadded: [UInt8] = await state.unlockedData.asUnencryptedBytes()
         Sodium().utils.pad(bytes: &statePadded, blockSize: storagePaddingToSize)
 
         // Encrypt using an AEAD algorithm.
@@ -155,7 +155,7 @@ public actor EncryptedStorage {
     ///   - session: an `EncryptedStorageSession` previously derived via`createOrResetStorageWithPassphrase` or `unlockStorageWithPassphrase`
     /// - Returns: `UnlockedSecretData` object
     /// - Throws: If the storage cannot be decrypted; this can be due to a wrong passphrase or a tamered file
-    public static func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretData {
+    public static func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretDataService {
         // retrieve our `Storage` information from disk
         let fileURL = try EncryptedStorage.secureStorageFileURL()
         let readData = try Data(contentsOf: fileURL)
@@ -166,7 +166,7 @@ public actor EncryptedStorage {
 
         // Unpad and decode
         Sodium().utils.unpad(bytes: &plaintext, blockSize: EncryptedStorage.storagePaddingToSize)
-        return try await UnlockedSecretData.fromUnencryptedBytes(bytes: plaintext)
+        return try await UnlockedSecretDataService(unlockedData: UnlockedSecretData.fromUnencryptedBytes(bytes: plaintext))
     }
 
     /// - Returns: `URL` to the secure storage file

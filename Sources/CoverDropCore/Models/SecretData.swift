@@ -2,13 +2,17 @@ import Foundation
 
 public enum SecretData {
     case lockedSecretData(lockedData: LockedSecretData)
-    case unlockedSecretData(unlockedData: UnlockedSecretData)
+    case unlockedSecretData(unlockedData: UnlockedSecretDataService)
 }
 
 public class LockedSecretData: Codable {}
 
-@MainActor
-public class UnlockedSecretData: Codable, Equatable, ObservableObject {
+public class UnlockedSecretData: Codable, Equatable {
+    public var uuid: UUID = .init()
+    public var messageMailbox: Set<Message>
+    public var userKey: EncryptionKeypair<User>
+    public var privateSendingQueueSecret: PrivateSendingQueueSecret
+
     enum CodingKeys: CodingKey {
         case uuid, messageMailbox, userKey, privateSendingQueueSecret
     }
@@ -38,31 +42,29 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
         self.privateSendingQueueSecret = privateSendingQueueSecret
     }
 
-    public static func createNewEmpty() throws -> UnlockedSecretData {
-        let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
-        let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
-        return UnlockedSecretData(messageMailbox: [], userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret)
-    }
-
     public static func == (lhs: UnlockedSecretData, rhs: UnlockedSecretData) -> Bool {
         return lhs.messageMailbox == rhs.messageMailbox &&
             lhs.userKey.publicKey.key == rhs.userKey.publicKey.key &&
             lhs.userKey.secretKey.key == rhs.userKey.secretKey.key &&
             lhs.privateSendingQueueSecret == rhs.privateSendingQueueSecret
     }
+}
 
-    public var uuid: UUID = .init()
-    @Published public var messageMailbox: Set<Message>
-    public var userKey: EncryptionKeypair<User>
-    public var privateSendingQueueSecret: PrivateSendingQueueSecret
+@MainActor
+public class UnlockedSecretDataService: ObservableObject {
+    init(unlockedData: UnlockedSecretData) {
+        self.unlockedData = unlockedData
+    }
+
+    @Published public var unlockedData: UnlockedSecretData
 
     public func addMessage(message: Message) async throws {
-        messageMailbox.insert(message)
+        unlockedData.messageMailbox.insert(message)
         try await storeData()
     }
 
     public func addMessages(messages: Set<Message>) async throws {
-        messageMailbox.formUnion(messages)
+        unlockedData.messageMailbox.formUnion(messages)
         try await storeData()
     }
 
@@ -76,7 +78,7 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
     /// - Returns: A list of JournalistKeyData
     public func getMailboxRecipients() async -> [JournalistData] {
         guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return [] }
-        let recipients = messageMailbox.compactMap { message in
+        let recipients = unlockedData.messageMailbox.compactMap { message in
             switch message {
             case let .outboundMessage(message: message):
                 return message.recipient
@@ -85,7 +87,7 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
                 case let .textMessage(message: message):
                     return message.sender
                 case let .handoverMessage(message: handover):
-                    return UnlockedSecretData.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo, publicKeyData: publicKeyData)
+                    return UnlockedSecretDataService.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo, publicKeyData: publicKeyData)
                 }
             }
         }
@@ -93,57 +95,15 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
         return Array(uniqueRecipients)
     }
 
+    public static func createNewEmpty() throws -> UnlockedSecretDataService {
+        let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
+        let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
+        return UnlockedSecretDataService(unlockedData: UnlockedSecretData(messageMailbox: [], userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+    }
+
     public static func getJournalistKeyDataForJournalistId(journalistId: String, publicKeyData: VerifiedPublicKeys) -> JournalistData? {
         guard let profileData = publicKeyData.journalistProfiles.first(where: { $0.id == journalistId }) else { return nil }
 
         return JournalistData(recipientId: journalistId, displayName: profileData.displayName, isDesk: profileData.isDesk, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes))
-    }
-}
-
-extension UnlockedSecretData: CustomStringConvertible {
-    public var description: String {
-        """
-            uuid: \(uuid)
-            messageMailbox: \(messageMailbox)
-            userKey: \(userKey)
-        """
-    }
-}
-
-public struct JournalistData: Hashable, Codable, Comparable {
-    public static func < (lhs: JournalistData, rhs: JournalistData) -> Bool {
-        return lhs.recipientId < rhs.recipientId &&
-            lhs.displayName < rhs.displayName
-    }
-
-    public static func == (lhs: JournalistData, rhs: JournalistData) -> Bool {
-        return lhs.recipientId == rhs.recipientId &&
-            lhs.displayName == rhs.displayName &&
-            lhs.tag == rhs.tag &&
-            lhs.isDesk == rhs.isDesk
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(recipientId)
-    }
-
-    public let recipientId: String
-    public let displayName: String
-    public let isDesk: Bool
-    public let recipientDescription: String
-    public let tag: RecipientTag
-
-    public init(recipientId: String, displayName: String, isDesk: Bool, recipientDescription: String, tag: RecipientTag) {
-        self.recipientId = recipientId
-        self.displayName = displayName
-        self.isDesk = isDesk
-        self.recipientDescription = recipientDescription
-        self.tag = tag
-    }
-
-    public func getLatestMessagingKey() async -> JournalistMessagingPublicKey? {
-        guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return nil }
-        let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
-        return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }
 }

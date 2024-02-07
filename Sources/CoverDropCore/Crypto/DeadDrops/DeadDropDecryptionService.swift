@@ -25,7 +25,7 @@ public struct DeadDropDecryptionService {
         // so this is the only state we can be in to try and decrypt the data
         if case let .unlockedSecretData(unlockedData: secretData) = await secretDataRepository.secretData {
             let userSecretKey = await MainActor.run { () -> SecretEncryptionKey<User> in
-                secretData.userKey.secretKey
+                secretData.unlockedData.userKey.secretKey
             }
 
             let currentConversationJournalists = await secretData.getMailboxRecipients()

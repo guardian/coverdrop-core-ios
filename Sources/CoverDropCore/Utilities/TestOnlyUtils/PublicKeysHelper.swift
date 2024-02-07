@@ -134,7 +134,11 @@ public class PublicKeysHelper {
     }
 
     public func getTestJournalistMessageKey() async -> JournalistMessagingPublicKey? {
-        return await testDefaultJournalist?.getLatestMessagingKey()
+        if let defaultJournalist = testDefaultJournalist {
+            return await PublicDataRepository.getLatestMessagingKey(recipientId: defaultJournalist.recipientId)
+        } else {
+            return nil
+        }
     }
 
     public func getTestJournalistMessageSecretKey() throws -> SecretEncryptionKey<JournalistMessaging> {
