@@ -30,11 +30,11 @@ public enum BackgroundTaskService {
             let result = await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
 
             switch result {
-                case .success:
-                    task.setTaskCompleted(success: true)
-                    BackgroundTaskService.scheduleAppRefresh()
-                case .failure:
-                    task.setTaskCompleted(success: false)
+            case .success:
+                task.setTaskCompleted(success: true)
+                BackgroundTaskService.scheduleAppRefresh()
+            case .failure:
+                task.setTaskCompleted(success: false)
             }
         }
     }

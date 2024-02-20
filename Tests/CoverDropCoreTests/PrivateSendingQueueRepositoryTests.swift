@@ -36,7 +36,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let initialQueue = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
         _ = try await testableRepo.enqueue(secret: secret!,
-                                                  message: encryptedMessage)
+                                           message: encryptedMessage)
 
         let newQueueState = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
@@ -71,7 +71,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         // GIVEN a queue with 1 empty slots
         for _ in 0 ..< (PrivateSendingQueueConfiguration.default.totalQueueSize - 1) {
-           _ = try await testableRepo.enqueue(secret: PrivateSendingQueueTests().secret!, message: message)
+            _ = try await testableRepo.enqueue(secret: PrivateSendingQueueTests().secret!, message: message)
         }
 
         // WHEN attempting to add 2 messages
@@ -248,7 +248,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
                                             messageSize: defaultConfig.messageSize, coverMessageFactory: coverMessageFactory)
         let message = try await PrivateSendingQueueTests().message1()
         _ = try queue.enqueue(secret: PrivateSendingQueueTests().secret!,
-                          message: message)
+                              message: message)
         try await sut.saveQueue(queue)
 
         // WHEN that queue is loaded from disk

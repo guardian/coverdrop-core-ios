@@ -73,25 +73,25 @@ public class PublicDataRepository: ObservableObject {
     /// Once verified, they are added to the `publicData` thus available throughtout the app.
     /// Public keys and dead drops can be updated at any time in the API, so we poll to stay up to date.
     @MainActor public func loadAndVerifyPublicKeys() async throws -> VerifiedPublicKeys {
-        guard let appConfig = PublicDataRepository.appConfig else {
+        guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
         // Load public keys
 
-        let publicKeysDataOpt = try? await PublicKeyRepository(config: appConfig, urlSessionConfig: appConfig.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: appConfig.cacheEnabled)
-        let trustedRootKeysOpt = try? appConfig.organizationPublicKeys()
+        let publicKeysDataOpt = try? await PublicKeyRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+        let trustedRootKeysOpt = try? config.organizationPublicKeys()
 
         guard let publicKeysData = publicKeysDataOpt,
               let trustedRootKeys = trustedRootKeysOpt else {
             throw PublicDataRepositoryError.failedToLoadPublicKeys
         }
 
-        let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: appConfig.currentKeysPublishedTime())
+        let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: config.currentKeysPublishedTime())
         areKeysAvailable = true
         return verifiedPublicKeysData
     }
 
-    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> HTTPURLResponse {
+    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>, withSecureDns _: Bool) async throws -> HTTPURLResponse {
         let dataOpt = message.asBytes().base64Encode()
         guard let data = dataOpt,
               let jsonData: Data = try? JSONEncoder().encode(data) else {
@@ -112,7 +112,7 @@ public class PublicDataRepository: ObservableObject {
     public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async -> Result<Int, UserToJournalistMessagingError> {
         let privateSendingQueue = PrivateSendingQueueRepository.shared
 
-        guard PublicDataRepository.appConfig != nil else {
+        guard let config = PublicDataRepository.appConfig else {
             return .failure(UserToJournalistMessagingError.failedToGetConfig)
         }
 
@@ -120,7 +120,7 @@ public class PublicDataRepository: ObservableObject {
             return .failure(UserToJournalistMessagingError.failedToPeekMessage)
         }
 
-        guard let sendResult = try? await sendMessage(message: message) else {
+        guard let sendResult = try? await sendMessage(message: message, withSecureDns: config.withSecureDns) else {
             return .failure(UserToJournalistMessagingError.failedToSendMessage)
         }
 

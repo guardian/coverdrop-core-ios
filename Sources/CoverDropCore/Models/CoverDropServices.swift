@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 enum CoverDropServicesError: Error {
     case verifiedPublicKeysNotAvailable
@@ -15,6 +16,15 @@ public class CoverDropServices: ObservableObject {
 
     public func didLaunch(config: ConfigType) throws {
         BackgroundTaskService.registerAppRefresh(config: config)
+        // We support secure DNS via cloudflare by default,
+        // but this can be disabled by the integrating app if required.
+        if config.withSecureDns {
+            let secureDNS = SecureDNSConfig.cloudflare
+            NWParameters.PrivacyContext.default.requireEncryptedNameResolution(
+                true,
+                fallbackResolver: .https(secureDNS.httpsURL, serverAddresses: secureDNS.serverAddresses)
+            )
+        }
     }
 
     public func didLaunchAsync(config: ConfigType) async throws {

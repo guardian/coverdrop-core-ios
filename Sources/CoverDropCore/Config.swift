@@ -11,6 +11,7 @@ public protocol ConfigProtocol {
     var startWithTestMessages: Bool { get }
     var startWithTestStorage: Bool { get }
     var maxBackgroundDurationInSeconds: Int { get }
+    var withSecureDns: Bool { get }
     func currentTime() -> Date
 }
 
@@ -76,6 +77,10 @@ public enum ConfigType: ConfigProtocol {
         return internalGetConfig().passphraseWordCount
     }
 
+    public var withSecureDns: Bool {
+        return internalGetConfig().withSecureDns
+    }
+
     public var envString: String {
         switch self {
         case .codeConfig:
@@ -118,10 +123,17 @@ public enum ConfigType: ConfigProtocol {
 }
 
 public struct ProdConfig: ConfigProtocol {
+    public var withSecureDns: Bool = true
+
     public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
+        if withSecureDns {
+            if #available(iOS 16.0, *) {
+                urlSessionConfig.requiresDNSSECValidation = true
+            }
+        }
         return URLSession(configuration: urlSessionConfig)
     }
 
@@ -152,10 +164,17 @@ public struct ProdConfig: ConfigProtocol {
 }
 
 public struct DemoConfig: ConfigProtocol {
+    public var withSecureDns: Bool = true
+
     public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
+        if withSecureDns {
+            if #available(iOS 16.0, *) {
+                urlSessionConfig.requiresDNSSECValidation = true
+            }
+        }
         return URLSession(configuration: urlSessionConfig)
     }
 
@@ -186,10 +205,17 @@ public struct DemoConfig: ConfigProtocol {
 }
 
 public struct AuditConfig: ConfigProtocol {
+    public var withSecureDns: Bool = true
+
     public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
+        if withSecureDns {
+            if #available(iOS 16.0, *) {
+                urlSessionConfig.requiresDNSSECValidation = true
+            }
+        }
         return URLSession(configuration: urlSessionConfig)
     }
 
@@ -215,10 +241,17 @@ public struct AuditConfig: ConfigProtocol {
 }
 
 public struct CodeConfig: ConfigProtocol {
+    public var withSecureDns: Bool = true
+
     public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
+        if withSecureDns {
+            if #available(iOS 16.0, *) {
+                urlSessionConfig.requiresDNSSECValidation = true
+            }
+        }
         return URLSession(configuration: urlSessionConfig)
     }
 
@@ -248,10 +281,17 @@ public struct CodeConfig: ConfigProtocol {
 }
 
 public struct DevConfig: ConfigProtocol {
+    public var withSecureDns: Bool = false
+
     public var passphraseWordCount = 3
 
     public func urlSessionConfig() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
+        if withSecureDns {
+            if #available(iOS 16.0, *) {
+                urlSessionConfig.requiresDNSSECValidation = true
+            }
+        }
         URLProtocolMock.mockURLs = MockUrlData.getMockUrlData()
         urlSessionConfig.protocolClasses = [URLProtocolMock.self]
         return URLSession(configuration: urlSessionConfig)
