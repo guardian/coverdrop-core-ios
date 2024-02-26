@@ -13,7 +13,7 @@ public enum CoverDropServiceHelper {
         } while ready == false
     }
 
-    public static func addTestStorage(config: ConfigType) async throws {
+    public static func addTestStorage(config: CoverDropConfig) async throws {
         if config.startWithTestStorage {
             // If we are in UI_TEST_MODE, we want to initialise the storage with a known passphase
             // and set of user keys, so we can work with UI

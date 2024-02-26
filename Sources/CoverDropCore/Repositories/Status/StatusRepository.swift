@@ -2,7 +2,7 @@ import Foundation
 import Sodium
 
 class StatusRepository: CacheableApiRepository<StatusData> {
-    init(now: Date = Date(), config: ConfigType, urlSessionConfig: URLSession) {
+    init(now: Date = Date(), config: CoverDropConfig, urlSessionConfig: URLSession) {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,

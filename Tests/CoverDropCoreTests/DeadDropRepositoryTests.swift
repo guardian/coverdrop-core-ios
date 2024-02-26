@@ -3,7 +3,7 @@ import Sodium
 import XCTest
 
 final class DeadDropRepositoryTests: XCTestCase {
-    let config: ConfigType = .devConfig
+    let config: StaticConfig = .devConfig
     func removeDeadDropCacheFile() async throws {
         let fileManager = FileManager.default
         let fileURL = try await DeadDropLocalRepository().fileURL()

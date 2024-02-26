@@ -1,8 +1,9 @@
 import Foundation
 import Sodium
 
-public protocol ConfigProtocol {
+public protocol CoverDropConfig {
     func urlSessionConfig() -> URLSession
+    var envType: EnvType { get }
     var apiBaseUrl: String { get }
     var messageBaseUrl: String { get }
     var cacheEnabled: Bool { get }
@@ -15,14 +16,18 @@ public protocol ConfigProtocol {
     func currentTime() -> Date
 }
 
-public enum ConfigType: ConfigProtocol {
+public enum EnvType {
+    case dev, code, prod, audit, demo
+}
+
+public enum StaticConfig: CoverDropConfig {
     case devConfig
     case codeConfig
     case prodConfig
     case auditConfig
     case demoConfig
 
-    private func internalGetConfig() -> ConfigProtocol {
+    private func internalGetConfig() -> CoverDropConfig {
         switch self {
         case .devConfig:
             return DevConfig()
@@ -81,48 +86,13 @@ public enum ConfigType: ConfigProtocol {
         return internalGetConfig().withSecureDns
     }
 
-    public var envString: String {
-        switch self {
-        case .codeConfig:
-            return "code"
-        case .devConfig:
-            return "dev"
-        case .prodConfig:
-            return "prod"
-        case .auditConfig:
-            return "audit"
-        case .demoConfig:
-            return "demo"
-        }
-    }
-
-    public func organizationPublicKeys() throws -> [TrustedOrganizationPublicKey] {
-        let subpath: String = envString
-        let resourcePaths: [String] = Bundle.module.paths(forResourcesOfType: "json", inDirectory: "organization_keys/\(subpath)/")
-
-        let keys: [TrustedOrganizationPublicKey] = try resourcePaths.compactMap { fullPath in
-            // As `Bundle.module.paths` returns the full path, we just want to get the filename
-            let fileName = URL(fileURLWithPath: fullPath).lastPathComponent
-            let fileNameWithoutExtension = (fileName as NSString).deletingPathExtension
-            let resourceUrlOption = Bundle.module.url(forResource: fileNameWithoutExtension, withExtension: ".json", subdirectory: "organization_keys/\(subpath)/")
-            if let resourceUrl = resourceUrlOption {
-                let data = try Data(contentsOf: resourceUrl)
-                let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyData.self, from: data)
-
-                return SelfSignedPublicSigningKey<TrustedOrganization>.init(
-                    key: Sign.KeyPair.PublicKey(keyData.key.bytes),
-                    certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes),
-                    notValidAfter: keyData.notValidAfter.date, now: Date.now
-                )
-            }
-            return nil
-        }
-
-        return keys
+    public var envType: EnvType {
+        return internalGetConfig().envType
     }
 }
 
-public struct ProdConfig: ConfigProtocol {
+public struct ProdConfig: CoverDropConfig {
+    public var envType: EnvType = .prod
     public var withSecureDns: Bool = true
 
     public var passphraseWordCount = 3
@@ -163,7 +133,8 @@ public struct ProdConfig: ConfigProtocol {
     public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
 }
 
-public struct DemoConfig: ConfigProtocol {
+public struct DemoConfig: CoverDropConfig {
+    public var envType: EnvType = .demo
     public var withSecureDns: Bool = true
 
     public var passphraseWordCount = 3
@@ -204,7 +175,8 @@ public struct DemoConfig: ConfigProtocol {
     public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
 }
 
-public struct AuditConfig: ConfigProtocol {
+public struct AuditConfig: CoverDropConfig {
+    public var envType: EnvType = .audit
     public var withSecureDns: Bool = true
 
     public var passphraseWordCount = 3
@@ -240,7 +212,8 @@ public struct AuditConfig: ConfigProtocol {
     public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
 }
 
-public struct CodeConfig: ConfigProtocol {
+public struct CodeConfig: CoverDropConfig {
+    public var envType: EnvType = .code
     public var withSecureDns: Bool = true
 
     public var passphraseWordCount = 3
@@ -280,7 +253,8 @@ public struct CodeConfig: ConfigProtocol {
     public let maxBackgroundDurationInSeconds = 10
 }
 
-public struct DevConfig: ConfigProtocol {
+public struct DevConfig: CoverDropConfig {
+    public var envType: EnvType = .dev
     public var withSecureDns: Bool = false
 
     public var passphraseWordCount = 3

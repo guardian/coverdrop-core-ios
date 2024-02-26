@@ -5,7 +5,7 @@ import Foundation
 ///
 
 class DeadDropRepository: CacheableApiRepository<DeadDropData> {
-    init(now: Date = Date(), config: ConfigType, urlSession: URLSession) {
+    init(now: Date = Date(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,

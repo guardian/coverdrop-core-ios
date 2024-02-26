@@ -10,7 +10,7 @@ final class WebRepositoryTests: XCTestCase {
         configuration.protocolClasses = [MockURLProtocol.self]
         let urlSession = URLSession(configuration: configuration)
 
-        webRepository = PublicKeyWebRepository(config: .devConfig, urlSession: urlSession)
+        webRepository = PublicKeyWebRepository(config: StaticConfig.devConfig, urlSession: urlSession)
     }
 
     func testTextJsonDecoding() async throws {

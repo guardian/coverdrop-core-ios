@@ -17,9 +17,9 @@ public class PublicDataRepository: ObservableObject {
     @MainActor @Published public var coverDropServiceStatus: StatusData?
     @MainActor @Published public var areKeysAvailable: Bool = false
     @Published public var cacheEnabled: Bool = true
-    public private(set) static var appConfig: ConfigType?
+    public private(set) static var appConfig: CoverDropConfig?
 
-    public class func setup(_ config: ConfigType) {
+    public class func setup(_ config: CoverDropConfig) {
         PublicDataRepository.appConfig = config
     }
 
@@ -79,7 +79,7 @@ public class PublicDataRepository: ObservableObject {
         // Load public keys
 
         let publicKeysDataOpt = try? await PublicKeyRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
-        let trustedRootKeysOpt = try? config.organizationPublicKeys()
+        let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(envType: config.envType)
 
         guard let publicKeysData = publicKeysDataOpt,
               let trustedRootKeys = trustedRootKeysOpt else {
@@ -168,5 +168,30 @@ public class PublicDataRepository: ObservableObject {
         guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return nil }
         let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
         return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
+    }
+
+    public static func loadTrustedOrganizationPublicKeys(envType: EnvType) throws -> [TrustedOrganizationPublicKey] {
+        let subpath: EnvType = envType
+        let resourcePaths: [String] = Bundle.module.paths(forResourcesOfType: "json", inDirectory: "organization_keys/\(subpath)/")
+
+        let keys: [TrustedOrganizationPublicKey] = try resourcePaths.compactMap { fullPath in
+            // As `Bundle.module.paths` returns the full path, we just want to get the filename
+            let fileName = URL(fileURLWithPath: fullPath).lastPathComponent
+            let fileNameWithoutExtension = (fileName as NSString).deletingPathExtension
+            let resourceUrlOption = Bundle.module.url(forResource: fileNameWithoutExtension, withExtension: ".json", subdirectory: "organization_keys/\(subpath)/")
+            if let resourceUrl = resourceUrlOption {
+                let data = try Data(contentsOf: resourceUrl)
+                let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyData.self, from: data)
+
+                return SelfSignedPublicSigningKey<TrustedOrganization>.init(
+                    key: Sign.KeyPair.PublicKey(keyData.key.bytes),
+                    certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes),
+                    notValidAfter: keyData.notValidAfter.date, now: Date.now
+                )
+            }
+            return nil
+        }
+
+        return keys
     }
 }

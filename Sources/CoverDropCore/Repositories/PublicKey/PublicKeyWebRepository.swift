@@ -2,6 +2,7 @@ import Combine
 import Foundation
 
 // MARK: - Implementation
+
 // swiftlint:disable type_name
 struct PublicKeyWebRepository: CacheableWebRepository {
     typealias T = PublicKeysData
@@ -14,7 +15,7 @@ struct PublicKeyWebRepository: CacheableWebRepository {
     let session: URLSession
     let baseURL: String
 
-    init(config: ConfigType, urlSession: URLSession) {
+    init(config: CoverDropConfig, urlSession: URLSession) {
         session = urlSession
         baseURL = config.apiBaseUrl
     }
@@ -51,4 +52,5 @@ extension PublicKeyWebRepository.API: APICall {
         return nil
     }
 }
-    // swiftlint:enable type_name
+
+// swiftlint:enable type_name

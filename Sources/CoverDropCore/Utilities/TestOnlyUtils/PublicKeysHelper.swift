@@ -30,7 +30,7 @@ public class PublicKeysHelper {
     public static let shared = PublicKeysHelper()
 
     private init() {
-        let config: ConfigType = .devConfig
+        let config: StaticConfig = .devConfig
         PublicDataRepository.setup(config)
         let publicKeysData = try! PublicKeysHelper.readLocalKeysFile()
         let trustedOrganizationSigningKeys = try! PublicKeysHelper.readLocalTrustedOrganizationKeys()
@@ -67,7 +67,7 @@ public class PublicKeysHelper {
 
     public static func readLocalTrustedOrganizationKeys() throws -> [TrustedOrganizationPublicKey] {
         if let config = PublicDataRepository.appConfig {
-            let trustedRootKeys = try config.organizationPublicKeys()
+            let trustedRootKeys = try PublicDataRepository.loadTrustedOrganizationPublicKeys(envType: config.envType)
             return trustedRootKeys
         } else {
             return []

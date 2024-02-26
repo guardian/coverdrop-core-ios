@@ -48,7 +48,7 @@ public actor EncryptedStorage {
     /// To be called on every app start. If no storage exists, a new one is created with an undisclosed passphrase. If one already exists, its last-modified date is updated.
     /// - Returns: `Storage` object with encrypted `blob`
     /// - Throws: if touching or creating storage fails
-    public static func onAppStart(config: ConfigType) async throws {
+    public static func onAppStart(config: CoverDropConfig) async throws {
         let fileURL = try EncryptedStorage.secureStorageFileURL()
 
         if FileManager.default.fileExists(atPath: fileURL.path) {

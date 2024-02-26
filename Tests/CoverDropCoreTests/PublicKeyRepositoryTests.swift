@@ -3,7 +3,7 @@ import Sodium
 import XCTest
 
 final class PublicKeyRepositoryTests: XCTestCase {
-    let config: ConfigType = .devConfig
+    let config: StaticConfig = .devConfig
     func removeCurrentCacheFile() async throws {
         let fileManager = FileManager.default
         let fileURL = try await PublicKeyLocalRepository().fileURL()

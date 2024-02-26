@@ -3,7 +3,7 @@ import Sodium
 import XCTest
 
 final class StatusRepositoryTests: XCTestCase {
-    let config: ConfigType = .devConfig
+    let config: StaticConfig = .devConfig
 
     func removeStatusCacheFile() async throws {
         let fileManager = FileManager.default

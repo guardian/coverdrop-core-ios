@@ -14,7 +14,7 @@ public class CoverDropServices: ObservableObject {
 
     public static var shared = CoverDropServices()
 
-    public func didLaunch(config: ConfigType) throws {
+    public func didLaunch(config: CoverDropConfig) throws {
         BackgroundTaskService.registerAppRefresh(config: config)
         // We support secure DNS via cloudflare by default,
         // but this can be disabled by the integrating app if required.
@@ -27,7 +27,7 @@ public class CoverDropServices: ObservableObject {
         }
     }
 
-    public func didLaunchAsync(config: ConfigType) async throws {
+    public func didLaunchAsync(config: CoverDropConfig) async throws {
         // To initialise the CoverDrop service we need to:
         // 1. Setup the public data repository
         PublicDataRepository.setup(config)
@@ -36,7 +36,7 @@ public class CoverDropServices: ObservableObject {
 
         // Note the app will not be made available if the cache is not enabled in production
         if let appConfig = PublicDataRepository.appConfig,
-           case .prodConfig = appConfig {
+           case appConfig.envType = .prod {
             if !appConfig.cacheEnabled {
                 throw CoverDropServicesError.failedToStartCachingNotEnabledInProd
             }
@@ -81,7 +81,7 @@ public class CoverDropServices: ObservableObject {
         try await CoverDropServiceHelper.addTestStorage(config: config)
     }
 
-    public static func getCoverMessageFactoryFromPublicKeysRepository(config: ConfigType) async throws -> CoverMessageFactory {
+    public static func getCoverMessageFactoryFromPublicKeysRepository(config: CoverDropConfig) async throws -> CoverMessageFactory {
         PublicDataRepository.setup(config)
 
         let publicDataRepository = PublicDataRepository.shared
@@ -94,7 +94,7 @@ public class CoverDropServices: ObservableObject {
         return coverMessageFactory
     }
 
-    public static func didEnterForeground(config: ConfigType) {
+    public static func didEnterForeground(config: CoverDropConfig) {
         Task {
             if let coverMessageFactory = try? await getCoverMessageFactoryFromPublicKeysRepository(config: config) {
                 _ = await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
