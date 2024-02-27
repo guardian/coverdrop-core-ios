@@ -5,7 +5,8 @@ protocol PublicKeyRepositoryProtocol {
 }
 
 /// This repository is for managing public keys published by the Private Key Infrastructure
-/// This repository tries to load the keys data from disk, if this fails it will then try and reload the data from the web api
+/// This repository tries to load the keys data from disk, if this fails it will then try and reload the data from the
+/// web api
 /// and store the results to file before returning them
 public class PublicKeyRepository: CacheableApiRepository<PublicKeysData> {
     init(now: Date = Date(), config: CoverDropConfig, urlSessionConfig: URLSession) {

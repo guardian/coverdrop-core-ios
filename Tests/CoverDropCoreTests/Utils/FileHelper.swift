@@ -13,7 +13,9 @@ class FileHelper {
     public static func dataFromFile(filePath: String, fileExtension: String) throws -> Data? {
         // If you see the error `Bundle.module not available` it means you've not copied the test
         // vectors into the `Resources` folder, check `Resources/README.md for details
-        guard let resourceUrl = Bundle.module.url(forResource: filePath, withExtension: fileExtension) else { return nil }
+        guard let resourceUrl = Bundle.module.url(forResource: filePath, withExtension: fileExtension) else {
+            return nil
+        }
         guard let data = try? Data(contentsOf: resourceUrl) else { return nil }
         return data
     }

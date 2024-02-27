@@ -1,5 +1,6 @@
 public struct UnverifiedSignedPublicSigningKeyPairData: Codable, Equatable {
-    public static func == (lhs: UnverifiedSignedPublicSigningKeyPairData, rhs: UnverifiedSignedPublicSigningKeyPairData) -> Bool {
+    public static func == (lhs: UnverifiedSignedPublicSigningKeyPairData,
+                           rhs: UnverifiedSignedPublicSigningKeyPairData) -> Bool {
         return lhs.secretKey == rhs.secretKey
     }
 
@@ -19,7 +20,10 @@ public struct UnverifiedSignedPublicSigningKeyPairData: Codable, Equatable {
 
 // swiftlint:disable type_name
 public struct UnverifiedSignedPublicSigningKeyPairDataKeyOnly: Codable, Equatable {
-    public static func == (lhs: UnverifiedSignedPublicSigningKeyPairDataKeyOnly, rhs: UnverifiedSignedPublicSigningKeyPairDataKeyOnly) -> Bool {
+    public static func == (
+        lhs: UnverifiedSignedPublicSigningKeyPairDataKeyOnly,
+        rhs: UnverifiedSignedPublicSigningKeyPairDataKeyOnly
+    ) -> Bool {
         return lhs.secretKey == rhs.secretKey &&
             lhs.publicKey == rhs.publicKey
     }
@@ -37,7 +41,8 @@ public struct UnverifiedSignedPublicSigningKeyPairDataKeyOnly: Codable, Equatabl
         case secretKey = "secret_key"
     }
 }
-// swiftlint:enable type_name 
+
+// swiftlint:enable type_name
 
 public struct KeyPairDataKeyOnly: Codable, Equatable {
     var key: HexEncodedString

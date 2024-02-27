@@ -15,7 +15,8 @@ import Sodium
 /// [`SecretBox`]: super::SecretBox
 /// [`crypto_box`]: https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption
 ///
-/// Please read `https://github.com/guardian/coverdrop/blob/main/docs/cryptography.md` for details on `TwoPartyBox` functions
+/// Please read `https://github.com/guardian/coverdrop/blob/main/docs/cryptography.md` for details on `TwoPartyBox`
+/// functions
 public struct TwoPartyBox<T> {
     var tagCiphertextAndNonce: [UInt8]
 }
@@ -38,7 +39,12 @@ public extension TwoPartyBox {
     ) throws -> TwoPartyBox<S> {
         let nonce = Sodium().box.nonce()
 
-        if var tagAndCiphertext: [UInt8] = Sodium().box.seal(message: data.asUnencryptedBytes(), recipientPublicKey: recipientPk.key, senderSecretKey: senderSk.key, nonce: nonce) {
+        if var tagAndCiphertext: [UInt8] = Sodium().box.seal(
+            message: data.asUnencryptedBytes(),
+            recipientPublicKey: recipientPk.key,
+            senderSecretKey: senderSk.key,
+            nonce: nonce
+        ) {
             tagAndCiphertext.append(contentsOf: nonce)
 
             let tagCiphertextAndNonce = tagAndCiphertext
@@ -61,7 +67,12 @@ public extension TwoPartyBox {
         // get the ciphertext from the begining of tagCiphertextAndNonce
         let cipherTestBytes = Array(bytes.prefix(nonceStart))
 
-        if let plaintextBytes = Sodium().box.open(authenticatedCipherText: cipherTestBytes, senderPublicKey: senderPk.key, recipientSecretKey: recipientSk.key, nonce: nonce) {
+        if let plaintextBytes = Sodium().box.open(
+            authenticatedCipherText: cipherTestBytes,
+            senderPublicKey: senderPk.key,
+            recipientSecretKey: recipientSk.key,
+            nonce: nonce
+        ) {
             return try S.fromUnencryptedBytes(bytes: plaintextBytes) as! S
         } else {
             throw EncryptionError.failedToDecrypt

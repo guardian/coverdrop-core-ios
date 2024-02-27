@@ -7,7 +7,8 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponseFailure()
 
         let numRecipients = 1
-        let bytesLength = (numRecipients * Sodium().secretBox.KeyBytes + Sodium().box.SealBytes) + Sodium().secretBox.MacBytes
+        let bytesLength = (numRecipients * Sodium().secretBox.KeyBytes + Sodium().box.SealBytes) + Sodium().secretBox
+            .MacBytes
 
         let bytes = Sodium().randomBytes.buf(length: bytesLength)!
 
@@ -18,7 +19,10 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         }
         let jsonData: Data = try JSONEncoder().encode(data)
         do {
-            _ = try await UserToJournalistMessageWebRepository(session: urlSessionConfig, baseUrl: StaticConfig.devConfig.messageBaseUrl).sendMessage(jsonData: jsonData)
+            _ = try await UserToJournalistMessageWebRepository(
+                session: urlSessionConfig,
+                baseUrl: StaticConfig.devConfig.messageBaseUrl
+            ).sendMessage(jsonData: jsonData)
             XCTFail("API error should have failed")
         } catch {}
     }
@@ -27,7 +31,8 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         let numRecipients = 1
-        let bytesLength = (numRecipients * Sodium().secretBox.KeyBytes + Sodium().box.SealBytes) + Sodium().secretBox.MacBytes
+        let bytesLength = (numRecipients * Sodium().secretBox.KeyBytes + Sodium().box.SealBytes) + Sodium().secretBox
+            .MacBytes
 
         let bytes = Sodium().randomBytes.buf(length: bytesLength)!
 
@@ -38,13 +43,17 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         }
         let jsonData: Data = try JSONEncoder().encode(data)
         do {
-            _ = try await UserToJournalistMessageWebRepository(session: urlSessionConfig, baseUrl: StaticConfig.devConfig.messageBaseUrl).sendMessage(jsonData: jsonData)
+            _ = try await UserToJournalistMessageWebRepository(
+                session: urlSessionConfig,
+                baseUrl: StaticConfig.devConfig.messageBaseUrl
+            ).sendMessage(jsonData: jsonData)
         } catch {
             XCTFail("API error should have failed")
         }
     }
 
-    /// This overrides the default UrlSessionConfig in our global Config Object, so that calls to our public keys endpoint
+    /// This overrides the default UrlSessionConfig in our global Config Object, so that calls to our public keys
+    /// endpoint
     /// return the mock data supplied
     func mockApiResponse() -> URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral

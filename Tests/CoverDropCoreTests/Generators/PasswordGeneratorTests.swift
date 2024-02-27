@@ -68,7 +68,7 @@ final class PasswordGeneratorTests: XCTestCase {
             "wérd with accent"
         ]
 
-        try passwords.forEach { password in
+        for password in passwords {
             XCTAssertThrowsError(try PasswordGenerator.checkValid(passwordInput: password)) { error in
                 XCTAssertEqual(error as! PasswordGeneratorError, PasswordGeneratorError.passwordFormatError)
             }

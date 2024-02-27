@@ -31,9 +31,17 @@ public enum CoverDropServiceHelper {
             let userKeyPair = EncryptionKeypair(publicKey: userPublicMessageKey, secretKey: userSecretMessageKey)
             let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
-            let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(message: "Hey", messageRecipient: testDefaultJournalist, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+            let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
+                message: "Hey",
+                messageRecipient: testDefaultJournalist,
+                covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys,
+                userPublicKey: userKeyPair.publicKey
+            )
 
-            let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage.asBytes()))
+            let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(
+                secretKey: privateSendingQueueSecret.bytes,
+                message: encryptedMessage.asBytes()
+            ))
 
             var messages: Set<Message> = []
             if config.startWithTestMessages {
@@ -46,7 +54,11 @@ public enum CoverDropServiceHelper {
 
                 messages = [
                     .outboundMessage(message: outboundMessage),
-                    .incomingMessage(message: .textMessage(message: IncomingMessageData(sender: testDefaultJournalist, messageText: "Hey", dateReceived: Date())))
+                    .incomingMessage(message: .textMessage(message: IncomingMessageData(
+                        sender: testDefaultJournalist,
+                        messageText: "Hey",
+                        dateReceived: Date()
+                    )))
                 ]
             }
 
@@ -55,7 +67,10 @@ public enum CoverDropServiceHelper {
                 userKey: userKeyPair,
                 privateSendingQueueSecret: privateSendingQueueSecret
             )
-            try await EncryptedStorage.updateStorageOnDisk(session: session, state: UnlockedSecretDataService(unlockedData: data))
+            try await EncryptedStorage.updateStorageOnDisk(
+                session: session,
+                state: UnlockedSecretDataService(unlockedData: data)
+            )
         }
     }
 }

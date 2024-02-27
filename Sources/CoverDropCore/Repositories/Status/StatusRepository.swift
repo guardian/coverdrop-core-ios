@@ -7,7 +7,12 @@ class StatusRepository: CacheableApiRepository<StatusData> {
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,
             urlSessionConfig: urlSessionConfig,
-            defaultResponse: StatusData(status: .unavailable, description: "Unavailable", timestamp: RFC3339DateTimeString(date: Date()), isAvailable: false),
+            defaultResponse: StatusData(
+                status: .unavailable,
+                description: "Unavailable",
+                timestamp: RFC3339DateTimeString(date: Date()),
+                isAvailable: false
+            ),
             localRepository: StatusLocalRepository(),
             cacheableWebRepository: StatusWebRepository(session: urlSessionConfig, baseUrl: config.apiBaseUrl)
         )

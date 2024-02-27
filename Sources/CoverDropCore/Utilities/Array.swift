@@ -25,16 +25,16 @@ extension Array {
 
     func splitAt(offset: Int) -> ([Element], [Element]) {
         assert(offset >= 0)
-        assert(offset < self.count)
+        assert(offset < count)
         return (
             Array(self[0 ..< offset]),
-            Array(self[offset ..< self.count])
+            Array(self[offset ..< count])
         )
     }
 
     /// This checks the array contains exactly the items in the comparision array.
     func containsExactly<T: Equatable>(_ array: [T]) -> Bool {
-        let contains = self.allSatisfy { item in array.contains(where: { $0 == item as! T }) }
+        let contains = allSatisfy { item in array.contains(where: { $0 == item as! T }) }
         let count = self.count == array.count
         return contains && count
     }

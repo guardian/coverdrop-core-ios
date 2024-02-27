@@ -21,4 +21,5 @@ protocol LocalCacheFileRepository<T> {
     /// - Throws: if writing to the output file fails or JSON encoding fails
     func save(data: T) async throws
 }
-// swiftlint:enable type_name 
+
+// swiftlint:enable type_name

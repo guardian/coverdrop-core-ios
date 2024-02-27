@@ -23,7 +23,13 @@ public struct JournalistData: Hashable, Codable, Comparable {
     public let recipientDescription: String
     public let tag: RecipientTag
 
-    public init(recipientId: String, displayName: String, isDesk: Bool, recipientDescription: String, tag: RecipientTag) {
+    public init(
+        recipientId: String,
+        displayName: String,
+        isDesk: Bool,
+        recipientDescription: String,
+        tag: RecipientTag
+    ) {
         self.recipientId = recipientId
         self.displayName = displayName
         self.isDesk = isDesk

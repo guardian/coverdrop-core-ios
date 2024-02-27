@@ -10,7 +10,9 @@ enum BackgroundLogoutServiceError: Error {
 public enum BackgroundLogoutService {
     public static func logoutIfBackgroundedForTooLong() async throws {
         guard let lastBackgroundDate = UserDefaults.standard.object(forKey: "LastBackgroundDate") as? Date,
-              let appConfig = PublicDataRepository.appConfig else { throw BackgroundLogoutServiceError.missingLastBackgroundDateConfig }
+              let appConfig = PublicDataRepository.appConfig else {
+            throw BackgroundLogoutServiceError.missingLastBackgroundDateConfig
+        }
 
         let timeIntervalSinceLastBackground = Date().timeIntervalSince(lastBackgroundDate)
         if timeIntervalSinceLastBackground > TimeInterval(appConfig.maxBackgroundDurationInSeconds) {

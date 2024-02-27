@@ -17,7 +17,10 @@ public struct RFC3339DateTimeString: Codable, Equatable, Comparable {
         let container = try decoder.singleValueContainer()
         let string = try container.decode(String.self)
         guard let dateString = DateFormats.validateDate(date: string) else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "ISODateString does not contain a valid date string")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "ISODateString does not contain a valid date string"
+            )
         }
         date = dateString
     }

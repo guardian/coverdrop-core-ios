@@ -66,6 +66,6 @@ final class PaddiedCompressedStringTests: XCTestCase {
 
         let suffix = pcs.asUnencryptedBytes().suffix(Constants.messagePaddingLen - 100)
         XCTAssertGreaterThanOrEqual(suffix.count, 100)
-        XCTAssertLessThan(suffix.filter {$0 == 0x00}.count, 10)
+        XCTAssertLessThan(suffix.filter { $0 == 0x00 }.count, 10)
     }
 }

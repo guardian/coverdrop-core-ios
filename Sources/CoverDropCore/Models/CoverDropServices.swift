@@ -49,11 +49,13 @@ public class CoverDropServices: ObservableObject {
             throw CoverDropServicesError.verifiedPublicKeysNotAvailable
         }
         // 5. generate a coverMessage from the verified Keys
-        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
         // 6. create the private sending queue on disk if it does not exist
-        _ = try await PrivateSendingQueueRepository.shared.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
+        _ = try await PrivateSendingQueueRepository.shared
+            .loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart(config: config)
@@ -81,14 +83,16 @@ public class CoverDropServices: ObservableObject {
         try await CoverDropServiceHelper.addTestStorage(config: config)
     }
 
-    public static func getCoverMessageFactoryFromPublicKeysRepository(config: CoverDropConfig) async throws -> CoverMessageFactory {
+    public static func getCoverMessageFactoryFromPublicKeysRepository(config: CoverDropConfig) async throws
+        -> CoverMessageFactory {
         PublicDataRepository.setup(config)
 
         let publicDataRepository = PublicDataRepository.shared
         guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
             throw CoverDropServicesError.verifiedPublicKeysNotAvailable
         }
-        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
         return coverMessageFactory

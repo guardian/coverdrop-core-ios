@@ -17,7 +17,12 @@ final class DeadDropDecryptionTests: XCTestCase {
         let journalistData = DeadDropDecryptionTests.testerJournalistData
 
         if let journalistData {
-            let result = DeadDropMessageParser.parseMessage(messageBytes: textMessage, journalistData: journalistData, deadDropId: 1, dateReceived: Date())
+            let result = DeadDropMessageParser.parseMessage(
+                messageBytes: textMessage,
+                journalistData: journalistData,
+                deadDropId: 1,
+                dateReceived: Date()
+            )
             if case let .incomingMessage(message: incomingMessage) = result,
                case let .textMessage(message: messageText) = incomingMessage {
                 XCTAssertEqual(messageText.messageText, initalMessage)
@@ -44,7 +49,12 @@ final class DeadDropDecryptionTests: XCTestCase {
         let journalistKey = DeadDropDecryptionTests.testerJournalistData
 
         if let journalistKey {
-            let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistData: journalistKey, deadDropId: 1, dateReceived: Date())
+            let result = DeadDropMessageParser.parseMessage(
+                messageBytes: handoverMessage,
+                journalistData: journalistKey,
+                deadDropId: 1,
+                dateReceived: Date()
+            )
             if case let .incomingMessage(message: incomingMessage) = result,
                case let .handoverMessage(message: messageData) = incomingMessage {
                 XCTAssertEqual(messageData.handoverTo, journalistId)
@@ -61,7 +71,12 @@ final class DeadDropDecryptionTests: XCTestCase {
         let journalistData = DeadDropDecryptionTests.testerJournalistData
 
         if let journalistData {
-            let result = DeadDropMessageParser.parseMessage(messageBytes: handoverMessage, journalistData: journalistData, deadDropId: 1, dateReceived: Date())
+            let result = DeadDropMessageParser.parseMessage(
+                messageBytes: handoverMessage,
+                journalistData: journalistData,
+                deadDropId: 1,
+                dateReceived: Date()
+            )
             XCTAssertNil(result)
         } else {
             XCTFail("Failed to get Key")

@@ -8,5 +8,6 @@ public struct PrivateSendingQueueConfiguration {
 
     /// Default values for Coverdrop.
     public static let `default` = PrivateSendingQueueConfiguration(totalQueueSize: 64,
-                                                                   messageSize: Int32(Constants.userToCovernodeEncryptedMessageLen))
+                                                                   messageSize: Int32(Constants
+                                                                       .userToCovernodeEncryptedMessageLen))
 }

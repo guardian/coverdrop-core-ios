@@ -45,7 +45,11 @@ public class CacheableApiRepository<T: Codable> {
             return await initCache()
         }
 
-        let shouldDownload = hasCache && FileHelper.isFileOlderThan(durationInSeconds: maxCacheAge, fileUrl: fileUrl, now: now)
+        let shouldDownload = hasCache && FileHelper.isFileOlderThan(
+            durationInSeconds: maxCacheAge,
+            fileUrl: fileUrl,
+            now: now
+        )
 
         if shouldDownload {
             _ = await getFromApiAndCache()

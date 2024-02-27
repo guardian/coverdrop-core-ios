@@ -1,7 +1,8 @@
 import Foundation
 
 /// This repository is for managing dead drops published from the API `/users/dead-drops`
-/// 1. This repository tries to load the last succesfull dead drop ID from disk, if this fails it will then try and get dead drops from id 0
+/// 1. This repository tries to load the last succesfull dead drop ID from disk, if this fails it will then try and get
+/// dead drops from id 0
 ///
 
 class DeadDropRepository: CacheableApiRepository<DeadDropData> {
@@ -17,9 +18,11 @@ class DeadDropRepository: CacheableApiRepository<DeadDropData> {
     }
 
     /// This loads dead drops from the `/user/dead-drops/` endpoint and caches the response.
-    /// Each dead drop will only be kept in cache for 2 weeks, and will be removed during a merge and trim operation, once the dead drop `createdAt` date  falls outside that period.
+    /// Each dead drop will only be kept in cache for 2 weeks, and will be removed during a merge and trim operation,
+    /// once the dead drop `createdAt` date  falls outside that period.
     /// A merge and trim only happens when new dead drops have been got from the api.
-    /// At any point in time, the dead drop api only has the last 2 weeks worth of dead drops, so inital loading will generally have a fixed size.
+    /// At any point in time, the dead drop api only has the last 2 weeks worth of dead drops, so inital loading will
+    /// generally have a fixed size.
 
     override func getFromApiAndCache() async -> DeadDropData? {
         do {
@@ -33,7 +36,10 @@ class DeadDropRepository: CacheableApiRepository<DeadDropData> {
             let params = ["ids_greater_than": String(highestCachedDeadDropId)]
             let webData: DeadDropData = try await cacheableWebRepository.get(params: params)
 
-            let mergedDeadDrops = await DeadDropLocalRepository().mergeAndTrim(existingDeadDrops: availableCachedData, newDeadDrops: webData)
+            let mergedDeadDrops = await DeadDropLocalRepository().mergeAndTrim(
+                existingDeadDrops: availableCachedData,
+                newDeadDrops: webData
+            )
 
             try await localRepository.save(data: mergedDeadDrops)
             return mergedDeadDrops

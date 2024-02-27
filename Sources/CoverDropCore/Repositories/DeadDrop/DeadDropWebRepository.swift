@@ -59,4 +59,4 @@ extension DeadDropWebRepository.API: APICall {
     }
 }
 
-// swiftlint:enable type_name 
+// swiftlint:enable type_name

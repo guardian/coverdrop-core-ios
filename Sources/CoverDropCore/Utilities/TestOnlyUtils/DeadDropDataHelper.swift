@@ -5,7 +5,8 @@ public enum DeadDropDateError: Error {
 }
 
 /// This helper is used to load the dead drop fixture data from disk for the purpose of unit and UI testing
-/// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency of them all
+/// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency
+/// of them all
 public class DeadDropDataHelper {
     public func readLocalDataFile() throws -> DeadDropData {
         let data = try readLoadDeadDropJson()
@@ -15,13 +16,21 @@ public class DeadDropDataHelper {
 
     public func readLoadDeadDropJson() throws -> Data {
         let name = "003_journalist_replied_and_processed"
-        guard let resourceUrl = Bundle.module.url(forResource: name, withExtension: ".json", subdirectory: "vectors/messaging_scenario/user_dead_drops") else { throw DeadDropDateError.cannotFindFileError }
+        guard let resourceUrl = Bundle.module.url(
+            forResource: name,
+            withExtension: ".json",
+            subdirectory: "vectors/messaging_scenario/user_dead_drops"
+        ) else { throw DeadDropDateError.cannotFindFileError }
         return try Data(contentsOf: resourceUrl)
     }
 
     public func readLoadMultipleJournalistDeadDropJson() throws -> Data {
         let name = "004_journalist_2_replied_and_processed"
-        guard let resourceUrl = Bundle.module.url(forResource: name, withExtension: ".json", subdirectory: "vectors/multiple_journalists_messaging_scenario/user_dead_drops") else { throw DeadDropDateError.cannotFindFileError }
+        guard let resourceUrl = Bundle.module.url(
+            forResource: name,
+            withExtension: ".json",
+            subdirectory: "vectors/multiple_journalists_messaging_scenario/user_dead_drops"
+        ) else { throw DeadDropDateError.cannotFindFileError }
         return try Data(contentsOf: resourceUrl)
     }
 

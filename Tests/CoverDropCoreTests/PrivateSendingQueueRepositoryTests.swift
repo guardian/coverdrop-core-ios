@@ -20,7 +20,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
     func testRoundTrip() async throws {
         let secret = PrivateSendingQueueSecret(bytes: "secret__secret__".asBytes())
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
 
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let messageKey = await PublicKeysHelper.shared.getTestJournalistMessageKey()!
@@ -44,7 +45,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testAddingTwoMessagesWithinCapacity() async throws {
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         _ = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
@@ -63,7 +65,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testAddingOneMessageBeyondCapacity() async throws {
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         _ = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
@@ -82,7 +85,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testAddingTwoMessagesBeyondCapacity() async throws {
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         _ = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
@@ -101,7 +105,10 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     @discardableResult
-    private func addTwoMessagesConcurrentlyReturningErrorCount(to repository: PrivateSendingQueueRepository) async throws -> Int {
+    private func addTwoMessagesConcurrentlyReturningErrorCount(
+        to repository: PrivateSendingQueueRepository
+    ) async throws
+        -> Int {
         let taskPriorities: [TaskPriority] = [.low, .high, .medium, .utility, .background, .userInitiated]
 
         let message = try await PrivateSendingQueueTests().message1()
@@ -132,7 +139,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testEnqueued() async throws {
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         let initialQueue = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
@@ -150,14 +158,17 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testDequeue() async throws {
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         _ = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
         try await addTwoMessagesConcurrentlyReturningErrorCount(to: testableRepo)
 
         // WHEN dequeue is called
-        _ = try await testableRepo.dequeue(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        _ = try await testableRepo
+            .dequeue(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
 
         // THEN the queue should have 1 message left
         let queue = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
@@ -166,7 +177,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     func testPeek() async throws {
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         _ = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
@@ -186,12 +198,23 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let encryptedMessage = try await UserToCoverNodeMessage.createMessage(message: "message 1",
-                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey()!,
-                                                                              verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
-                                                                              userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [1, 2, 3, 4]))
+                                                                              recipientPublicKey: PublicKeysHelper
+                                                                                  .shared
+                                                                                  .getTestJournalistMessageKey(
+                                                                                  )!,
+                                                                              verifiedPublicKeys: PublicKeysHelper
+                                                                                  .shared.testKeys,
+                                                                              userPublicKey: userKeyPair.publicKey,
+                                                                              tag: RecipientTag(tag: [
+                                                                                  1,
+                                                                                  2,
+                                                                                  3,
+                                                                                  4
+                                                                              ]))
 
         // GIVEN an initialized empty queue
-        let coverMessageFactory = try PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
+        let coverMessageFactory = try PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
         let testableRepo = PrivateSendingQueueRepository.shared
         _ = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
         // WHEN a message is enqueue, then the queue is wiped
@@ -202,7 +225,9 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         XCTAssertTrue(inQueue)
 
-        try await testableRepo.wipeQueue(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        try await testableRepo
+            .wipeQueue(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
         // THEN a message is no longer in the queue
         let stillInQueue = try await testableRepo.isMessageInQueue(hint: hmac)
 
@@ -212,7 +237,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     func testSaving() async throws {
         PublicDataRepository.setup(StaticConfig.devConfig)
         try await PublicDataRepository.shared.pollPublicKeysAndStatusApis()
-        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")
             return
         }
@@ -221,7 +247,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let sut = PrivateSendingQueueRepository.shared
         let defaultConfig = PrivateSendingQueueConfiguration.default
         let queue = try PrivateSendingQueue(totalQueueSize: defaultConfig.totalQueueSize,
-                                            messageSize: defaultConfig.messageSize, coverMessageFactory: coverMessageFactory)
+                                            messageSize: defaultConfig.messageSize,
+                                            coverMessageFactory: coverMessageFactory)
 
         // WHEN that queue is saved to the store
         try await sut.saveQueue(queue)
@@ -236,7 +263,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     func testLoading() async throws {
         PublicDataRepository.setup(StaticConfig.devConfig)
         try await PublicDataRepository.shared.pollPublicKeysAndStatusApis()
-        guard let coverMessageFactory = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
+        guard let coverMessageFactory = try? PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")
             return
         }
@@ -245,7 +273,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let sut = PrivateSendingQueueRepository.shared
         let defaultConfig = PrivateSendingQueueConfiguration.default
         var queue = try PrivateSendingQueue(totalQueueSize: defaultConfig.totalQueueSize,
-                                            messageSize: defaultConfig.messageSize, coverMessageFactory: coverMessageFactory)
+                                            messageSize: defaultConfig.messageSize,
+                                            coverMessageFactory: coverMessageFactory)
         let message = try await PrivateSendingQueueTests().message1()
         _ = try queue.enqueue(secret: PrivateSendingQueueTests().secret!,
                               message: message)

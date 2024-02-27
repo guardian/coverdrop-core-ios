@@ -53,10 +53,16 @@ public struct PrivateSendingQueue: Equatable {
 
     /// Initialise a `PrivateSendingQueue`
     /// - Parameters:
-    ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform serialization standard
-    ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform serialization standard
+    ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform
+    /// serialization standard
+    ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform
+    /// serialization standard
     ///   - initialMessagesAndHints: the inital message and hints you want to place in the queue.
-    init?(totalQueueSize: Int32, messageSize: Int32, initialMessagesAndHints: ([MultiAnonymousBox<UserToCoverNodeMessageData>], [UInt8])) {
+    init?(
+        totalQueueSize: Int32,
+        messageSize: Int32,
+        initialMessagesAndHints: ([MultiAnonymousBox<UserToCoverNodeMessageData>], [UInt8])
+    ) {
         self.totalQueueSize = totalQueueSize
         self.messageSize = messageSize
         self.initialMessagesAndHints = initialMessagesAndHints
@@ -70,8 +76,10 @@ public struct PrivateSendingQueue: Equatable {
     /// Initialise a `PrivateSendingQueue` with random data in both the message and hints blocks
     /// corresponding to the number and size of messages requested.
     /// - Parameters:
-    ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform serialization standard
-    ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform serialization standard
+    ///   - totalQueueSize: The total number of messages the queue can hold, this is an `Int32` to make cross platform
+    /// serialization standard
+    ///   - messageSize: The size in bytes of a single message, this is an `Int32` to make cross platform serialization
+    /// standard
     init(totalQueueSize: Int32, messageSize: Int32, coverMessageFactory: CoverMessageFactory) throws {
         self.totalQueueSize = totalQueueSize
         self.messageSize = messageSize
@@ -90,7 +98,8 @@ public struct PrivateSendingQueue: Equatable {
     /// they would be at the front and returned before any cover messages. Afterwards the buffer
     /// is filled up to `self.size` again.
     @discardableResult
-    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: CoverMessageFactory) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: CoverMessageFactory) throws
+        -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let message = mStorage.removeFirst()
         _ = mHints.removeFirst()
 
@@ -143,11 +152,13 @@ public struct PrivateSendingQueue: Equatable {
     /// - Parameters:
     ///   - secret: a secret generated and stored
     ///   - message: the ecrypted message to be enqueued
-    ///   - sendingQueueMessageSize: the expected message size of the private sending queue. Defaults to the value specified in the `PrivateSendignQueueConfiguration.default.messageSize`.
+    ///   - sendingQueueMessageSize: the expected message size of the private sending queue. Defaults to the value
+    /// specified in the `PrivateSendignQueueConfiguration.default.messageSize`.
     /// - throws: if the queue is full  of real messages or an incorrect size
     mutating func enqueue(secret: PrivateSendingQueueSecret,
                           message: MultiAnonymousBox<UserToCoverNodeMessageData>,
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> HintHmac {
+                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default
+                              .messageSize) throws -> HintHmac {
         let fillLevel = getFillLevel(secret: secret)
 
         if fillLevel == totalQueueSize {
@@ -202,11 +213,13 @@ public struct PrivateSendingQueue: Equatable {
     /// Deserializes a `PrivateSendingQueue` from a `[UInt8]` that was previously
     /// created with `serialize`.
     /// - Parameter bytes: a `[UInt8]` that was previously created with `serialize`.
-    ///  - Parameter sendingQueueMessageSize: the expected message size of the private sending queue. Defaults to the value specified in the `PrivateSendignQueueConfiguration.default.messageSize`.
+    ///  - Parameter sendingQueueMessageSize: the expected message size of the private sending queue. Defaults to the
+    /// value specified in the `PrivateSendignQueueConfiguration.default.messageSize`.
     /// - Returns: a `PrivateSendingQueue`
     /// - throws: if the `bytes` were not able to be deserialized to the expected length
     static func fromBytes(bytes: [UInt8],
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize) throws -> PrivateSendingQueue {
+                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default
+                              .messageSize) throws -> PrivateSendingQueue {
         var buffer = Data(bytes)
 
         let numberOfMessages: Int32 = popInt(byteLength: currentMessagesIntBytes, buffer: &buffer)
@@ -216,12 +229,17 @@ public struct PrivateSendingQueue: Equatable {
 
         if buffer.count != 0 { throw PrivateSendingQueueError.deserializationBufferSizeIncorrect }
 
-        let messages: [MultiAnonymousBox<UserToCoverNodeMessageData>] = storageBlock.chunked(into: Int(sendingQueueMessageSize)).map { message in
-            MultiAnonymousBox<UserToCoverNodeMessageData>.fromVecUnchecked(bytes: message)
-        }
+        let messages: [MultiAnonymousBox<UserToCoverNodeMessageData>] = storageBlock
+            .chunked(into: Int(sendingQueueMessageSize)).map { message in
+                MultiAnonymousBox<UserToCoverNodeMessageData>.fromVecUnchecked(bytes: message)
+            }
         let initialMessagesAndHints: ([MultiAnonymousBox<UserToCoverNodeMessageData>], [UInt8]) = (messages, hintsBlock)
 
-        return PrivateSendingQueue(totalQueueSize: numberOfMessages, messageSize: messageSizeInt, initialMessagesAndHints: initialMessagesAndHints)!
+        return PrivateSendingQueue(
+            totalQueueSize: numberOfMessages,
+            messageSize: messageSizeInt,
+            initialMessagesAndHints: initialMessagesAndHints
+        )!
     }
 
     /// Serializes all internal state into a `[UInt8]`] that can later be used with `fromBytes`.
@@ -238,7 +256,9 @@ public struct PrivateSendingQueue: Equatable {
     /// - throws: if the serialization did not match the expected size
     ///   or the message and hint queues were not able to be serialized into the `Int32` allocated space.
     func serialize() throws -> [UInt8] {
-        let expectedSize = currentMessagesIntBytes + messageSizeIntBytes + (totalQueueSize * messageSize) + (totalQueueSize * hintSizeBytes)
+        let totalMessageSize = totalQueueSize * messageSize
+        let totalHintSize = totalQueueSize * hintSizeBytes
+        let expectedSize = currentMessagesIntBytes + messageSizeIntBytes + totalMessageSize + totalHintSize
 
         var buffer = Data(capacity: Int(expectedSize))
 
@@ -252,11 +272,11 @@ public struct PrivateSendingQueue: Equatable {
         buffer.append(contentsOf: numberBytes)
         buffer.append(contentsOf: messageSizeByteArray)
 
-        mStorage.forEach { message in
+        for message in mStorage {
             buffer.append(contentsOf: message.asBytes())
         }
 
-        mHints.forEach { hint in
+        for hint in mHints {
             buffer.append(contentsOf: hint.hint)
         }
 
@@ -282,7 +302,10 @@ public struct PrivateSendingQueue: Equatable {
     /// - Parameters:
     ///   - message: the message to be added
     ///   - hint: the hint hash of the message and secret
-    private mutating func addMessageAndHint(message: MultiAnonymousBox<UserToCoverNodeMessageData>, hint: HintHmac) throws {
+    private mutating func addMessageAndHint(
+        message: MultiAnonymousBox<UserToCoverNodeMessageData>,
+        hint: HintHmac
+    ) throws {
         if message.asBytes().count != messageSize || hint.hint.count != hintSizeBytes {
             throw PrivateSendingQueueError.messageOrHintSizeIncorrect
         }

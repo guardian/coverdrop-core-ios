@@ -13,7 +13,10 @@ public struct HexEncodedString: Codable, Equatable {
         let container = try decoder.singleValueContainer()
         let string = try container.decode(String.self)
         guard let decodedString = string.hexStringToBytes() else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "HexEncodedNumber does not contain a hex string")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "HexEncodedNumber does not contain a hex string"
+            )
         }
         bytes = decodedString
     }
@@ -21,7 +24,10 @@ public struct HexEncodedString: Codable, Equatable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         guard let byteString = bytes.hexStr else {
-            throw EncodingError.invalidValue(bytes, EncodingError.Context(codingPath: container.codingPath, debugDescription: "Failed to encode"))
+            throw EncodingError.invalidValue(
+                bytes,
+                EncodingError.Context(codingPath: container.codingPath, debugDescription: "Failed to encode")
+            )
         }
         try container.encode(byteString)
     }

@@ -32,10 +32,18 @@ public class UnlockedSecretData: Codable, Equatable {
         uuid = try container.decode(UUID.self, forKey: .uuid)
         messageMailbox = try container.decode(Set<Message>.self, forKey: .messageMailbox)
         userKey = try container.decode(EncryptionKeypair<User>.self, forKey: .userKey)
-        privateSendingQueueSecret = try container.decode(PrivateSendingQueueSecret.self, forKey: .privateSendingQueueSecret)
+        privateSendingQueueSecret = try container.decode(
+            PrivateSendingQueueSecret.self,
+            forKey: .privateSendingQueueSecret
+        )
     }
 
-    public init(uuid: UUID = UUID(), messageMailbox: Set<Message>, userKey: EncryptionKeypair<User>, privateSendingQueueSecret: PrivateSendingQueueSecret) {
+    public init(
+        uuid: UUID = UUID(),
+        messageMailbox: Set<Message>,
+        userKey: EncryptionKeypair<User>,
+        privateSendingQueueSecret: PrivateSendingQueueSecret
+    ) {
         self.uuid = uuid
         self.messageMailbox = messageMailbox
         self.userKey = userKey
@@ -87,7 +95,10 @@ public class UnlockedSecretDataService: ObservableObject {
                 case let .textMessage(message: message):
                     return message.sender
                 case let .handoverMessage(message: handover):
-                    return UnlockedSecretDataService.getJournalistKeyDataForJournalistId(journalistId: handover.handoverTo, publicKeyData: publicKeyData)
+                    return UnlockedSecretDataService.getJournalistKeyDataForJournalistId(
+                        journalistId: handover.handoverTo,
+                        publicKeyData: publicKeyData
+                    )
                 }
             }
         }
@@ -98,12 +109,23 @@ public class UnlockedSecretDataService: ObservableObject {
     public static func createNewEmpty() throws -> UnlockedSecretDataService {
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
-        return UnlockedSecretDataService(unlockedData: UnlockedSecretData(messageMailbox: [], userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret))
+        return UnlockedSecretDataService(unlockedData: UnlockedSecretData(
+            messageMailbox: [],
+            userKey: userKeyPair,
+            privateSendingQueueSecret: privateSendingQueueSecret
+        ))
     }
 
-    public static func getJournalistKeyDataForJournalistId(journalistId: String, publicKeyData: VerifiedPublicKeys) -> JournalistData? {
+    public static func getJournalistKeyDataForJournalistId(journalistId: String,
+                                                           publicKeyData: VerifiedPublicKeys) -> JournalistData? {
         guard let profileData = publicKeyData.journalistProfiles.first(where: { $0.id == journalistId }) else { return nil }
 
-        return JournalistData(recipientId: journalistId, displayName: profileData.displayName, isDesk: profileData.isDesk, recipientDescription: profileData.description, tag: RecipientTag(tag: profileData.tag.bytes))
+        return JournalistData(
+            recipientId: journalistId,
+            displayName: profileData.displayName,
+            isDesk: profileData.isDesk,
+            recipientDescription: profileData.description,
+            tag: RecipientTag(tag: profileData.tag.bytes)
+        )
     }
 }

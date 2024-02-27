@@ -19,7 +19,8 @@ public struct MessageRecipients {
     /// Sets up message recipients and sorts into relevant local properties using the provided public keys.
     /// - Parameters:
     ///   - verifiedPublicKeys:
-    ///   - excludingDefaultRecipient: Exclude the default recipient from the `journalists` and `desks` arrays. Defaults to `true`.
+    ///   - excludingDefaultRecipient: Exclude the default recipient from the `journalists` and `desks` arrays. Defaults
+    /// to `true`.
     public init(verifiedPublicKeys: VerifiedPublicKeys?,
                 excludingDefaultRecipient: Bool = true) throws {
         try setupMessageRecipients(with: verifiedPublicKeys, excludingDefaultRecipient: excludingDefaultRecipient)

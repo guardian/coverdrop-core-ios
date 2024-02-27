@@ -22,7 +22,10 @@ public struct Base64EncodedString: Codable, Equatable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         guard let byteString = bytes.base64Encode() else {
-            throw EncodingError.invalidValue(bytes, EncodingError.Context(codingPath: container.codingPath, debugDescription: "Failed to encode to base64"))
+            throw EncodingError.invalidValue(
+                bytes,
+                EncodingError.Context(codingPath: container.codingPath, debugDescription: "Failed to encode to base64")
+            )
         }
         try container.encode(byteString)
     }

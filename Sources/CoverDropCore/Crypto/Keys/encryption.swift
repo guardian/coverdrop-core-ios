@@ -23,7 +23,10 @@ public class EncryptionKeypair<T: Role>: Codable {
             let secretKey = keypair.secretKey
             let publicKey = keypair.publicKey
 
-            return EncryptionKeypair<R>(publicKey: PublicEncryptionKey<R>(key: publicKey), secretKey: SecretEncryptionKey<R>(key: secretKey))
+            return EncryptionKeypair<R>(
+                publicKey: PublicEncryptionKey<R>(key: publicKey),
+                secretKey: SecretEncryptionKey<R>(key: secretKey)
+            )
         } else {
             throw EncryptionError.failedToGenerateKeys
         }

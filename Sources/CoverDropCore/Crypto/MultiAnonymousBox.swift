@@ -4,7 +4,8 @@ import Sodium
 let wrappedKeySize = Sodium().secretBox.KeyBytes + Sodium().box.SealBytes
 
 enum MultiAnonymousBoxError: Error {
-    case keyGenFailed, encryptWithSecretBoxFailed, badOutputLength, decryptWithSecretBoxFailed, missingRecipientPublicKeys
+    case keyGenFailed, encryptWithSecretBoxFailed, badOutputLength, decryptWithSecretBoxFailed,
+         missingRecipientPublicKeys
 }
 
 public struct MultiAnonymousBox<T>: Equatable, Hashable {
@@ -53,7 +54,7 @@ public extension MultiAnonymousBox {
         let outputCapacity = Int(wrappedKey.count * wrappedKeySize + ciphertext.count)
         var output = Data(capacity: outputCapacity)
 
-        wrappedKey.forEach { key in
+        for key in wrappedKey {
             output.append(contentsOf: key.asBytes())
         }
 
@@ -82,7 +83,11 @@ public extension MultiAnonymousBox {
             throw MultiAnonymousBoxError.decryptWithSecretBoxFailed
         }
 
-        if let plaintextBytes = Sodium().secretBox.open(authenticatedCipherText: ciphertext, secretKey: key!.asUnencryptedBytes(), nonce: Array(repeating: UInt8(0), count: Sodium().secretBox.NonceBytes)) {
+        if let plaintextBytes = Sodium().secretBox.open(
+            authenticatedCipherText: ciphertext,
+            secretKey: key!.asUnencryptedBytes(),
+            nonce: Array(repeating: UInt8(0), count: Sodium().secretBox.NonceBytes)
+        ) {
             return try U.fromUnencryptedBytes(bytes: plaintextBytes) as! U
         } else {
             throw MultiAnonymousBoxError.decryptWithSecretBoxFailed

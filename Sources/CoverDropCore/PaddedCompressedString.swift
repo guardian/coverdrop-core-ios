@@ -26,7 +26,8 @@ public struct PaddedCompressedString: Equatable, Encryptable {
     // this is a UInt16 expressed as maximum number of bytes, which is 2
     static let headerSize = 2
 
-    /// The first step of constructing a `PaddedCompressedString`, but can also be called externally to check whether a user's message exceeds the allowed size
+    /// The first step of constructing a `PaddedCompressedString`, but can also be called externally to check whether a
+    /// user's message exceeds the allowed size
     @discardableResult
     public static func compressCheckingLength(from text: String) throws -> (compressedData: Data, compressedSize: Int) {
         let padToSize = Constants.messagePaddingLen

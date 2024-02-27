@@ -16,10 +16,12 @@ final class MessageRecipientsTests: XCTestCase {
     }
 
     func testDefaultRecipientExcluded() {
-        let journalistContains = MessageRecipientsTests.sut?.journalists.contains(where: { $0 == MessageRecipientsTests.sut?.defaultRecipient })
+        let journalistContains = MessageRecipientsTests.sut?.journalists
+            .contains(where: { $0 == MessageRecipientsTests.sut?.defaultRecipient })
         XCTAssertFalse(journalistContains == nil)
 
-        let desksContains = MessageRecipientsTests.sut?.desks.contains(where: { $0 == MessageRecipientsTests.sut?.defaultRecipient })
+        let desksContains = MessageRecipientsTests.sut?.desks
+            .contains(where: { $0 == MessageRecipientsTests.sut?.defaultRecipient })
         XCTAssertFalse(desksContains == nil)
     }
 
@@ -27,13 +29,17 @@ final class MessageRecipientsTests: XCTestCase {
         do {
             _ = try MessageRecipients(verifiedPublicKeys: nil)
         } catch {
-            XCTAssert(error as! MessageRecipients.RecipientsError == MessageRecipients.RecipientsError.recipientsUnavailable)
+            XCTAssert(error as! MessageRecipients.RecipientsError == MessageRecipients.RecipientsError
+                .recipientsUnavailable)
         }
     }
 
     // tests MessageRecipients based on `001_journalist_with_multiple_messaging_keys.json`
     func testDesks() {
-        guard let sut = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false) else {
+        guard let sut = try? MessageRecipients(
+            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
+            excludingDefaultRecipient: false
+        ) else {
             XCTFail("Failed to get message recipients")
             return
         }
@@ -42,7 +48,10 @@ final class MessageRecipientsTests: XCTestCase {
     }
 
     func testJournalists() {
-        guard let sut = try? MessageRecipients(verifiedPublicKeys: PublicKeysHelper.shared.testKeys, excludingDefaultRecipient: false) else {
+        guard let sut = try? MessageRecipients(
+            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
+            excludingDefaultRecipient: false
+        ) else {
             XCTFail("Failed to get message recipients")
             return
         }

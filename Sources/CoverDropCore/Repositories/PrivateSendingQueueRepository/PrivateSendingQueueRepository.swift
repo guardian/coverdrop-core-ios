@@ -4,7 +4,8 @@ enum PrivateSendingQueueRepositoryError: Error {
     case queueNotAvailable
 }
 
-/// This repository actor is the main interface for the app for creating and managing its instance of the global `PrivateSendingQueue` via a  `shared` singleton instance.
+/// This repository actor is the main interface for the app for creating and managing its instance of the global
+/// `PrivateSendingQueue` via a  `shared` singleton instance.
 public actor PrivateSendingQueueRepository: ObservableObject {
     public static let shared = PrivateSendingQueueRepository()
 
@@ -34,7 +35,10 @@ public actor PrivateSendingQueueRepository: ObservableObject {
     /// Removes the current queue, by generating a new `PrivateSendingQueue` and storing to disk
     /// This is so we can remove any pending real messages from users if they choose to delete all messages.
     /// - Parameter configuration: An optional configuration for setting up the managed`PrivateSendingQueue`.
-    public func wipeQueue(with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default, coverMessageFactory: CoverMessageFactory) async throws {
+    public func wipeQueue(
+        with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default,
+        coverMessageFactory: CoverMessageFactory
+    ) async throws {
         let queue = try PrivateSendingQueue(
             totalQueueSize: configuration.totalQueueSize,
             messageSize: configuration.messageSize,
@@ -43,8 +47,12 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         try await saveQueue(queue)
     }
 
-    /// Enqueues the given message by calling the the `PrivateSendingQueue`'s `enqueue(..)` method and storing the changed state to disk.
-    public func enqueue(secret: PrivateSendingQueueSecret, message: MultiAnonymousBox<UserToCoverNodeMessageData>) async throws -> HintHmac {
+    /// Enqueues the given message by calling the the `PrivateSendingQueue`'s `enqueue(..)` method and storing the
+    /// changed state to disk.
+    public func enqueue(
+        secret: PrivateSendingQueueSecret,
+        message: MultiAnonymousBox<UserToCoverNodeMessageData>
+    ) async throws -> HintHmac {
         guard var queue = try await loadQueue() else {
             throw PrivateSendingQueueRepositoryError.queueNotAvailable
         }
@@ -54,8 +62,10 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         return hint
     }
 
-    /// Dequeues a message by calling the the `PrivateSendingQueue`'s `dequeue(..)` method and storing the changed state to disk.
-    func dequeue(coverMessageFactory: CoverMessageFactory) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    /// Dequeues a message by calling the the `PrivateSendingQueue`'s `dequeue(..)` method and storing the changed state
+    /// to disk.
+    func dequeue(coverMessageFactory: CoverMessageFactory) async throws
+        -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         var queue = try await loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
         let message = try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: coverMessageFactory)
 
@@ -73,7 +83,8 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         return message
     }
 
-    /// Checks a message in still in the outbound queue using `PrivateSendingQueue`'s `isMessageStillInQueue(..)` method.
+    /// Checks a message in still in the outbound queue using `PrivateSendingQueue`'s `isMessageStillInQueue(..)`
+    /// method.
     public func isMessageInQueue(hint: HintHmac) async throws -> Bool {
         guard let queue = try await loadQueue() else {
             throw PrivateSendingQueueRepositoryError.queueNotAvailable

@@ -36,7 +36,10 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
 
     public static func getExpiredStatus(dateSentOrReceived: Date) -> MessageStatus {
         if Message.isExpiring(dateSentOrReceived: dateSentOrReceived) {
-            if let formattedExpiry = Message.formatExpiryDate(messageDate: dateSentOrReceived, expiry: Message.expiryWindow) {
+            if let formattedExpiry = Message.formatExpiryDate(
+                messageDate: dateSentOrReceived,
+                expiry: Message.expiryWindow
+            ) {
                 return .expiring(time: formattedExpiry)
             } else {
                 return .pendingOrSent

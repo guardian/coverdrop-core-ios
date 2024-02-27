@@ -5,7 +5,8 @@ enum MessageHelperError: Error {
 }
 
 /// This helper is used to generate a mock user message inbox for the purpose of previewing the UI in xcode
-/// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency of them all
+/// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency
+/// of them all
 @MainActor public enum MessageHelper {
     public static func addMessagesToInbox() async throws -> SecretData {
         let twoDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 2))
@@ -24,9 +25,17 @@ enum MessageHelperError: Error {
         guard let recipientUnwrapped = recipient,
               let otherRecipientUnwrapped = otherRecipient else { throw MessageHelperError.unableToCreateMessage }
 
-        let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+        let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
+            message: "hey \(recipientUnwrapped.displayName)",
+            messageRecipient: recipientUnwrapped,
+            covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys,
+            userPublicKey: userKeyPair.publicKey
+        )
 
-        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage.asBytes()))
+        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(
+            secretKey: privateSendingQueueSecret.bytes,
+            message: encryptedMessage.asBytes()
+        ))
         let outboundMessage = OutboundMessageData(
             messageRecipient: recipientUnwrapped,
             messageText: "hey \(recipientUnwrapped.displayName)",
@@ -45,11 +54,23 @@ enum MessageHelperError: Error {
 
         let realMessage = Message.outboundMessage(message: realOutboundMessage)
 
-        let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(sender: recipientUnwrapped, messageText: "hey user, from: \(recipientUnwrapped.displayName)", dateReceived: Date())))
+        let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(
+            sender: recipientUnwrapped,
+            messageText: "hey user, from: \(recipientUnwrapped.displayName)",
+            dateReceived: Date()
+        )))
 
-        let encryptedMessage2 = try await UserToCoverNodeMessageData.createMessage(message: "hey \(recipientUnwrapped.displayName)", messageRecipient: recipientUnwrapped, covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys, userPublicKey: userKeyPair.publicKey)
+        let encryptedMessage2 = try await UserToCoverNodeMessageData.createMessage(
+            message: "hey \(recipientUnwrapped.displayName)",
+            messageRecipient: recipientUnwrapped,
+            covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys,
+            userPublicKey: userKeyPair.publicKey
+        )
 
-        let hint2 = HintHmac(hint: PrivateSendingQueueHmac.hmac(secretKey: privateSendingQueueSecret.bytes, message: encryptedMessage2.asBytes()))
+        let hint2 = HintHmac(hint: PrivateSendingQueueHmac.hmac(
+            secretKey: privateSendingQueueSecret.bytes,
+            message: encryptedMessage2.asBytes()
+        ))
 
         let inactiveMessageInner = OutboundMessageData(
             messageRecipient: otherRecipientUnwrapped,
@@ -76,7 +97,11 @@ enum MessageHelperError: Error {
         messages.insert(inactiveMessage1)
         messages.insert(inactiveMessage2)
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(messageMailbox: messages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret)))
+        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(
+            messageMailbox: messages,
+            userKey: userKeyPair,
+            privateSendingQueueSecret: privateSendingQueueSecret
+        )))
     }
 
     public static func loadMessagesFromDeadDrop() async throws -> SecretData {
@@ -85,11 +110,17 @@ enum MessageHelperError: Error {
 
         let userMessageSecretKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
         let userMessagePublicKey = try PublicKeysHelper.shared.getTestUserMessagePublicKey()
-        let userKeyPair: EncryptionKeypair<User> = EncryptionKeypair(publicKey: userMessagePublicKey, secretKey: userMessageSecretKey)
+        let userKeyPair: EncryptionKeypair<User> = EncryptionKeypair(
+            publicKey: userMessagePublicKey,
+            secretKey: userMessageSecretKey
+        )
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
         let deadDropData = try DeadDropDataHelper.shared.readLocalDataFile()
-        let verifiedDeadDrops = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDropData, verifiedKeys: verifiedPublicKeys)
+        let verifiedDeadDrops = VerifiedDeadDrops.fromAllDeadDropData(
+            deadDrops: deadDropData,
+            verifiedKeys: verifiedPublicKeys
+        )
 
         var userMessages: Set<Message> = []
 
@@ -104,6 +135,10 @@ enum MessageHelperError: Error {
             )
         }
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(messageMailbox: userMessages, userKey: userKeyPair, privateSendingQueueSecret: privateSendingQueueSecret)))
+        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(
+            messageMailbox: userMessages,
+            userKey: userKeyPair,
+            privateSendingQueueSecret: privateSendingQueueSecret
+        )))
     }
 }

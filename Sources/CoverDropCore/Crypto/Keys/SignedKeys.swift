@@ -4,11 +4,17 @@ import Sodium
 public typealias TrustedOrganizationPublicKey = SelfSignedPublicSigningKey<TrustedOrganization>
 public typealias OrganizationPublicKey = SelfSignedPublicSigningKey<Organization>
 
-public typealias CoverNodeProvisioningKey = SignedPublicSigningKey<CoverNodeProvisioning, SelfSignedPublicSigningKey<TrustedOrganization>>
+public typealias CoverNodeProvisioningKey = SignedPublicSigningKey<
+    CoverNodeProvisioning,
+    SelfSignedPublicSigningKey<TrustedOrganization>
+>
 public typealias CoverNodeIdPublicKey = SignedPublicSigningKey<CoverNodeId, CoverNodeProvisioningKey>
 public typealias CoverNodeMessagingPublicKey = SignedPublicEncryptionKey<CoverNodeMessaging, CoverNodeIdPublicKey>
 
-public typealias JournalistProvisioningKey = SignedPublicSigningKey<JournalistProvisioning, SelfSignedPublicSigningKey<TrustedOrganization>>
+public typealias JournalistProvisioningKey = SignedPublicSigningKey<
+    JournalistProvisioning,
+    SelfSignedPublicSigningKey<TrustedOrganization>
+>
 public typealias JournalistIdPublicKey = SignedPublicSigningKey<JournalistId, JournalistProvisioningKey>
 public typealias JournalistMessagingPublicKey = SignedPublicEncryptionKey<JournalistMessaging, JournalistIdPublicKey>
 
@@ -49,7 +55,11 @@ public struct SelfSignedPublicSigningKey<T: Role>: SigningKey, Codable, Equatabl
         // The certificate for this also includes the timestamp,
         let validationCertificate = KeyCertificateData.newForSigningKey(key: key, notValidAfter: notValidAfter)
 
-        let isKeyValid = Sodium().sign.verify(message: validationCertificate.data, publicKey: key, signature: certificate.certificate)
+        let isKeyValid = Sodium().sign.verify(
+            message: validationCertificate.data,
+            publicKey: key,
+            signature: certificate.certificate
+        )
 
         return isDateValid && isKeyValid
     }
@@ -59,7 +69,13 @@ public class SignedPublicSigningKey<T: Role, S: SigningKey>: SigningKey, Codable
     public var key: Sign.KeyPair.PublicKey
     public var certificate: Signature<T>
     public var notValidAfter: Date
-    public init?(key: Sign.KeyPair.PublicKey, certificate: Signature<T>, signingKey: some SigningKey, notValidAfter: Date, now: Date) {
+    public init?(
+        key: Sign.KeyPair.PublicKey,
+        certificate: Signature<T>,
+        signingKey: some SigningKey,
+        notValidAfter: Date,
+        now: Date
+    ) {
         self.key = key
         self.certificate = certificate
         self.notValidAfter = notValidAfter
@@ -78,12 +94,20 @@ public class SignedPublicSigningKey<T: Role, S: SigningKey>: SigningKey, Codable
         // The certificate for this also includes the timestamp,
         let validationCertificate = KeyCertificateData.newForSigningKey(key: key, notValidAfter: notValidAfter)
 
-        let isKeyValid = Sodium().sign.verify(message: validationCertificate.data, publicKey: signingKey.key, signature: certificate.certificate)
+        let isKeyValid = Sodium().sign.verify(
+            message: validationCertificate.data,
+            publicKey: signingKey.key,
+            signature: certificate.certificate
+        )
 
         return isDateValid && isKeyValid
     }
 
-    public static func fromUnverified<R: Role, Q: SigningKey>(unverifiedKey: UnverifiedSignedPublicSigningKeyData, signingKey: Q, now: Date) throws -> SignedPublicSigningKey<R, Q> {
+    public static func fromUnverified<R: Role, Q: SigningKey>(
+        unverifiedKey: UnverifiedSignedPublicSigningKeyData,
+        signingKey: Q,
+        now: Date
+    ) throws -> SignedPublicSigningKey<R, Q> {
         if let verifiedKey = SignedPublicSigningKey<R, Q>(
             key: Sign.KeyPair.PublicKey(unverifiedKey.key.bytes),
             certificate: Signature<R>.fromBytes(bytes: unverifiedKey.certificate.bytes),
@@ -100,7 +124,13 @@ public class SignedPublicEncryptionKey<T: Role, S: SigningKey>: Codable {
     public var key: PublicEncryptionKey<T>
     public var certificate: Signature<T>
     public var notValidAfter: Date
-    public init?(key: PublicEncryptionKey<T>, certificate: Signature<T>, signingKey: some SigningKey, notValidAfter: Date, now: Date) {
+    public init?(
+        key: PublicEncryptionKey<T>,
+        certificate: Signature<T>,
+        signingKey: some SigningKey,
+        notValidAfter: Date,
+        now: Date
+    ) {
         self.key = key
         self.certificate = certificate
         self.notValidAfter = notValidAfter
@@ -119,12 +149,20 @@ public class SignedPublicEncryptionKey<T: Role, S: SigningKey>: Codable {
         // The certificate for this also includes the timestamp,
         let validationCertificate = KeyCertificateData.newForEncryptionKey(key: key, notValidAfter: notValidAfter)
 
-        let isKeyValid = Sodium().sign.verify(message: validationCertificate.data, publicKey: signingKey.key, signature: certificate.certificate)
+        let isKeyValid = Sodium().sign.verify(
+            message: validationCertificate.data,
+            publicKey: signingKey.key,
+            signature: certificate.certificate
+        )
 
         return isDateValid && isKeyValid
     }
 
-    public static func fromUnverified<R: Role, Q: SigningKey>(unverifiedMessageKey: UnverifiedSignedPublicEncryptionKeyData, signingKey: Q, now: Date) throws -> SignedPublicEncryptionKey<R, Q> {
+    public static func fromUnverified<R: Role, Q: SigningKey>(
+        unverifiedMessageKey: UnverifiedSignedPublicEncryptionKeyData,
+        signingKey: Q,
+        now: Date
+    ) throws -> SignedPublicEncryptionKey<R, Q> {
         if let verifiedMessageKey = SignedPublicEncryptionKey<R, Q>(
             key: PublicEncryptionKey<R>(key: unverifiedMessageKey.key.bytes),
             certificate: Signature<R>.fromBytes(bytes: unverifiedMessageKey.certificate.bytes),

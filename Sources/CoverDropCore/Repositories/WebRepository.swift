@@ -34,9 +34,10 @@ extension WebRepository {
     }
 }
 
-    // swiftlint:disable type_name
+// swiftlint:disable type_name
 protocol CacheableWebRepository<T>: WebRepository {
     associatedtype T: Codable
     func get(params: [String: String]?) async throws -> T
 }
-    // swiftlint:enable type_name 
+
+// swiftlint:enable type_name

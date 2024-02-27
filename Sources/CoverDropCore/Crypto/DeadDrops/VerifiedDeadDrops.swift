@@ -27,14 +27,15 @@ public extension VerifiedDeadDrops {
         return VerifiedDeadDrops(deadDrops: verifiedDeadDrops)
     }
 
-    static func allVerifiedDeadDropsFromDeadDropData(deadDrops: DeadDropData, verifiedKeys: VerifiedPublicKeys) -> [VerifiedDeadDrop] {
+    static func allVerifiedDeadDropsFromDeadDropData(deadDrops: DeadDropData,
+                                                     verifiedKeys: VerifiedPublicKeys) -> [VerifiedDeadDrop] {
         var verifiedDeadDrops: [VerifiedDeadDrop] = []
 
         let coverNodeIdKeys: [String: [CoverNodeIdPublicKey]] = verifiedKeys.getAllCoverNodeIdKeysInAllHierarchies()
 
-        deadDrops.deadDrops.forEach { deadDrop in
-            coverNodeIdKeys.values.forEach { coverNodeIdKey in
-                coverNodeIdKey.forEach { key in
+        for deadDrop in deadDrops.deadDrops {
+            for coverNodeIdKey in coverNodeIdKeys.values {
+                for key in coverNodeIdKey {
                     if let verfiedDeadDrop = VerifiedDeadDrop(unverifiedDeadDrop: deadDrop, signingPk: key) {
                         verifiedDeadDrops.append(verfiedDeadDrop)
                     }
@@ -93,7 +94,8 @@ public struct VerifiedDeadDrop {
             if unverifiedDeadDrop.count != Constants.journalistToUserEncryptedMessageLen {
                 throw VerificationDeadDropError.deadDropDataWrongSize
             }
-            let journalistToUserMessage: JournalistToUserMessage = TwoPartyBox<PaddedCompressedString>.fromVecUnchecked(bytes: unverifiedDeadDrop)
+            let journalistToUserMessage: JournalistToUserMessage = TwoPartyBox<PaddedCompressedString>
+                .fromVecUnchecked(bytes: unverifiedDeadDrop)
             return journalistToUserMessage
         }
     }

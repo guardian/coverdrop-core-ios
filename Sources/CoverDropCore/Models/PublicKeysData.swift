@@ -90,7 +90,14 @@ public typealias CoverNodeKeysFamily = PublicKeysFamily
 public typealias JournalistKeysFamily = PublicKeysFamily
 
 public struct JournalistProfile: Codable, Equatable {
-    public init(id: String, displayName: String, sortName: String, description: String, isDesk: Bool, tag: HexEncodedString) {
+    public init(
+        id: String,
+        displayName: String,
+        sortName: String,
+        description: String,
+        isDesk: Bool,
+        tag: HexEncodedString
+    ) {
         self.id = id
         self.displayName = displayName
         self.sortName = sortName
@@ -135,7 +142,8 @@ public struct UnverifiedSignedPublicEncryptionKeyData: Codable, Equatable {
 }
 
 public struct UnverifiedSignedPublicSigningKeyData: Codable, Equatable {
-    public static func == (lhs: UnverifiedSignedPublicSigningKeyData, rhs: UnverifiedSignedPublicSigningKeyData) -> Bool {
+    public static func == (lhs: UnverifiedSignedPublicSigningKeyData,
+                           rhs: UnverifiedSignedPublicSigningKeyData) -> Bool {
         return lhs.key == rhs.key &&
             lhs.certificate == rhs.certificate &&
             lhs.notValidAfter == rhs.notValidAfter

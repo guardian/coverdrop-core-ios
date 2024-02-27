@@ -10,9 +10,19 @@ final class PrivateSendingQueueTests: XCTestCase {
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
 
         let encryptedMessage = try await UserToCoverNodeMessage.createMessage(message: message,
-                                                                              recipientPublicKey: PublicKeysHelper.shared.getTestJournalistMessageKey()!,
-                                                                              verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
-                                                                              userPublicKey: userKeyPair.publicKey, tag: RecipientTag(tag: [2, 3, 3, 3]))
+                                                                              recipientPublicKey: PublicKeysHelper
+                                                                                  .shared
+                                                                                  .getTestJournalistMessageKey(
+                                                                                  )!,
+                                                                              verifiedPublicKeys: PublicKeysHelper
+                                                                                  .shared.testKeys,
+                                                                              userPublicKey: userKeyPair.publicKey,
+                                                                              tag: RecipientTag(tag: [
+                                                                                  2,
+                                                                                  3,
+                                                                                  3,
+                                                                                  3
+                                                                              ]))
         return encryptedMessage
     }
 
@@ -29,12 +39,14 @@ final class PrivateSendingQueueTests: XCTestCase {
     }
 
     func emptyCoverdropQueue() throws -> PrivateSendingQueue {
-        guard let coverMessage = try? PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
+        guard let coverMessage = try? PublicDataRepository
+            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Failed to get cover message")
             throw PublicDataRepositoryError.failedToCreateCoverMessage
         }
         return try PrivateSendingQueue(totalQueueSize: PrivateSendingQueueConfiguration.default.totalQueueSize,
-                                       messageSize: PrivateSendingQueueConfiguration.default.messageSize, coverMessageFactory: coverMessage)
+                                       messageSize: PrivateSendingQueueConfiguration.default.messageSize,
+                                       coverMessageFactory: coverMessage)
     }
 
     func testEnqueueWhenAddingMessageThenFillLevelIncreases() async throws {
@@ -86,7 +98,12 @@ final class PrivateSendingQueueTests: XCTestCase {
         _ = try queue.enqueue(secret: differentSecret!, message: message3)
 
         // we would have otherwise expected message1 due to the FIFO nature of the queue
-        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message3)
+        XCTAssertEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message3
+        )
     }
 
     func testDequeueWhenAddedMessagesThenPoppedInOrder() async throws {
@@ -97,8 +114,18 @@ final class PrivateSendingQueueTests: XCTestCase {
         _ = try queue.enqueue(secret: secret!, message: message1)
         _ = try queue.enqueue(secret: secret!, message: message2)
 
-        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message1)
-        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message2)
+        XCTAssertEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message1
+        )
+        XCTAssertEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message2
+        )
     }
 
     func testDequeueWhenPoppingMoreThanRealMessagesThenCoverMessagesReturned() async throws {
@@ -109,13 +136,35 @@ final class PrivateSendingQueueTests: XCTestCase {
         _ = try queue.enqueue(secret: secret!, message: message1)
         _ = try queue.enqueue(secret: secret!, message: message2)
 
-        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message1)
-        XCTAssertEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message2)
+        XCTAssertEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message1
+        )
+        XCTAssertEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message2
+        )
 
-        _ = try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        _ = try queue
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
 
-        XCTAssertNotEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message1)
-        XCTAssertNotEqual(try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)), message2)
+        XCTAssertNotEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message1
+        )
+        XCTAssertNotEqual(
+            try queue
+                .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                    .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)),
+            message2
+        )
     }
 
     func testFromBytesWhenSerdeEmptyThenDeserializesSuccessfully() throws {
@@ -140,16 +189,28 @@ final class PrivateSendingQueueTests: XCTestCase {
         let fillLevel = copy.getFillLevel(secret: secret!)
         XCTAssertEqual(fillLevel, 2)
 
-        let actualMessage1 = try copy.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        let actualMessage1 = try copy
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
         XCTAssertEqual(actualMessage1, message1)
 
-        let actualMessage2 = try copy.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        let actualMessage2 = try copy
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
         XCTAssertEqual(actualMessage2, message2)
 
-        try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 1
-        try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 2
-        let originalCover1 = try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
-        let actualCover1 = try copy.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 1
+        try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 2
+        let originalCover1 = try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
+        let actualCover1 = try copy
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys))
         XCTAssertEqual(originalCover1, actualCover1)
     }
 
@@ -163,8 +224,12 @@ final class PrivateSendingQueueTests: XCTestCase {
 
         XCTAssertTrue(isInQueue)
 
-        try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 1
-        try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 2
+        try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 1
+        try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 2
 
         let isStillInQueue = original.isMessageStillInQueue(hint: hint1)
 
@@ -184,8 +249,12 @@ final class PrivateSendingQueueTests: XCTestCase {
 
         XCTAssertTrue(original.mStorage.count == Set(original.mStorage).count)
 
-        try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 1
-        try original.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository.getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 2
+        try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 1
+        try original
+            .sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: PublicDataRepository
+                .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)) // message 2
 
         XCTAssertTrue(original.mStorage.count == Set(original.mStorage).count)
     }

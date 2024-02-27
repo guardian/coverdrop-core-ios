@@ -13,7 +13,8 @@ import Sodium
 /// [`SecretBox`]: super::SecretBox
 /// [`sealed_box`]: https://libsodium.gitbook.io/doc/public-key_cryptography/sealed_boxes
 ///
-/// Please read `https://github.com/guardian/coverdrop/blob/main/docs/cryptography.md` for details on `AnonymousBox` functions
+/// Please read `https://github.com/guardian/coverdrop/blob/main/docs/cryptography.md` for details on `AnonymousBox`
+/// functions
 
 public struct AnonymousBox<T: Encryptable>: Equatable {
     let pkTagAndCiphertext: [UInt8]
@@ -56,7 +57,11 @@ public extension AnonymousBox {
     ) throws -> S {
         let ciphertext = data.pkTagAndCiphertext
 
-        if let plaintextBytes = Sodium().box.open(anonymousCipherText: ciphertext, recipientPublicKey: myPk.key, recipientSecretKey: mySk.key) {
+        if let plaintextBytes = Sodium().box.open(
+            anonymousCipherText: ciphertext,
+            recipientPublicKey: myPk.key,
+            recipientSecretKey: mySk.key
+        ) {
             return try S.fromUnencryptedBytes(bytes: plaintextBytes) as! S
 
         } else {

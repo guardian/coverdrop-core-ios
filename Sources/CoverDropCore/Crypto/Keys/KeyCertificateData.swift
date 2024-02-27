@@ -19,7 +19,8 @@ public class KeyCertificateData: Codable {
     ///      |              |
     ///     32B             8B
     /// ```
-    /// This same method is used to sign the key, so you can only validate the key with its signature by including expiry date.
+    /// This same method is used to sign the key, so you can only validate the key with its signature by including
+    /// expiry date.
     /// - Parameters:
     ///   - keyBytes: the byte representation of a PublicEncryptionKey<T>
     ///   - notValidAfter: the expiry date of the key
@@ -27,7 +28,8 @@ public class KeyCertificateData: Codable {
     private static func newForKeyBytes(keyBytes: [UInt8], notValidAfter: Date) -> KeyCertificateData {
         // Use network endianess since we have to pick a cross-platform representation
         // We need to make sure its BigEndian here !
-        let notValidAfterSecs: [UInt8] = Array(withUnsafeBytes(of: Int64(bigEndian: Int64(notValidAfter.timeIntervalSince1970))) { Data($0) })
+        let notValidAfterSecs: [UInt8] =
+            Array(withUnsafeBytes(of: Int64(bigEndian: Int64(notValidAfter.timeIntervalSince1970))) { Data($0) })
 
         var buf = keyBytes
         buf.append(contentsOf: notValidAfterSecs)
@@ -35,7 +37,8 @@ public class KeyCertificateData: Codable {
         return KeyCertificateData(data: buf)
     }
 
-    public static func newForEncryptionKey<T: Role>(key: PublicEncryptionKey<T>, notValidAfter: Date) -> KeyCertificateData {
+    public static func newForEncryptionKey<T: Role>(key: PublicEncryptionKey<T>,
+                                                    notValidAfter: Date) -> KeyCertificateData {
         return newForKeyBytes(keyBytes: key.key, notValidAfter: notValidAfter)
     }
 

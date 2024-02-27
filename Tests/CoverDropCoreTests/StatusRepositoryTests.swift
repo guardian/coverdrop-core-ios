@@ -19,7 +19,8 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponseFailure()
 
-        let results = try await StatusRepository(config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
+        let results = try await StatusRepository(config: config, urlSessionConfig: urlSessionConfig)
+            .downloadAndUpdateAllCaches(cacheEnabled: false)
 
         XCTAssertTrue(results?.status == .unavailable)
     }
@@ -30,7 +31,11 @@ final class StatusRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         // note we are outside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
+        let results = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 60 * 48),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches(cacheEnabled: false)
         XCTAssertTrue(results?.status == .available)
     }
 
@@ -39,7 +44,8 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponseFailure()
 
-        let results = try await StatusRepository(config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results = try await StatusRepository(config: config, urlSessionConfig: urlSessionConfig)
+            .downloadAndUpdateAllCaches()
 
         XCTAssertTrue(results?.status == .unavailable)
     }
@@ -50,7 +56,11 @@ final class StatusRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponse()
 
         // note we are outside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 48), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 60 * 48),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches()
 
         XCTAssertTrue(results?.status == .available)
     }
@@ -60,7 +70,11 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponse()
         // note we are intside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 50), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 50),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches()
         let cache = try await StatusLocalRepository().load()
         XCTAssertEqual(results, cache)
     }
@@ -70,7 +84,11 @@ final class StatusRepositoryTests: XCTestCase {
 
         let urlSessionConfig = mockApiResponse()
         // note we are outside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 60 * 2), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 60 * 2),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches()
         let cache = try await StatusLocalRepository().load()
         XCTAssertEqual(results, cache)
     }
@@ -80,7 +98,11 @@ final class StatusRepositoryTests: XCTestCase {
         let urlSessionConfig = mockApiResponseFailure()
 
         // note we are inside the cache window
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 50), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches(cacheEnabled: false)
+        let results = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 50),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches(cacheEnabled: false)
 
         XCTAssertTrue(results?.status == .unavailable)
     }
@@ -89,13 +111,22 @@ final class StatusRepositoryTests: XCTestCase {
         try await removeStatusCacheFile()
         let urlSessionConfig = mockApiResponse()
 
-        let results = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 90), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
-        let results2 = try await StatusRepository(now: Date(timeIntervalSinceNow: 60 * 90), config: config, urlSessionConfig: urlSessionConfig).downloadAndUpdateAllCaches()
+        let results = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 90),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches()
+        let results2 = try await StatusRepository(
+            now: Date(timeIntervalSinceNow: 60 * 90),
+            config: config,
+            urlSessionConfig: urlSessionConfig
+        ).downloadAndUpdateAllCaches()
 
         XCTAssertEqual(results, results2)
     }
 
-    /// This overrides the default UrlSessionConfig in our global Config Object, so that calls to our public keys endpoint
+    /// This overrides the default UrlSessionConfig in our global Config Object, so that calls to our public keys
+    /// endpoint
     /// return the mock data supplied
     func mockApiResponse(mockData: [URL?: MockResponse] = [:]) -> URLSession {
         let suppliedMockData = (mockData.isEmpty) ? MockUrlData.getMockUrlData() : mockData

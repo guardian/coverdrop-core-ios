@@ -43,7 +43,8 @@ public class PublicDataRepository: ObservableObject {
         guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
-        if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
+        if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig())
+            .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
             await MainActor.run {
                 coverDropServiceStatus = currentStatus
             }
@@ -55,7 +56,8 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.configNotAvailable
         }
 
-        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig())
+            .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let verifiedPublicKeysOpt = try? await loadAndVerifyPublicKeys()
 
         guard let deadDrops = deadDropsOpt,
@@ -64,7 +66,10 @@ public class PublicDataRepository: ObservableObject {
         }
 
         // Load dead drops from journalists
-        let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(deadDrops: deadDrops, verifiedKeys: verifiedPublicKeys)
+        let verifiedDeadDropData = VerifiedDeadDrops.fromAllDeadDropData(
+            deadDrops: deadDrops,
+            verifiedKeys: verifiedPublicKeys
+        )
 
         return verifiedDeadDropData
     }
@@ -78,7 +83,10 @@ public class PublicDataRepository: ObservableObject {
         }
         // Load public keys
 
-        let publicKeysDataOpt = try? await PublicKeyRepository(config: config, urlSessionConfig: config.urlSessionConfig()).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+        let publicKeysDataOpt = try? await PublicKeyRepository(
+            config: config,
+            urlSessionConfig: config.urlSessionConfig()
+        ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(envType: config.envType)
 
         guard let publicKeysData = publicKeysDataOpt,
@@ -86,12 +94,17 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.failedToLoadPublicKeys
         }
 
-        let verifiedPublicKeysData = VerifiedPublicKeys(publicKeysData: publicKeysData, trustedOrganizationPublicKeys: trustedRootKeys, currentTime: config.currentKeysPublishedTime())
+        let verifiedPublicKeysData = VerifiedPublicKeys(
+            publicKeysData: publicKeysData,
+            trustedOrganizationPublicKeys: trustedRootKeys,
+            currentTime: config.currentKeysPublishedTime()
+        )
         areKeysAvailable = true
         return verifiedPublicKeysData
     }
 
-    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>, withSecureDns _: Bool) async throws -> HTTPURLResponse {
+    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>,
+                            withSecureDns _: Bool) async throws -> HTTPURLResponse {
         let dataOpt = message.asBytes().base64Encode()
         guard let data = dataOpt,
               let jsonData: Data = try? JSONEncoder().encode(data) else {
@@ -102,14 +115,18 @@ public class PublicDataRepository: ObservableObject {
             throw UserToJournalistMessagingError.failedToGetConfig
         }
 
-        return try await UserToJournalistMessageWebRepository(session: config.urlSessionConfig(), baseUrl: config.messageBaseUrl).sendMessage(jsonData: jsonData)
+        return try await UserToJournalistMessageWebRepository(
+            session: config.urlSessionConfig(),
+            baseUrl: config.messageBaseUrl
+        ).sendMessage(jsonData: jsonData)
     }
 
     /// This dequeues a message from the `PrivateSendingQueue` and sends it to the user to journalist
     /// message api
     /// 1. dequeue message from privateSendingQueue
     /// 2. send to the api
-    public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async -> Result<Int, UserToJournalistMessagingError> {
+    public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async
+        -> Result<Int, UserToJournalistMessagingError> {
         let privateSendingQueue = PrivateSendingQueueRepository.shared
 
         guard let config = PublicDataRepository.appConfig else {
@@ -130,9 +147,11 @@ public class PublicDataRepository: ObservableObject {
         return .success(sendResult.statusCode)
     }
 
-    public func createCoverMessageToCoverNode(coverNodeKeys: [PublicEncryptionKey<CoverNodeMessaging>]) throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
+    public func createCoverMessageToCoverNode(coverNodeKeys: [PublicEncryptionKey<CoverNodeMessaging>]) throws
+        -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         // create placeholder string instead of inner message
-        guard let innerEncryptedPlaceholder = Sodium().randomBytes.buf(length: Constants.userToJournalistEncryptedMessageLen) else {
+        guard let innerEncryptedPlaceholder = Sodium().randomBytes
+            .buf(length: Constants.userToJournalistEncryptedMessageLen) else {
             throw PublicDataRepositoryError.failedToGenerateRandomBytes
         }
         if innerEncryptedPlaceholder.count != Constants.userToJournalistEncryptedMessageLen {
@@ -149,7 +168,10 @@ public class PublicDataRepository: ObservableObject {
         }
 
         // encrypt outer message to CoverNode
-        let outerEncryptedMessage = try MultiAnonymousBox<UserToCoverNodeMessageData>.encrypt(recipientPks: coverNodeKeys, data: payloadForOuter)
+        let outerEncryptedMessage = try MultiAnonymousBox<UserToCoverNodeMessageData>.encrypt(
+            recipientPks: coverNodeKeys,
+            data: payloadForOuter
+        )
         return outerEncryptedMessage
     }
 
@@ -172,13 +194,20 @@ public class PublicDataRepository: ObservableObject {
 
     public static func loadTrustedOrganizationPublicKeys(envType: EnvType) throws -> [TrustedOrganizationPublicKey] {
         let subpath: EnvType = envType
-        let resourcePaths: [String] = Bundle.module.paths(forResourcesOfType: "json", inDirectory: "organization_keys/\(subpath)/")
+        let resourcePaths: [String] = Bundle.module.paths(
+            forResourcesOfType: "json",
+            inDirectory: "organization_keys/\(subpath)/"
+        )
 
         let keys: [TrustedOrganizationPublicKey] = try resourcePaths.compactMap { fullPath in
             // As `Bundle.module.paths` returns the full path, we just want to get the filename
             let fileName = URL(fileURLWithPath: fullPath).lastPathComponent
             let fileNameWithoutExtension = (fileName as NSString).deletingPathExtension
-            let resourceUrlOption = Bundle.module.url(forResource: fileNameWithoutExtension, withExtension: ".json", subdirectory: "organization_keys/\(subpath)/")
+            let resourceUrlOption = Bundle.module.url(
+                forResource: fileNameWithoutExtension,
+                withExtension: ".json",
+                subdirectory: "organization_keys/\(subpath)/"
+            )
             if let resourceUrl = resourceUrlOption {
                 let data = try Data(contentsOf: resourceUrl)
                 let keyData = try JSONDecoder().decode(UnverifiedSignedPublicSigningKeyData.self, from: data)

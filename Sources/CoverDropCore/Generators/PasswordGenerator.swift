@@ -51,7 +51,8 @@ public extension PasswordGenerator {
     /// and the checksum matches.
     ///
     /// If everything is successful this function returns a `String` with the verified password embedded inside it.
-    /// It is very important that you use this password in any further functions, such as key derivation, since validated
+    /// It is very important that you use this password in any further functions, such as key derivation, since
+    /// validated
     /// passwords are transformed to lower case letters
     ///
     static func checkValid(passwordInput: String) throws -> ValidPassword {
