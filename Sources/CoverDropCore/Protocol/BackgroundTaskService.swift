@@ -1,12 +1,23 @@
 import BackgroundTasks
 import Foundation
 
+let expectedMeanDelaySeconds = 10 * 60
+let minDelaySeconds = 5 * 60
+let maxDelaySeconds = 120 * 60
+
 public enum BackgroundTaskService {
     static var serviceName = "com.theguardian.coverdrop.reference.refresh"
 
     static func scheduleAppRefresh() {
         let request = BGAppRefreshTaskRequest(identifier: serviceName)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 60) // Run no earlier than 1 minute from now
+        let extraDelaySeconds: Int64 = 10 * 60
+        let delay = try? SecureRandomUtils.nextDurationFromExponentialDistribution(
+            expectedMeanDuration: Duration.seconds(expectedMeanDelaySeconds),
+            atLeastDuration: Duration.seconds(minDelaySeconds),
+            atMostDuration: Duration.seconds(maxDelaySeconds)
+        ).components.seconds + extraDelaySeconds
+        let timeDelay = TimeInterval(delay ?? Int64(expectedMeanDelaySeconds))
+        request.earliestBeginDate = Date(timeIntervalSinceNow: timeDelay)
 
         try? BGTaskScheduler.shared.submit(request)
     }
