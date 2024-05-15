@@ -37,7 +37,7 @@ public struct MessageRecipients {
             // make sure there are some public keys for the journalist
             let allJournalistKeys = verifiedPublicKeys.allMessageKeysForJournalistId(journalistId: journalistProfile.id)
             // make sure there is a messaging key
-            if allJournalistKeys.isEmpty { return }
+            if allJournalistKeys.isEmpty { continue }
 
             let journalistKeyData = JournalistData(
                 recipientId: journalistProfile.id,
