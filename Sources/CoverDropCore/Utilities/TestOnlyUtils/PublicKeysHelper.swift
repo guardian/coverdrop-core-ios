@@ -24,7 +24,7 @@ public enum MockDate {
 /// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency
 /// of them all
 public class PublicKeysHelper {
-    // swiftlint:disable force_try
+    // swiftlint:disable force_try non_optional_string_data_conversion
 
     public let testKeys: VerifiedPublicKeys
 
@@ -207,5 +207,5 @@ public class PublicKeysHelper {
         let data = try PublicKeysHelper.readLocalKeypairKeyOnlyFile(path: "user")
         return PublicEncryptionKey(key: Box.KeyPair.SecretKey(data.publicKey.key.bytes))
     }
-    // swiftlint:enable force_try
+    // swiftlint:enable force_try non_optional_string_data_conversion
 }
