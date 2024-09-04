@@ -107,8 +107,8 @@ public struct ProdConfig: CoverDropConfig {
         return URLSession(configuration: urlSessionConfig)
     }
 
-    public let apiBaseUrl = "https://coverdrop-api.code.dev-gutools.co.uk/v1"
-    public let messageBaseUrl = "https://secure-messaging.code.dev-guardianapis.com"
+    public let apiBaseUrl = "https://secure-messaging-api.guardianapis.com/v1"
+    public let messageBaseUrl = "https://secure-messaging-msg.guardianapis.com"
 
     // This supplies a date function, which is used to determine the current date
     // This is required as our mock keys data cannot be guarenteed to be valid
