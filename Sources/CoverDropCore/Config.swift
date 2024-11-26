@@ -8,7 +8,7 @@ public protocol CoverDropConfig {
     var messageBaseUrl: String { get }
     var cacheEnabled: Bool { get }
     var passphraseWordCount: Int { get }
-    var currentKeysPublishedTime: () -> Date { get }
+    var now: () -> Date { get }
     var startWithTestMessages: Bool { get }
     var startWithTestStorage: Bool { get }
     var maxBackgroundDurationInSeconds: Int { get }
@@ -58,8 +58,8 @@ public enum StaticConfig: CoverDropConfig {
         return internalGetConfig().cacheEnabled
     }
 
-    public var currentKeysPublishedTime: () -> Date {
-        return internalGetConfig().currentKeysPublishedTime
+    public var now: () -> Date {
+        return internalGetConfig().now
     }
 
     public var startWithTestStorage: Bool {
@@ -115,7 +115,7 @@ public struct ProdConfig: CoverDropConfig {
     // (because the expiry times of tokens are static)
     // So MockDate.now returns a date in the past at the current date
     // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
+    public let now: () -> Date = {
         var dateFunc = Date()
         return dateFunc
     }
@@ -157,7 +157,7 @@ public struct DemoConfig: CoverDropConfig {
     // (because the expiry times of tokens are static)
     // So MockDate.now returns a date in the past at the current date
     // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
+    public let now: () -> Date = {
         var dateFunc = Date()
         return dateFunc
     }
@@ -194,7 +194,7 @@ public struct AuditConfig: CoverDropConfig {
     public let apiBaseUrl = "https://secure-messaging-api-audit.guardianapis.com/v1"
     public let messageBaseUrl = "https://secure-messaging-msg-audit.guardianapis.com"
 
-    public let currentKeysPublishedTime: () -> Date = {
+    public let now: () -> Date = {
         var dateFunc = Date()
         return dateFunc
     }
@@ -231,13 +231,9 @@ public struct CodeConfig: CoverDropConfig {
     public let apiBaseUrl = "https://coverdrop-api.code.dev-gutools.co.uk/v1"
     public let messageBaseUrl = "https://secure-messaging.code.dev-guardianapis.com"
 
-    // This supplies a date function, which is used to determine the current date
-    // This is required as our mock keys data cannot be guarenteed to be valid
-    // (because the expiry times of tokens are static)
-    // So MockDate.now returns a date in the past at the current date
-    // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
-        MockDate.currentTime()
+    public let now: () -> Date = {
+        var dateFunc = Date()
+        return dateFunc
     }
 
     public let cacheEnabled = false
@@ -279,7 +275,7 @@ public struct DevConfig: CoverDropConfig {
     // (because the expiry times of tokens are static)
     // So MockDate.now returns a date in the past at the current date
     // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
+    public let now: () -> Date = {
         MockDate.currentTime()
     }
 

@@ -87,7 +87,10 @@ public class PublicDataRepository: ObservableObject {
             config: config,
             urlSessionConfig: config.urlSessionConfig()
         ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
-        let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(envType: config.envType)
+        let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(
+            envType: config.envType,
+            now: config.now()
+        )
 
         guard let publicKeysData = publicKeysDataOpt,
               let trustedRootKeys = trustedRootKeysOpt else {
@@ -97,7 +100,7 @@ public class PublicDataRepository: ObservableObject {
         let verifiedPublicKeysData = VerifiedPublicKeys(
             publicKeysData: publicKeysData,
             trustedOrganizationPublicKeys: trustedRootKeys,
-            currentTime: config.currentKeysPublishedTime()
+            currentTime: config.now()
         )
         areKeysAvailable = true
         return verifiedPublicKeysData
@@ -192,7 +195,8 @@ public class PublicDataRepository: ObservableObject {
         return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }
 
-    public static func loadTrustedOrganizationPublicKeys(envType: EnvType) throws -> [TrustedOrganizationPublicKey] {
+    public static func loadTrustedOrganizationPublicKeys(envType: EnvType,
+                                                         now: Date) throws -> [TrustedOrganizationPublicKey] {
         let subpath: EnvType = envType
         let resourcePaths: [String] = Bundle.module.paths(
             forResourcesOfType: "json",
@@ -215,7 +219,7 @@ public class PublicDataRepository: ObservableObject {
                 return SelfSignedPublicSigningKey<TrustedOrganization>.init(
                     key: Sign.KeyPair.PublicKey(keyData.key.bytes),
                     certificate: Signature<TrustedOrganization>.fromBytes(bytes: keyData.certificate.bytes),
-                    notValidAfter: keyData.notValidAfter.date, now: Date.now
+                    notValidAfter: keyData.notValidAfter.date, now: now
                 )
             }
             return nil
