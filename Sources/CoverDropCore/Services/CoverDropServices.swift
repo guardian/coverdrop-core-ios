@@ -1,3 +1,4 @@
+import BackgroundTasks
 import Foundation
 import Network
 
@@ -15,7 +16,7 @@ public class CoverDropServices: ObservableObject {
     public static var shared = CoverDropServices()
 
     public func didLaunch(config: CoverDropConfig) throws {
-        BackgroundTaskService.registerAppRefresh(config: config)
+        BackgroundTaskService.registerBackgroundSendJob(config: config)
         // We support secure DNS via cloudflare by default,
         // but this can be disabled by the integrating app if required.
         if config.withSecureDns {
@@ -59,7 +60,10 @@ public class CoverDropServices: ObservableObject {
 
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart(config: config)
-        _ = SecretDataRepository.shared
+        _ = await SecretDataRepository.shared
+
+        // Run background task for message sending, this is only done on App startup
+        _ = await BackgroundMessageScheduleService.onAppStart()
 
         // Run foreground checks so that there is the same behaviour when app is started,
         // as when its foregrounded
@@ -79,6 +83,9 @@ public class CoverDropServices: ObservableObject {
         // We load the dead drops after the service is marked ready
         // so we do not delay startup
         _ = try? await PublicDataRepository.shared.loadDeadDrops()
+        #if DEBUG
+            await CoverDropServiceHelper.removeBackgroundSendState(config: config)
+        #endif
 
         try await CoverDropServiceHelper.addTestStorage(config: config)
     }
@@ -98,11 +105,8 @@ public class CoverDropServices: ObservableObject {
         return coverMessageFactory
     }
 
-    public static func didEnterForeground(config: CoverDropConfig) {
+    public static func didEnterForeground(config _: CoverDropConfig) {
         Task {
-            if let coverMessageFactory = try? await getCoverMessageFactoryFromPublicKeysRepository(config: config) {
-                _ = await PublicDataRepository.shared.dequeueMessageAndSend(coverMessageFactory: coverMessageFactory)
-            }
             async let logout: () = BackgroundLogoutService.logoutIfBackgroundedForTooLong()
             async let publicKeysAndStatus: () = PublicDataRepository.shared.pollPublicKeysAndStatusApis()
             async let deadDrops = PublicDataRepository.shared.loadDeadDrops()
@@ -114,8 +118,8 @@ public class CoverDropServices: ObservableObject {
     }
 
     public static func didEnterBackground() {
-        // This is called when the app is backgrounded
+        // This is called when the app enters the background
         UserDefaults.standard.set(Date(), forKey: "LastBackgroundDate")
-        BackgroundTaskService.scheduleAppRefresh()
+        BackgroundMessageScheduleService.onEnterBackground()
     }
 }

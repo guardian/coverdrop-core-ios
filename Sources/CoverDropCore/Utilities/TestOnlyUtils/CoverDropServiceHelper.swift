@@ -13,6 +13,14 @@ public enum CoverDropServiceHelper {
         } while ready == false
     }
 
+    #if DEBUG
+        public static func removeBackgroundSendState(config: CoverDropConfig) async {
+            if config.removeBackgroundSendStateOnStart {
+                UserDefaults.standard.removeObject(forKey: "CoverDropBackgroundWorkLastSuccessfulRunTimestamp")
+                UserDefaults.standard.removeObject(forKey: "CoverDropBackgroundWorkFailed")
+            }
+        }
+    #endif
     public static func addTestStorage(config: CoverDropConfig) async throws {
         if config.startWithTestStorage {
             // If we are in UI_TEST_MODE, we want to initialise the storage with a known passphase

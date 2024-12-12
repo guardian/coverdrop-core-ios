@@ -11,10 +11,10 @@ public struct DeadDropDecryptionService {
     /// This service tries to decrypts the supplied verfied dead drops with the supplied journalist Key
     /// If a message within the dead drops is succesfully decrypted it is added to the user mailbox
     ///
-    public func decryptStoredDeadDrops(
-        secretDataRepository: SecretDataRepository = SecretDataRepository.shared,
-        publicDataRepository: PublicDataRepository = PublicDataRepository.shared
-    ) async throws {
+    public func decryptStoredDeadDrops() async throws {
+        async let secretDataRepository: SecretDataRepository = SecretDataRepository.shared
+        let publicDataRepository: PublicDataRepository = PublicDataRepository.shared
+
         guard let verifiedDeadDrops = try? await publicDataRepository.loadDeadDrops() else {
             throw DeadDropDecryptionServiceError.failedToGetDeadDrops
         }

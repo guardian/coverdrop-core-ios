@@ -29,6 +29,7 @@ public class PublicDataRepository: ObservableObject {
         guard PublicDataRepository.appConfig != nil else {
             fatalError("Error - you must call setup before accessing PublicDataRepository.shared")
         }
+        initBackgroundMessageSendState()
     }
 
     public func pollPublicKeysAndStatusApis() async throws {
@@ -89,7 +90,7 @@ public class PublicDataRepository: ObservableObject {
         ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(
             envType: config.envType,
-            now: config.now()
+            now: config.currentKeysPublishedTime()
         )
 
         guard let publicKeysData = publicKeysDataOpt,
@@ -100,7 +101,7 @@ public class PublicDataRepository: ObservableObject {
         let verifiedPublicKeysData = VerifiedPublicKeys(
             publicKeysData: publicKeysData,
             trustedOrganizationPublicKeys: trustedRootKeys,
-            currentTime: config.now()
+            currentTime: config.currentKeysPublishedTime()
         )
         areKeysAvailable = true
         return verifiedPublicKeysData
@@ -128,7 +129,7 @@ public class PublicDataRepository: ObservableObject {
     /// message api
     /// 1. dequeue message from privateSendingQueue
     /// 2. send to the api
-    public func dequeueMessageAndSend(coverMessageFactory: CoverMessageFactory) async
+    public func trySendMessageAndDequeue(coverMessageFactory: CoverMessageFactory) async
         -> Result<Int, UserToJournalistMessagingError> {
         let privateSendingQueue = PrivateSendingQueueRepository.shared
 
@@ -226,5 +227,45 @@ public class PublicDataRepository: ObservableObject {
         }
 
         return keys
+    }
+
+    func initBackgroundMessageSendState() {
+        // This sets the BackgroundWorkLastSuccessfulRun to a date in the past on first ever run.
+        if let config = PublicDataRepository.appConfig,
+           readBackgroundWorkLastSuccessfulRun() == nil {
+            writeBackgroundWorkLastSuccessfulRun(instant: config.currentTime()
+                .advanced(by: TimeInterval(0 - config.minDurationBetweenBackgroundRunsInSecs)))
+            writeBackgroundWorkPending(false)
+        }
+    }
+
+    // BackgroundMessageSendFailed state, this tracks if there were any failures with the previous
+    // background message sending task
+
+    public static let CoverDropBackgroundWorkPendingKey = "CoverDropBackgroundWorkPending"
+
+    func writeBackgroundWorkPending(_ result: Bool) {
+        UserDefaults.standard.set(result, forKey: PublicDataRepository.CoverDropBackgroundWorkPendingKey)
+    }
+
+    func readBackgroundWorkPending() -> Bool? {
+        UserDefaults.standard
+            .object(forKey: PublicDataRepository.CoverDropBackgroundWorkPendingKey) as? Bool
+    }
+
+    public static let CoverDropBgWorkLastSuccessfulRunTimeKey =
+        "CoverDropBackgroundWorkLastSuccessfulRunTimestamp"
+    // BackgroundWorkLastSuccessfulRun state, this tracks when the last successful background message sending task ran
+
+    func writeBackgroundWorkLastSuccessfulRun(instant: Date) {
+        UserDefaults.standard.set(
+            instant,
+            forKey: PublicDataRepository.CoverDropBgWorkLastSuccessfulRunTimeKey
+        )
+    }
+
+    func readBackgroundWorkLastSuccessfulRun() -> Date? {
+        return UserDefaults.standard
+            .object(forKey: PublicDataRepository.CoverDropBgWorkLastSuccessfulRunTimeKey) as? Date
     }
 }
