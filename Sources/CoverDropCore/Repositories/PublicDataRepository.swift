@@ -44,7 +44,7 @@ public class PublicDataRepository: ObservableObject {
         guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
-        if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig())
+        if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig)
             .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
             await MainActor.run {
                 coverDropServiceStatus = currentStatus
@@ -57,7 +57,7 @@ public class PublicDataRepository: ObservableObject {
             throw PublicDataRepositoryError.configNotAvailable
         }
 
-        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig())
+        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig)
             .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let verifiedPublicKeysOpt = try? await loadAndVerifyPublicKeys()
 
@@ -86,7 +86,7 @@ public class PublicDataRepository: ObservableObject {
 
         let publicKeysDataOpt = try? await PublicKeyRepository(
             config: config,
-            urlSessionConfig: config.urlSessionConfig()
+            urlSessionConfig: config.urlSessionConfig
         ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(
             envType: config.envType,
@@ -120,7 +120,7 @@ public class PublicDataRepository: ObservableObject {
         }
 
         return try await UserToJournalistMessageWebRepository(
-            session: config.urlSessionConfig(),
+            session: config.urlSessionConfig,
             baseUrl: config.messageBaseUrl
         ).sendMessage(jsonData: jsonData)
     }

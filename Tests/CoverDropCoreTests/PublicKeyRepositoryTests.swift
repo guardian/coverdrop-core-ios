@@ -19,7 +19,7 @@ final class PublicKeyRepositoryTests: XCTestCase {
         let keys = try PublicKeysHelper.readLocalKeysFile()
         try await PublicKeyLocalRepository().save(data: keys)
         // 2. call the loadKeys function
-        let results = try await PublicKeyRepository(config: config, urlSessionConfig: config.urlSessionConfig())
+        let results = try await PublicKeyRepository(config: config, urlSessionConfig: config.urlSessionConfig)
             .downloadAndUpdateAllCaches()
         // 3. the load keys should have got our file from disk
 

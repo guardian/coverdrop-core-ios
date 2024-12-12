@@ -2,7 +2,7 @@ import Foundation
 import Sodium
 
 public protocol CoverDropConfig {
-    func urlSessionConfig() -> URLSession
+    var urlSessionConfig: URLSession { get }
     var envType: EnvType { get }
     var apiBaseUrl: String { get }
     var messageBaseUrl: String { get }
@@ -46,8 +46,8 @@ public enum StaticConfig: CoverDropConfig {
         }
     }
 
-    public func urlSessionConfig() -> URLSession {
-        return internalGetConfig().urlSessionConfig()
+    public var urlSessionConfig: URLSession {
+        return internalGetConfig().urlSessionConfig
     }
 
     public var apiBaseUrl: String {
@@ -113,7 +113,7 @@ public struct ProdConfig: CoverDropConfig {
 
     public var passphraseWordCount = 3
 
-    public func urlSessionConfig() -> URLSession {
+    public var urlSessionConfig: URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
         if withSecureDns {
             if #available(iOS 16.0, *) {
@@ -158,7 +158,7 @@ public struct DemoConfig: CoverDropConfig {
 
     public var passphraseWordCount = 3
 
-    public func urlSessionConfig() -> URLSession {
+    public var urlSessionConfig: URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
         if withSecureDns {
             if #available(iOS 16.0, *) {
@@ -203,7 +203,7 @@ public struct AuditConfig: CoverDropConfig {
 
     public var passphraseWordCount = 3
 
-    public func urlSessionConfig() -> URLSession {
+    public var urlSessionConfig: URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
         if withSecureDns {
             if #available(iOS 16.0, *) {
@@ -243,7 +243,7 @@ public struct CodeConfig: CoverDropConfig {
 
     public var passphraseWordCount = 3
 
-    public func urlSessionConfig() -> URLSession {
+    public var urlSessionConfig: URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
         if withSecureDns {
             if #available(iOS 16.0, *) {
@@ -283,7 +283,7 @@ public struct DevConfig: CoverDropConfig {
 
     public var passphraseWordCount = 3
 
-    public func urlSessionConfig() -> URLSession {
+    public var urlSessionConfig: URLSession {
         let urlSessionConfig = URLSessionConfiguration.ephemeral
         if withSecureDns {
             if #available(iOS 16.0, *) {

@@ -30,7 +30,7 @@ public enum BackgroundTaskService {
         config: CoverDropConfig,
         bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared
     ) {
-        bgTaskScheduler.register(forTaskWithIdentifier: serviceName, using: nil) { task in
+        _ = bgTaskScheduler.register(forTaskWithIdentifier: serviceName, using: nil) { task in
             // Downcast the parameter to an app refresh task as this identifier is used for a refresh request.
             BackgroundTaskService.handleAppRefresh(task: task as! BGAppRefreshTask, config: config)
             Debug.println("Registered Background task")

@@ -26,9 +26,12 @@ public class CoverDropServices: ObservableObject {
                 fallbackResolver: .https(secureDNS.httpsURL, serverAddresses: secureDNS.serverAddresses)
             )
         }
+        Task {
+            try? await didLaunchAsync(config: config)
+        }
     }
 
-    public func didLaunchAsync(config: CoverDropConfig) async throws {
+    private func didLaunchAsync(config: CoverDropConfig) async throws {
         // To initialise the CoverDrop service we need to:
         // 1. Setup the public data repository
         PublicDataRepository.setup(config)
@@ -60,14 +63,14 @@ public class CoverDropServices: ObservableObject {
 
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart(config: config)
-        _ = await SecretDataRepository.shared
+        _ = SecretDataRepository.shared
 
         // Run background task for message sending, this is only done on App startup
         _ = await BackgroundMessageScheduleService.onAppStart()
 
         // Run foreground checks so that there is the same behaviour when app is started,
         // as when its foregrounded
-        CoverDropServices.didEnterForeground(config: config)
+        CoverDropServices.willEnterForeground(config: config)
 
         // Check app resiliance guards
         await SecuritySuite.shared.checkForJailbreak()
@@ -105,7 +108,7 @@ public class CoverDropServices: ObservableObject {
         return coverMessageFactory
     }
 
-    public static func didEnterForeground(config _: CoverDropConfig) {
+    public static func willEnterForeground(config: CoverDropConfig) {
         Task {
             async let logout: () = BackgroundLogoutService.logoutIfBackgroundedForTooLong()
             async let publicKeysAndStatus: () = PublicDataRepository.shared.pollPublicKeysAndStatusApis()
