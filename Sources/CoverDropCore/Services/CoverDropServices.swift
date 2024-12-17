@@ -123,6 +123,12 @@ public class CoverDropServices: ObservableObject {
     public static func didEnterBackground() {
         // This is called when the app enters the background
         UserDefaults.standard.set(Date(), forKey: "LastBackgroundDate")
+        do {
+            let fileURL = try EncryptedStorage.secureStorageFileURL()
+            try EncryptedStorage.touchExistingStorage(fileUrl: fileURL)
+        } catch {
+            Debug.println("Failed to touch storage on close")
+        }
         BackgroundMessageScheduleService.onEnterBackground()
     }
 }
