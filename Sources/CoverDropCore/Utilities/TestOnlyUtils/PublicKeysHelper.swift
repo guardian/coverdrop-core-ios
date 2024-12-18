@@ -6,17 +6,31 @@ public enum KeysError: Error {
     case cannotFindKey
 }
 
-public enum MockDate {
+public enum DateFunction {
+    public static func currentKeysPublishedTime() -> Date {
+        var date = Date()
+        #if DEBUG
+            do {
+                if let generatedAtDate = try PublicKeysHelper.readLocalGeneratedAtFile() {
+                    date = generatedAtDate
+                }
+            } catch { Debug.println("Failed to get local keys generated file") }
+        #endif
+        return date
+    }
+
     public static func currentTime() -> Date {
-        do {
-            if let generatedAtDate = try PublicKeysHelper.readLocalGeneratedAtFile() {
-                return generatedAtDate
-            } else {
-                return Date()
+        #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
+                if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
+                    let keysDate = DateFunction.currentKeysPublishedTime()
+                    return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
+                } else {
+                    return Date()
+                }
             }
-        } catch {
-            return Date()
-        }
+        #endif
+        return Date()
     }
 }
 
@@ -38,7 +52,7 @@ public class PublicKeysHelper {
         let verifiedPublicKeysData = VerifiedPublicKeys(
             publicKeysData: publicKeysData,
             trustedOrganizationPublicKeys: trustedOrganizationSigningKeys,
-            currentTime: MockDate.currentTime()
+            currentTime: DateFunction.currentKeysPublishedTime()
         )
         testKeys = verifiedPublicKeysData
     }

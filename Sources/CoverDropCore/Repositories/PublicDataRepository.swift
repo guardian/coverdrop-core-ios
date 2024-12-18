@@ -82,6 +82,8 @@ public class PublicDataRepository: ObservableObject {
         guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
+
+        let currentKeysPublishedTime = DateFunction.currentKeysPublishedTime()
         // Load public keys
 
         let publicKeysDataOpt = try? await PublicKeyRepository(
@@ -90,7 +92,7 @@ public class PublicDataRepository: ObservableObject {
         ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
         let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(
             envType: config.envType,
-            now: config.currentKeysPublishedTime()
+            now: currentKeysPublishedTime
         )
 
         guard let publicKeysData = publicKeysDataOpt,
@@ -101,7 +103,7 @@ public class PublicDataRepository: ObservableObject {
         let verifiedPublicKeysData = VerifiedPublicKeys(
             publicKeysData: publicKeysData,
             trustedOrganizationPublicKeys: trustedRootKeys,
-            currentTime: config.currentKeysPublishedTime()
+            currentTime: currentKeysPublishedTime
         )
         areKeysAvailable = true
         return verifiedPublicKeysData
@@ -233,7 +235,7 @@ public class PublicDataRepository: ObservableObject {
         // This sets the BackgroundWorkLastSuccessfulRun to a date in the past on first ever run.
         if let config = PublicDataRepository.appConfig,
            readBackgroundWorkLastSuccessfulRun() == nil {
-            writeBackgroundWorkLastSuccessfulRun(instant: config.currentTime()
+            writeBackgroundWorkLastSuccessfulRun(instant: DateFunction.currentTime()
                 .advanced(by: TimeInterval(0 - config.minDurationBetweenBackgroundRunsInSecs)))
             writeBackgroundWorkPending(false)
         }

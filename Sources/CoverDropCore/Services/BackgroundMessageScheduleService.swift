@@ -16,7 +16,7 @@ enum BackgroundMessageScheduleService {
             if let config = PublicDataRepository.appConfig {
                 _ = await BackgroundMessageSendJob.run(
                     config: config,
-                    now: config.currentTime(),
+                    now: DateFunction.currentTime(),
                     numMessagesPerBackgroundRun: config.numMessagesPerBackgroundRun,
                     minDurationBetweenBackgroundRunsInSecs: config.minDurationBetweenBackgroundRunsInSecs
                 )

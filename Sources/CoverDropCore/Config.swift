@@ -8,12 +8,10 @@ public protocol CoverDropConfig {
     var messageBaseUrl: String { get }
     var cacheEnabled: Bool { get }
     var passphraseWordCount: Int { get }
-    var currentKeysPublishedTime: () -> Date { get }
     var minDurationBetweenBackgroundRunsInSecs: Int { get }
     var maxBackgroundDurationInSeconds: Int { get }
     var numMessagesPerBackgroundRun: Int { get }
     var withSecureDns: Bool { get }
-    func currentTime() -> Date
     // TODO: these are for testing only, so we should lets replace them later
     var startWithTestMessages: Bool { get }
     var startWithTestStorage: Bool { get }
@@ -62,20 +60,12 @@ public enum StaticConfig: CoverDropConfig {
         return internalGetConfig().cacheEnabled
     }
 
-    public var currentKeysPublishedTime: () -> Date {
-        return internalGetConfig().currentKeysPublishedTime
-    }
-
     public var startWithTestStorage: Bool {
         return internalGetConfig().startWithTestStorage
     }
 
     public var startWithTestMessages: Bool {
         return internalGetConfig().startWithTestMessages
-    }
-
-    public func currentTime() -> Date {
-        return internalGetConfig().currentTime()
     }
 
     public var maxBackgroundDurationInSeconds: Int {
@@ -126,25 +116,11 @@ public struct ProdConfig: CoverDropConfig {
     public let apiBaseUrl = "https://secure-messaging-api.guardianapis.com/v1"
     public let messageBaseUrl = "https://secure-messaging-msg.guardianapis.com"
 
-    // This supplies a date function, which is used to determine the current date
-    // This is required as our mock keys data cannot be guarenteed to be valid
-    // (because the expiry times of tokens are static)
-    // So MockDate.now returns a date in the past at the current date
-    // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
-        var dateFunc = Date()
-        return dateFunc
-    }
-
     public let cacheEnabled = true
 
     public var startWithTestStorage = false
 
     public let startWithTestMessages = false
-
-    public func currentTime() -> Date {
-        return Date()
-    }
 
     public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
     public var minDurationBetweenBackgroundRunsInSecs = 60 * 60
@@ -171,25 +147,11 @@ public struct DemoConfig: CoverDropConfig {
     public let apiBaseUrl = "https://secure-messaging-api-demo.guardianapis.com/v1"
     public let messageBaseUrl = "https://secure-messaging-msg-demo.guardianapis.com"
 
-    // This supplies a date function, which is used to determine the current date
-    // This is required as our mock keys data cannot be guarenteed to be valid
-    // (because the expiry times of tokens are static)
-    // So MockDate.now returns a date in the past at the current date
-    // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
-        var dateFunc = Date()
-        return dateFunc
-    }
-
     public let cacheEnabled = false
 
     public var startWithTestStorage = false
 
     public let startWithTestMessages = false
-
-    public func currentTime() -> Date {
-        return Date()
-    }
 
     public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
     public var minDurationBetweenBackgroundRunsInSecs = 60 * 60
@@ -216,20 +178,11 @@ public struct AuditConfig: CoverDropConfig {
     public let apiBaseUrl = "https://secure-messaging-api-audit.guardianapis.com/v1"
     public let messageBaseUrl = "https://secure-messaging-msg-audit.guardianapis.com"
 
-    public let currentKeysPublishedTime: () -> Date = {
-        var dateFunc = Date()
-        return dateFunc
-    }
-
     public let cacheEnabled = true
 
     public var startWithTestStorage = false
 
     public let startWithTestMessages = false
-
-    public func currentTime() -> Date {
-        return Date()
-    }
 
     public let maxBackgroundDurationInSeconds = Constants.maxBackgroundDurationInSeconds
     public var minDurationBetweenBackgroundRunsInSecs = 60 * 60
@@ -256,20 +209,11 @@ public struct CodeConfig: CoverDropConfig {
     public let apiBaseUrl = "https://coverdrop-api.code.dev-gutools.co.uk/v1"
     public let messageBaseUrl = "https://secure-messaging.code.dev-guardianapis.com"
 
-    public let currentKeysPublishedTime: () -> Date = {
-        var dateFunc = Date()
-        return dateFunc
-    }
-
     public let cacheEnabled = false
 
     public let startWithTestStorage = false
 
     public var startWithTestMessages: Bool = false
-
-    public func currentTime() -> Date {
-        return Date()
-    }
 
     public let maxBackgroundDurationInSeconds = 10
     public var minDurationBetweenBackgroundRunsInSecs = 60 * 60
@@ -297,15 +241,6 @@ public struct DevConfig: CoverDropConfig {
 
     public let apiBaseUrl = "http://localhost:3000/v1"
     public let messageBaseUrl = "http://localhost:7676"
-
-    // This supplies a date function, which is used to determine the current date
-    // This is required as our mock keys data cannot be guarenteed to be valid
-    // (because the expiry times of tokens are static)
-    // So MockDate.now returns a date in the past at the current date
-    // This is only used for UI and Unit tests that require valid keys
-    public let currentKeysPublishedTime: () -> Date = {
-        MockDate.currentTime()
-    }
 
     public let cacheEnabled = false
 
@@ -338,20 +273,6 @@ public struct DevConfig: CoverDropConfig {
             }
         #endif
         return false
-    }
-
-    public func currentTime() -> Date {
-        #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
-                if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
-                    let keysDate = MockDate.currentTime()
-                    return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
-                } else {
-                    return Date()
-                }
-            }
-        #endif
-        return Date()
     }
 
     public let maxBackgroundDurationInSeconds = 10
