@@ -12,7 +12,7 @@ public enum BackgroundTaskService {
     static func scheduleBackgroundSendJob(
         extraDelaySeconds: Int = 0,
         bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared
-    ) {
+    ) async {
         let request = BGAppRefreshTaskRequest(identifier: serviceName)
         let delay = try? Int(SecureRandomUtils.nextDurationFromExponentialDistribution(
             expectedMeanDuration: Duration.seconds(expectedMeanDelaySeconds),
@@ -32,16 +32,26 @@ public enum BackgroundTaskService {
     ) {
         _ = bgTaskScheduler.register(forTaskWithIdentifier: serviceName, using: nil) { task in
             // Downcast the parameter to an app refresh task as this identifier is used for a refresh request.
-            BackgroundTaskService.handleAppRefresh(task: task as! BGAppRefreshTask, config: config)
-            Debug.println("Registered Background task")
+            Task {
+                await BackgroundTaskService.handleAppRefresh(
+                    task: task as! BGAppRefreshTask,
+                    config: config
+                )
+                Debug.println("Registered Background task")
+            }
         }
     }
 
-    static func handleAppRefresh(task: BGAppRefreshTask, config: CoverDropConfig) {
-        Task {
-            Debug.println("Background task run")
+    static func handleAppRefresh(
+        task: BGAppRefreshTask,
+        config: CoverDropConfig
+    ) async {
+        Debug.println("Background task run")
+        PublicDataRepository.setup(config)
+        do {
+            let verifiedPublicKeys = try await PublicDataRepository.shared.loadAndVerifyPublicKeys(config: config)
             let result = await BackgroundMessageSendJob.run(
-                config: config,
+                verifiedPublicKeys: verifiedPublicKeys,
                 now: Date(),
                 numMessagesPerBackgroundRun: config
                     .numMessagesPerBackgroundRun,
@@ -55,6 +65,8 @@ public enum BackgroundTaskService {
             case .failure:
                 task.setTaskCompleted(success: false)
             }
+        } catch {
+            task.setTaskCompleted(success: false)
         }
     }
 }

@@ -34,7 +34,10 @@ public struct UserToCoverNodeMessageData: Equatable, Encryptable {
         userPublicKey: UserPublicKey
     ) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         if let messageKey = await PublicDataRepository
-            .getLatestMessagingKey(recipientId: messageRecipient.recipientId) {
+            .getLatestMessagingKey(
+                recipientId: messageRecipient.recipientId,
+                verifiedPublicKeys: covernodeMessagePublicKey
+            ) {
             return try UserToCoverNodeMessage.createMessage(
                 message: message,
                 recipientPublicKey: messageKey,

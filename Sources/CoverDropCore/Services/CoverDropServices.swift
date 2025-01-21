@@ -47,14 +47,17 @@ public class CoverDropServices: ObservableObject {
         }
 
         // 3. request the public keys and any dead drops
-        try await publicDataRepository.pollPublicKeysAndStatusApis()
+        try await publicDataRepository.pollPublicKeysAndStatusApis(config: config)
         // 4. get the verified keys
-        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
+        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys(config: config) else {
             throw CoverDropServicesError.verifiedPublicKeysNotAvailable
         }
+
         // 5. generate a coverMessage from the verified Keys
         guard let coverMessageFactory = try? PublicDataRepository
-            .getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
+            .getCoverMessageFactory(
+                verifiedPublicKeys: verifiedPublicKeys
+            ) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
         // 6. create the private sending queue on disk if it does not exist
@@ -66,7 +69,7 @@ public class CoverDropServices: ObservableObject {
         _ = SecretDataRepository.shared
 
         // Run background task for message sending, this is only done on App startup
-        _ = await BackgroundMessageScheduleService.onAppStart()
+        _ = await BackgroundMessageScheduleService.onAppStart(verifiedPublicKeys: verifiedPublicKeys, config: config)
 
         // Run foreground checks so that there is the same behaviour when app is started,
         // as when its foregrounded
@@ -85,7 +88,7 @@ public class CoverDropServices: ObservableObject {
 
         // We load the dead drops after the service is marked ready
         // so we do not delay startup
-        _ = try? await PublicDataRepository.shared.loadDeadDrops()
+        _ = try? await PublicDataRepository.loadDeadDrops(verifiedPublicKeys: verifiedPublicKeys)
         #if DEBUG
             await CoverDropServiceHelper.removeBackgroundSendState(config: config)
         #endif
@@ -93,16 +96,14 @@ public class CoverDropServices: ObservableObject {
         try await CoverDropServiceHelper.addTestStorage(config: config)
     }
 
-    public static func getCoverMessageFactoryFromPublicKeysRepository(config: CoverDropConfig) async throws
+    public static func getCoverMessageFactoryFromPublicKeysRepository(
+        verifiedPublicKeys: VerifiedPublicKeys
+    ) throws
         -> CoverMessageFactory {
-        PublicDataRepository.setup(config)
-
-        let publicDataRepository = PublicDataRepository.shared
-        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
-            throw CoverDropServicesError.verifiedPublicKeysNotAvailable
-        }
         guard let coverMessageFactory = try? PublicDataRepository
-            .getCoverMessageFactory(verifiedPublicKeys: verifiedPublicKeys) else {
+            .getCoverMessageFactory(
+                verifiedPublicKeys: verifiedPublicKeys
+            ) else {
             throw CoverDropServicesError.failedToGenerateCoverMessage
         }
         return coverMessageFactory
@@ -110,9 +111,12 @@ public class CoverDropServices: ObservableObject {
 
     public static func willEnterForeground(config: CoverDropConfig) {
         Task {
+            PublicDataRepository.setup(config)
             async let logout: () = BackgroundLogoutService.logoutIfBackgroundedForTooLong()
-            async let publicKeysAndStatus: () = PublicDataRepository.shared.pollPublicKeysAndStatusApis()
-            async let deadDrops = PublicDataRepository.shared.loadDeadDrops()
+            async let publicKeysAndStatus: () = PublicDataRepository.shared.pollPublicKeysAndStatusApis(config: config)
+            async let deadDrops = PublicDataRepository.loadDeadDrops(
+                verifiedPublicKeys: PublicDataRepository.shared.loadAndVerifyPublicKeys(config: config)
+            )
 
             try? await logout
             try? await publicKeysAndStatus
@@ -129,6 +133,16 @@ public class CoverDropServices: ObservableObject {
         } catch {
             Debug.println("Failed to touch storage on close")
         }
-        BackgroundMessageScheduleService.onEnterBackground()
+
+        // This puts the setting up of background traffic sending into a async task
+        // This could fail if the task does not complete within 5 seconds
+        // https://developer.apple.com/documentation/uikit/uiapplicationdelegate/applicationdidenterbackground(_:)
+        // as its called from applicationDidEnterBackground
+        // In most scenarios the user should aready have the verifiedPublicKeys, so we are just loading from cache
+        // But if they don't it will required a http round trip.
+        // If this doesn't complete in time, we won't schedule a background task, but this will get picked up
+        // by the BackgroundMessageScheduleService.onAppStart cleanup function
+
+        Task { await BackgroundMessageScheduleService.onEnterBackground() }
     }
 }

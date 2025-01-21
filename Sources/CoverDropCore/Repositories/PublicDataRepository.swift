@@ -29,21 +29,18 @@ public class PublicDataRepository: ObservableObject {
         guard PublicDataRepository.appConfig != nil else {
             fatalError("Error - you must call setup before accessing PublicDataRepository.shared")
         }
-        initBackgroundMessageSendState()
+        PublicDataRepository.initBackgroundMessageSendState()
     }
 
-    public func pollPublicKeysAndStatusApis() async throws {
-        async let status: () = loadStatus()
-        async let publicKeys = loadAndVerifyPublicKeys()
+    public func pollPublicKeysAndStatusApis(config: CoverDropConfig) async throws {
+        async let status: () = loadStatus(config: config)
+        async let publicKeys = loadAndVerifyPublicKeys(config: config)
 
         try await status
         _ = try await publicKeys
     }
 
-    public func loadStatus() async throws {
-        guard let config = PublicDataRepository.appConfig else {
-            throw PublicDataRepositoryError.configNotAvailable
-        }
+    public func loadStatus(config: CoverDropConfig) async throws {
         if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig)
             .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
             await MainActor.run {
@@ -52,17 +49,15 @@ public class PublicDataRepository: ObservableObject {
         }
     }
 
-    public func loadDeadDrops() async throws -> VerifiedDeadDrops {
+    public static func loadDeadDrops(verifiedPublicKeys: VerifiedPublicKeys) async throws -> VerifiedDeadDrops {
         guard let config = PublicDataRepository.appConfig else {
             throw PublicDataRepositoryError.configNotAvailable
         }
 
         let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig)
             .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
-        let verifiedPublicKeysOpt = try? await loadAndVerifyPublicKeys()
 
-        guard let deadDrops = deadDropsOpt,
-              let verifiedPublicKeys = verifiedPublicKeysOpt else {
+        guard let deadDrops = deadDropsOpt else {
             throw PublicDataRepositoryError.failedToLoadDeadDrops
         }
 
@@ -78,18 +73,15 @@ public class PublicDataRepository: ObservableObject {
     /// This loads and verifies the public key and dead drops from the API.
     /// Once verified, they are added to the `publicData` thus available throughtout the app.
     /// Public keys and dead drops can be updated at any time in the API, so we poll to stay up to date.
-    @MainActor public func loadAndVerifyPublicKeys() async throws -> VerifiedPublicKeys {
-        guard let config = PublicDataRepository.appConfig else {
-            throw PublicDataRepositoryError.configNotAvailable
-        }
-
+    @MainActor public func loadAndVerifyPublicKeys(config: CoverDropConfig) async throws -> VerifiedPublicKeys {
         let currentKeysPublishedTime = DateFunction.currentKeysPublishedTime()
-        // Load public keys
 
+        // Load public keys
         let publicKeysDataOpt = try? await PublicKeyRepository(
             config: config,
             urlSessionConfig: config.urlSessionConfig
         ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
+
         let trustedRootKeysOpt = try? PublicDataRepository.loadTrustedOrganizationPublicKeys(
             envType: config.envType,
             now: currentKeysPublishedTime
@@ -109,8 +101,8 @@ public class PublicDataRepository: ObservableObject {
         return verifiedPublicKeysData
     }
 
-    public func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>,
-                            withSecureDns _: Bool) async throws -> HTTPURLResponse {
+    public static func sendMessage(message: MultiAnonymousBox<UserToCoverNodeMessageData>,
+                                   withSecureDns _: Bool) async throws -> HTTPURLResponse {
         let dataOpt = message.asBytes().base64Encode()
         guard let data = dataOpt,
               let jsonData: Data = try? JSONEncoder().encode(data) else {
@@ -131,7 +123,7 @@ public class PublicDataRepository: ObservableObject {
     /// message api
     /// 1. dequeue message from privateSendingQueue
     /// 2. send to the api
-    public func trySendMessageAndDequeue(coverMessageFactory: CoverMessageFactory) async
+    public static func trySendMessageAndDequeue(coverMessageFactory: CoverMessageFactory) async
         -> Result<Int, UserToJournalistMessagingError> {
         let privateSendingQueue = PrivateSendingQueueRepository.shared
 
@@ -153,7 +145,7 @@ public class PublicDataRepository: ObservableObject {
         return .success(sendResult.statusCode)
     }
 
-    public func createCoverMessageToCoverNode(coverNodeKeys: [PublicEncryptionKey<CoverNodeMessaging>]) throws
+    public static func createCoverMessageToCoverNode(coverNodeKeys: [PublicEncryptionKey<CoverNodeMessaging>]) throws
         -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         // create placeholder string instead of inner message
         guard let innerEncryptedPlaceholder = Sodium().randomBytes
@@ -188,13 +180,14 @@ public class PublicDataRepository: ObservableObject {
         }
         let coverNodeKeys = UserToCoverNodeMessage.selectCoverNodeKeys(coverNodeKeys: allCoverNodes)
         return {
-            try PublicDataRepository.shared.createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys)
+            try PublicDataRepository.createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys)
         }
     }
 
-    public static func getLatestMessagingKey(recipientId: String) async -> JournalistMessagingPublicKey? {
-        guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return nil }
-        let messageKeys = publicKeyData.allMessageKeysForJournalistId(journalistId: recipientId)
+    public static func getLatestMessagingKey(recipientId: String,
+                                             verifiedPublicKeys: VerifiedPublicKeys) async
+        -> JournalistMessagingPublicKey? {
+        let messageKeys = verifiedPublicKeys.allMessageKeysForJournalistId(journalistId: recipientId)
         return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }
 
@@ -231,7 +224,7 @@ public class PublicDataRepository: ObservableObject {
         return keys
     }
 
-    func initBackgroundMessageSendState() {
+    static func initBackgroundMessageSendState() {
         // This sets the BackgroundWorkLastSuccessfulRun to a date in the past on first ever run.
         if let config = PublicDataRepository.appConfig,
            readBackgroundWorkLastSuccessfulRun() == nil {
@@ -246,11 +239,11 @@ public class PublicDataRepository: ObservableObject {
 
     public static let CoverDropBackgroundWorkPendingKey = "CoverDropBackgroundWorkPending"
 
-    func writeBackgroundWorkPending(_ result: Bool) {
+    static func writeBackgroundWorkPending(_ result: Bool) {
         UserDefaults.standard.set(result, forKey: PublicDataRepository.CoverDropBackgroundWorkPendingKey)
     }
 
-    func readBackgroundWorkPending() -> Bool? {
+    static func readBackgroundWorkPending() -> Bool? {
         UserDefaults.standard
             .object(forKey: PublicDataRepository.CoverDropBackgroundWorkPendingKey) as? Bool
     }
@@ -259,14 +252,14 @@ public class PublicDataRepository: ObservableObject {
         "CoverDropBackgroundWorkLastSuccessfulRunTimestamp"
     // BackgroundWorkLastSuccessfulRun state, this tracks when the last successful background message sending task ran
 
-    func writeBackgroundWorkLastSuccessfulRun(instant: Date) {
+    static func writeBackgroundWorkLastSuccessfulRun(instant: Date) {
         UserDefaults.standard.set(
             instant,
             forKey: PublicDataRepository.CoverDropBgWorkLastSuccessfulRunTimeKey
         )
     }
 
-    func readBackgroundWorkLastSuccessfulRun() -> Date? {
+    static func readBackgroundWorkLastSuccessfulRun() -> Date? {
         return UserDefaults.standard
             .object(forKey: PublicDataRepository.CoverDropBgWorkLastSuccessfulRunTimeKey) as? Date
     }

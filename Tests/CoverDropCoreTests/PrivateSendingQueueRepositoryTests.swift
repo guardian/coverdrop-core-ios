@@ -236,7 +236,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
     func testSaving() async throws {
         PublicDataRepository.setup(StaticConfig.devConfig)
-        try await PublicDataRepository.shared.pollPublicKeysAndStatusApis()
+        try await PublicDataRepository.shared.pollPublicKeysAndStatusApis(config: StaticConfig.devConfig)
         guard let coverMessageFactory = try? PublicDataRepository
             .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")
@@ -262,7 +262,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
     func testLoading() async throws {
         PublicDataRepository.setup(StaticConfig.devConfig)
-        try await PublicDataRepository.shared.pollPublicKeysAndStatusApis()
+        try await PublicDataRepository.shared.pollPublicKeysAndStatusApis(config: StaticConfig.devConfig)
         guard let coverMessageFactory = try? PublicDataRepository
             .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys) else {
             XCTFail("Unable to make cover message")

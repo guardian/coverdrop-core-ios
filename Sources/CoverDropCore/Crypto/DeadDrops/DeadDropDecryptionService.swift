@@ -11,16 +11,13 @@ public struct DeadDropDecryptionService {
     /// This service tries to decrypts the supplied verfied dead drops with the supplied journalist Key
     /// If a message within the dead drops is succesfully decrypted it is added to the user mailbox
     ///
-    public func decryptStoredDeadDrops() async throws {
+    public func decryptStoredDeadDrops(verifiedPublicKeys: VerifiedPublicKeys) async throws {
         async let secretDataRepository: SecretDataRepository = SecretDataRepository.shared
-        let publicDataRepository: PublicDataRepository = PublicDataRepository.shared
 
-        guard let verifiedDeadDrops = try? await publicDataRepository.loadDeadDrops() else {
+        guard let verifiedDeadDrops = try? await PublicDataRepository.loadDeadDrops(
+            verifiedPublicKeys: verifiedPublicKeys
+        ) else {
             throw DeadDropDecryptionServiceError.failedToGetDeadDrops
-        }
-
-        guard let verifiedPublicKeys = try? await publicDataRepository.loadAndVerifyPublicKeys() else {
-            throw DeadDropDecryptionServiceError.failedToGetKeys
         }
 
         // we only have access to the user secret key when we are unlocked
@@ -30,7 +27,9 @@ public struct DeadDropDecryptionService {
                 secretData.unlockedData.userKey.secretKey
             }
 
-            let currentConversationJournalists = await secretData.getMailboxRecipients()
+            let currentConversationJournalists = await secretData.getMailboxRecipients(
+                publicKeyData: verifiedPublicKeys
+            )
 
             var messages: Set<Message> = []
             for journalistData in currentConversationJournalists {

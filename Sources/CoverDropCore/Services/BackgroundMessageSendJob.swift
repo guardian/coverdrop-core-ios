@@ -35,15 +35,13 @@ enum BackgroundMessageSendServiceError: Error {
 
 enum BackgroundMessageSendJob {
     public static func run(
-        config: CoverDropConfig,
+        verifiedPublicKeys: VerifiedPublicKeys,
         now: Date,
         numMessagesPerBackgroundRun: Int,
         minDurationBetweenBackgroundRunsInSecs: Int
     ) async -> Result<Void, BackgroundMessageSendServiceError> {
-        let publicDataRepository = PublicDataRepository.shared
-
         // Rate limiting
-        if let lastRun = publicDataRepository.readBackgroundWorkLastSuccessfulRun() {
+        if let lastRun = PublicDataRepository.readBackgroundWorkLastSuccessfulRun() {
             let message = """
             Assessing background tasks with now: \(now) last run: \(lastRun)
             min duration: \(minDurationBetweenBackgroundRunsInSecs)
@@ -63,8 +61,8 @@ enum BackgroundMessageSendJob {
         }
 
         // Get our cover message data
-        let coverMessageFactoryOpt = try? await CoverDropServices
-            .getCoverMessageFactoryFromPublicKeysRepository(config: config)
+        let coverMessageFactoryOpt = try? CoverDropServices
+            .getCoverMessageFactoryFromPublicKeysRepository(verifiedPublicKeys: verifiedPublicKeys)
 
         guard let coverMessageFactory = coverMessageFactoryOpt else {
             return .failure(.failedToGetCoverMessage)
@@ -73,12 +71,11 @@ enum BackgroundMessageSendJob {
         // We try to send as many messages as we can.
         // Any message that fail to send remain in the queue for reprocessing later
         for _ in 0 ..< numMessagesPerBackgroundRun {
-            _ = await publicDataRepository
-                .trySendMessageAndDequeue(coverMessageFactory: coverMessageFactory)
+            _ = await PublicDataRepository.trySendMessageAndDequeue(coverMessageFactory: coverMessageFactory)
         }
 
-        publicDataRepository.writeBackgroundWorkLastSuccessfulRun(instant: now)
-        publicDataRepository.writeBackgroundWorkPending(false)
+        PublicDataRepository.writeBackgroundWorkLastSuccessfulRun(instant: now)
+        PublicDataRepository.writeBackgroundWorkPending(false)
         return .success(())
     }
 

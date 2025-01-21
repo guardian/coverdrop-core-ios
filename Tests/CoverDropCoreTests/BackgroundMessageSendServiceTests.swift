@@ -81,7 +81,7 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
             .loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
 
         let lastRun = Date(timeIntervalSince1970: TimeInterval(0))
-        PublicDataRepository.shared.writeBackgroundWorkLastSuccessfulRun(instant: lastRun)
+        PublicDataRepository.writeBackgroundWorkLastSuccessfulRun(instant: lastRun)
 
         let numMessagesPerBackgroundRun = 2
         let minDurationBetweenBackgroundRunsInSecs = 60 * 60
@@ -89,24 +89,24 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
         let now = Date(timeIntervalSince1970: TimeInterval(60 * 62))
         // Our first run of the message send service should always be successful as the UserDefaults state is removed
         _ = await BackgroundMessageSendJob.run(
-            config: config,
+            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
             now: now,
             numMessagesPerBackgroundRun: numMessagesPerBackgroundRun,
             minDurationBetweenBackgroundRunsInSecs: minDurationBetweenBackgroundRunsInSecs
         )
 
-        var result = PublicDataRepository.shared.readBackgroundWorkLastSuccessfulRun()
+        var result = PublicDataRepository.readBackgroundWorkLastSuccessfulRun()
 
         XCTAssertEqual(result, now)
 
         // second run should not alter the last run timestamp as it is within the minimumDurationBetweenRuns
         _ = await BackgroundMessageSendJob.run(
-            config: config,
+            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
             now: now,
             numMessagesPerBackgroundRun: numMessagesPerBackgroundRun,
             minDurationBetweenBackgroundRunsInSecs: minDurationBetweenBackgroundRunsInSecs
         )
-        result = PublicDataRepository.shared.readBackgroundWorkLastSuccessfulRun()
+        result = PublicDataRepository.readBackgroundWorkLastSuccessfulRun()
 
         XCTAssertEqual(result, now)
 
@@ -114,12 +114,12 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
 
         // third run should  alter the last run timestamp its in the future, even though background tasks are pending
         _ = await BackgroundMessageSendJob.run(
-            config: config,
+            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
             now: future,
             numMessagesPerBackgroundRun: numMessagesPerBackgroundRun,
             minDurationBetweenBackgroundRunsInSecs: minDurationBetweenBackgroundRunsInSecs
         )
-        result = PublicDataRepository.shared.readBackgroundWorkLastSuccessfulRun()
+        result = PublicDataRepository.readBackgroundWorkLastSuccessfulRun()
 
         XCTAssertEqual(result, future)
     }

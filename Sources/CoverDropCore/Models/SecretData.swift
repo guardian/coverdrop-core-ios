@@ -84,8 +84,7 @@ public class UnlockedSecretDataService: ObservableObject {
     /// This is used when we decrypt incoming dead drops so that we only try with keys for journalists
     /// we've been in converstations with.
     /// - Returns: A list of JournalistKeyData
-    public func getMailboxRecipients() async -> [JournalistData] {
-        guard let publicKeyData = try? await PublicDataRepository.shared.loadAndVerifyPublicKeys() else { return [] }
+    public func getMailboxRecipients(publicKeyData: VerifiedPublicKeys) async -> [JournalistData] {
         let recipients = unlockedData.messageMailbox.compactMap { message in
             switch message {
             case let .outboundMessage(message: message):

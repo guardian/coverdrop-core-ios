@@ -185,8 +185,14 @@ public class PublicKeysHelper {
     }
 
     public func getTestJournalistMessageKey() async -> JournalistMessagingPublicKey? {
+        guard let publicKeyData = try? await PublicDataRepository.shared
+            .loadAndVerifyPublicKeys(config: StaticConfig.devConfig) else { return nil }
+
         if let defaultJournalist = testDefaultJournalist {
-            return await PublicDataRepository.getLatestMessagingKey(recipientId: defaultJournalist.recipientId)
+            return await PublicDataRepository.getLatestMessagingKey(
+                recipientId: defaultJournalist.recipientId,
+                verifiedPublicKeys: publicKeyData
+            )
         } else {
             return nil
         }
