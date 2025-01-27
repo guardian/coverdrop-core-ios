@@ -3,14 +3,14 @@
 //
 // The Rust code is here: common/src/protocol/constants.rs
 
-// swiftlint:disable identifier_name 
+// swiftlint:disable identifier_name
 public enum Constants {
-    public static let journalistProvisioningKeyValidDurationSeconds = 14515200
-    public static let journalistIdKeyValidDurationSeconds = 4838400
-    public static let journalistMsgKeyValidDurationSeconds = 604800
-    public static let covernodeProvisioningKeyValidDurationSeconds = 14515200
-    public static let covernodeIdKeyValidDurationSeconds = 2419200
-    public static let covernodeMsgKeyValidDurationSeconds = 1209600
+    public static let journalistProvisioningKeyValidDurationSeconds = 14_515_200
+    public static let journalistIdKeyValidDurationSeconds = 4_838_400
+    public static let journalistMsgKeyValidDurationSeconds = 604_800
+    public static let covernodeProvisioningKeyValidDurationSeconds = 14_515_200
+    public static let covernodeIdKeyValidDurationSeconds = 2_419_200
+    public static let covernodeMsgKeyValidDurationSeconds = 1_209_600
     public static let userToCovernodeEncryptedMessageLen = 773
     public static let userToCovernodeMessageLen = 597
     public static let userToJournalistEncryptedMessageLen = 593
@@ -26,11 +26,12 @@ public enum Constants {
     public static let x25519SecretKeyLen = 32
     public static let poly1305AuthTagLen = 16
     public static let twoPartyBoxNonceLen = 24
-    public static let messageValidForDurationInSeconds = 1209600
-    public static let messageExpiryWarningInSeconds = 172800
+    public static let messageValidForDurationInSeconds = 1_209_600
+    public static let messageExpiryWarningInSeconds = 172_800
     public static let maxBackgroundDurationInSeconds = 300
-    public static let clientDeadDropCacheTtlSeconds = 1209600
+    public static let clientDeadDropCacheTtlSeconds = 1_209_600
     public static let localCacheDurationBetweenDownloadsSeconds = 3600
     public static let covernodeWrappingKeyCount = 2
 }
- // swiftlint:enable identifier_name
+
+// swiftlint:enable identifier_name
