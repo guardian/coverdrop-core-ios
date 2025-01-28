@@ -124,7 +124,8 @@ public class UnlockedSecretDataService: ObservableObject {
             displayName: profileData.displayName,
             isDesk: profileData.isDesk,
             recipientDescription: profileData.description,
-            tag: RecipientTag(tag: profileData.tag.bytes)
+            tag: RecipientTag(tag: profileData.tag.bytes),
+            visibility: (profileData.status == .visible) ? JournalistVisibility.visible : JournalistVisibility.hidden
         )
     }
 }

@@ -4,10 +4,14 @@ import XCTest
 
 final class DeadDropDecryptionTests: XCTestCase {
     static var testerJournalistData: JournalistData? {
-        return JournalistData(recipientId: "static_test_journalist",
-                              displayName: "tester",
-                              isDesk: false,
-                              recipientDescription: "This is a tester journalist", tag: RecipientTag(tag: [1, 2, 3, 4]))
+        return JournalistData(
+            recipientId: "static_test_journalist",
+            displayName: "tester",
+            isDesk: false,
+            recipientDescription: "This is a tester journalist",
+            tag: RecipientTag(tag: [1, 2, 3, 4]),
+            visibility: .visible
+        )
     }
 
     func testDecryptMessageParsesTextMessage() async throws {

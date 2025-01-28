@@ -39,12 +39,16 @@ public struct MessageRecipients {
             // make sure there is a messaging key
             if allJournalistKeys.isEmpty { continue }
 
+            let visibility = (journalistProfile.status == .visible)
+                ? JournalistVisibility.visible
+                : JournalistVisibility.hidden
             let journalistKeyData = JournalistData(
                 recipientId: journalistProfile.id,
                 displayName: journalistProfile.displayName,
                 isDesk: journalistProfile.isDesk,
                 recipientDescription: journalistProfile.description,
-                tag: RecipientTag(tag: journalistProfile.tag.bytes)
+                tag: RecipientTag(tag: journalistProfile.tag.bytes),
+                visibility: visibility
             )
 
             // if the journalist is the default journalist
@@ -55,10 +59,12 @@ public struct MessageRecipients {
                 }
             }
 
-            if journalistKeyData.isDesk {
-                desks.append(journalistKeyData)
-            } else {
-                journalists.append(journalistKeyData)
+            if journalistKeyData.visibility == .visible {
+                if journalistKeyData.isDesk {
+                    desks.append(journalistKeyData)
+                } else {
+                    journalists.append(journalistKeyData)
+                }
             }
         }
     }

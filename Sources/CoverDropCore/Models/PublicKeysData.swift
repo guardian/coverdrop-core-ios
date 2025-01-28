@@ -89,6 +89,12 @@ public struct PublicKeysFamily: Codable, Equatable {
 public typealias CoverNodeKeysFamily = PublicKeysFamily
 public typealias JournalistKeysFamily = PublicKeysFamily
 
+public enum JournalistStatus: String, Codable {
+    case visible = "VISIBLE"
+    case hiddenFromUi = "HIDDEN_FROM_UI"
+    case hiddenFromResponse = "HIDDEN_FROM_RESPONSE"
+}
+
 public struct JournalistProfile: Codable, Equatable {
     public init(
         id: String,
@@ -96,7 +102,8 @@ public struct JournalistProfile: Codable, Equatable {
         sortName: String,
         description: String,
         isDesk: Bool,
-        tag: HexEncodedString
+        tag: HexEncodedString,
+        status: JournalistStatus
     ) {
         self.id = id
         self.displayName = displayName
@@ -104,6 +111,7 @@ public struct JournalistProfile: Codable, Equatable {
         self.description = description
         self.isDesk = isDesk
         self.tag = tag
+        self.status = status
     }
 
     public var id: String
@@ -112,6 +120,7 @@ public struct JournalistProfile: Codable, Equatable {
     public var description: String
     public var isDesk: Bool
     public var tag: HexEncodedString
+    public var status: JournalistStatus
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -120,6 +129,7 @@ public struct JournalistProfile: Codable, Equatable {
         case description
         case isDesk = "is_desk"
         case tag
+        case status
     }
 }
 
