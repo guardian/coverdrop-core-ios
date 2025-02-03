@@ -8,7 +8,8 @@ enum MessageHelperError: Error {
 /// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency
 /// of them all
 @MainActor public enum MessageHelper {
-    public static func addMessagesToInbox() async throws -> SecretData {
+    public static func addMessagesToInbox(publicDataRepository: any PublicDataRepositoryProtocol) async throws
+        -> SecretData {
         let twoDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 2))
         let twelveDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 12))
         let thirteenDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 13))
@@ -28,7 +29,7 @@ enum MessageHelperError: Error {
         let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
             message: "hey \(recipientUnwrapped.displayName)",
             messageRecipient: recipientUnwrapped,
-            covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys,
+            publicDataRepository: publicDataRepository,
             userPublicKey: userKeyPair.publicKey
         )
 
@@ -37,18 +38,18 @@ enum MessageHelperError: Error {
             message: encryptedMessage.asBytes()
         ))
         let outboundMessage = OutboundMessageData(
-            messageRecipient: recipientUnwrapped,
+            recipient: recipientUnwrapped,
             messageText: "hey \(recipientUnwrapped.displayName)",
-            dateSent: Date(timeIntervalSinceNow: twoDaysAgo),
+            dateQueued: Date(timeIntervalSinceNow: twoDaysAgo),
             hint: hint
         )
 
         let nonExpiredMessage = Message.outboundMessage(message: outboundMessage)
 
         let realOutboundMessage = OutboundMessageData(
-            messageRecipient: recipientUnwrapped,
+            recipient: recipientUnwrapped,
             messageText: "hey outbound \(recipientUnwrapped.displayName)",
-            dateSent: Date(timeIntervalSinceNow: twelveDaysAgo),
+            dateQueued: Date(timeIntervalSinceNow: twelveDaysAgo),
             hint: hint
         )
 
@@ -63,7 +64,7 @@ enum MessageHelperError: Error {
         let encryptedMessage2 = try await UserToCoverNodeMessageData.createMessage(
             message: "hey \(recipientUnwrapped.displayName)",
             messageRecipient: recipientUnwrapped,
-            covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys,
+            publicDataRepository: publicDataRepository,
             userPublicKey: userKeyPair.publicKey
         )
 
@@ -73,9 +74,9 @@ enum MessageHelperError: Error {
         ))
 
         let inactiveMessageInner = OutboundMessageData(
-            messageRecipient: otherRecipientUnwrapped,
+            recipient: otherRecipientUnwrapped,
             messageText: "hey \(otherRecipientUnwrapped.displayName)",
-            dateSent: Date(timeIntervalSinceNow: thirteenDaysAgo),
+            dateQueued: Date(timeIntervalSinceNow: thirteenDaysAgo),
             hint: hint2
         )
 
@@ -97,11 +98,11 @@ enum MessageHelperError: Error {
         messages.insert(inactiveMessage1)
         messages.insert(inactiveMessage2)
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(
+        return .unlockedSecretData(unlockedData: UnlockedSecretData(
             messageMailbox: messages,
             userKey: userKeyPair,
             privateSendingQueueSecret: privateSendingQueueSecret
-        )))
+        ))
     }
 
     public static func loadMessagesFromDeadDrop() async throws -> SecretData {
@@ -135,10 +136,10 @@ enum MessageHelperError: Error {
             )
         }
 
-        return .unlockedSecretData(unlockedData: UnlockedSecretDataService(unlockedData: UnlockedSecretData(
+        return .unlockedSecretData(unlockedData: UnlockedSecretData(
             messageMailbox: userMessages,
             userKey: userKeyPair,
             privateSendingQueueSecret: privateSendingQueueSecret
-        )))
+        ))
     }
 }

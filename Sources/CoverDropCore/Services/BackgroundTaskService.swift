@@ -47,16 +47,14 @@ public enum BackgroundTaskService {
         config: CoverDropConfig
     ) async {
         Debug.println("Background task run")
-        PublicDataRepository.setup(config)
         do {
-            let verifiedPublicKeys = try await PublicDataRepository.shared.loadAndVerifyPublicKeys(config: config)
+            let lib = try await CoverDropService.getLibraryBlocking()
+
             let result = await BackgroundMessageSendJob.run(
-                verifiedPublicKeys: verifiedPublicKeys,
+                publicDataRepository: lib.publicDataRepository,
                 now: Date(),
-                numMessagesPerBackgroundRun: config
-                    .numMessagesPerBackgroundRun,
-                minDurationBetweenBackgroundRunsInSecs: config
-                    .minDurationBetweenBackgroundRunsInSecs
+                numMessagesPerBackgroundRun: config.numMessagesPerBackgroundRun,
+                minDurationBetweenBackgroundRunsInSecs: config.minDurationBetweenBackgroundRunsInSecs
             )
 
             switch result {

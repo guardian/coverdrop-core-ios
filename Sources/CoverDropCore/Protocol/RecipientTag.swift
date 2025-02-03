@@ -20,12 +20,10 @@ public struct RecipientTag: Equatable, Codable {
         // note: the hash operation here does not need any particular security properties (it should
         // just map pseudo randomly into the output domain to avoid collisions)
         var hasher = SHA256()
-
         hasher.update(data: journalistIdentifier.asBytes())
         let hash = hasher.finalize()
 
         let hashBytes: [UInt8] = Array(Data(hash))
-
         let truncatedHash = Array(hashBytes.prefix(Constants.recipientTagLen))
 
         // note: this is virtually impossible to happen (2^-32); if it happens, the respective

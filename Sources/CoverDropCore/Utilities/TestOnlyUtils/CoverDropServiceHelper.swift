@@ -5,12 +5,12 @@ enum CoverDropServiceHelperError: Error {
 }
 
 public enum CoverDropServiceHelper {
-    public static func awaitCoverDropService() async throws {
-        var ready = false
-        repeat {
-            try await Task.sleep(nanoseconds: UInt64(0.1))
-            ready = await CoverDropServices.shared.isReady
-        } while ready == false
+    public static func awaitCoverDropService() async throws -> CoverDropLibrary {
+        while true {
+            if case let .initialized(lib: lib) = CoverDropService.shared.state {
+                return lib
+            }
+        }
     }
 
     #if DEBUG
@@ -21,7 +21,10 @@ public enum CoverDropServiceHelper {
             }
         }
     #endif
-    public static func addTestStorage(config: CoverDropConfig) async throws {
+    public static func addTestStorage(
+        config: CoverDropConfig,
+        publicDataRepository: any PublicDataRepositoryProtocol
+    ) async throws {
         if config.startWithTestStorage {
             // If we are in UI_TEST_MODE, we want to initialise the storage with a known passphase
             // and set of user keys, so we can work with UI
@@ -42,7 +45,7 @@ public enum CoverDropServiceHelper {
             let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
                 message: "Hey",
                 messageRecipient: testDefaultJournalist,
-                covernodeMessagePublicKey: PublicKeysHelper.shared.testKeys,
+                publicDataRepository: publicDataRepository,
                 userPublicKey: userKeyPair.publicKey
             )
 
@@ -54,9 +57,9 @@ public enum CoverDropServiceHelper {
             var messages: Set<Message> = []
             if config.startWithTestMessages {
                 let outboundMessage = await OutboundMessageData(
-                    messageRecipient: testDefaultJournalist,
+                    recipient: testDefaultJournalist,
                     messageText: "Hey",
-                    dateSent: Date(),
+                    dateQueued: Date(),
                     hint: hint
                 )
 
@@ -75,9 +78,9 @@ public enum CoverDropServiceHelper {
                 userKey: userKeyPair,
                 privateSendingQueueSecret: privateSendingQueueSecret
             )
-            try await EncryptedStorage.updateStorageOnDisk(
+            try EncryptedStorage.updateStorageOnDisk(
                 session: session,
-                state: UnlockedSecretDataService(unlockedData: data)
+                state: data
             )
         }
     }

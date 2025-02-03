@@ -12,7 +12,7 @@ public protocol CoverDropConfig {
     var maxBackgroundDurationInSeconds: Int { get }
     var numMessagesPerBackgroundRun: Int { get }
     var withSecureDns: Bool { get }
-    // TODO: these are for testing only, so we should lets replace them later
+    // TODO: these are for testing only, so we should replace them later
     var startWithTestMessages: Bool { get }
     var startWithTestStorage: Bool { get }
     var removeBackgroundSendStateOnStart: Bool { get }

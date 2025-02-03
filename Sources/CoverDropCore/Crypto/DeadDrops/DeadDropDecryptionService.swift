@@ -11,25 +11,24 @@ public struct DeadDropDecryptionService {
     /// This service tries to decrypts the supplied verfied dead drops with the supplied journalist Key
     /// If a message within the dead drops is succesfully decrypted it is added to the user mailbox
     ///
-    public func decryptStoredDeadDrops(verifiedPublicKeys: VerifiedPublicKeys) async throws {
-        async let secretDataRepository: SecretDataRepository = SecretDataRepository.shared
-
-        guard let verifiedDeadDrops = try? await PublicDataRepository.loadDeadDrops(
-            verifiedPublicKeys: verifiedPublicKeys
-        ) else {
+    public func decryptStoredDeadDrops(
+        publicDataRepository: any PublicDataRepositoryProtocol,
+        secretDataRepository: any SecretDataRepositoryProtocol
+    ) async throws {
+        guard let verifiedDeadDrops = try? await publicDataRepository.loadDeadDrops() else {
             throw DeadDropDecryptionServiceError.failedToGetDeadDrops
         }
 
         // we only have access to the user secret key when we are unlocked
         // so this is the only state we can be in to try and decrypt the data
-        if case let .unlockedSecretData(unlockedData: secretData) = await secretDataRepository.secretData {
+        if case let .unlockedSecretData(unlockedData: secretData) = secretDataRepository.getSecretData() {
+            let verifiedPublicKeys = try publicDataRepository.getVerifiedKeysOrThrow()
             let userSecretKey = await MainActor.run { () -> SecretEncryptionKey<User> in
-                secretData.unlockedData.userKey.secretKey
+                secretData.userKey.secretKey
             }
 
-            let currentConversationJournalists = await secretData.getMailboxRecipients(
-                publicKeyData: verifiedPublicKeys
-            )
+            let currentConversationJournalists = try await secretDataRepository
+                .getMailboxRecipients(publicKeyData: verifiedPublicKeys)
 
             var messages: Set<Message> = []
             for journalistData in currentConversationJournalists {
@@ -42,7 +41,7 @@ public struct DeadDropDecryptionService {
                 messages.formUnion(message)
             }
 
-            try await secretData.addMessages(messages: messages)
+            try await secretDataRepository.addMessages(messages: messages)
         }
     }
 }

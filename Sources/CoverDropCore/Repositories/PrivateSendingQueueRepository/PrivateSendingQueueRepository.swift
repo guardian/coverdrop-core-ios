@@ -17,7 +17,7 @@ public actor PrivateSendingQueueRepository: ObservableObject {
 
     /// Starts the repository by creating the `PrivateSendingQueue` and storing it to disk.
     /// - Parameter configuration: An optional configuration for setting up the managed`PrivateSendingQueue`.
-    public func loadOrInitialiseQueue(coverMessageFactory: CoverMessageFactory) async throws -> PrivateSendingQueue {
+    public func loadOrInitialiseQueue(_ coverMessageFactory: CoverMessageFactory) async throws -> PrivateSendingQueue {
         let configuration = PrivateSendingQueueConfiguration.default
         if let queueFromDisk = try await loadQueue() {
             return queueFromDisk
@@ -37,7 +37,7 @@ public actor PrivateSendingQueueRepository: ObservableObject {
     /// - Parameter configuration: An optional configuration for setting up the managed`PrivateSendingQueue`.
     public func wipeQueue(
         with configuration: PrivateSendingQueueConfiguration = PrivateSendingQueueConfiguration.default,
-        coverMessageFactory: CoverMessageFactory
+        _ coverMessageFactory: CoverMessageFactory
     ) async throws {
         let queue = try PrivateSendingQueue(
             totalQueueSize: configuration.totalQueueSize,
@@ -64,10 +64,10 @@ public actor PrivateSendingQueueRepository: ObservableObject {
 
     /// Dequeues a message by calling the the `PrivateSendingQueue`'s `dequeue(..)` method and storing the changed state
     /// to disk.
-    func dequeue(coverMessageFactory: CoverMessageFactory) async throws
+    func dequeue(_ coverMessageFactory: CoverMessageFactory) async throws
         -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        var queue = try await loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
-        let message = try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: coverMessageFactory)
+        var queue = try await loadOrInitialiseQueue(coverMessageFactory)
+        let message = try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory)
 
         try await saveQueue(queue)
         lastUpdated = Date.now

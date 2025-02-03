@@ -39,16 +39,16 @@ public enum DateFunction {
 /// of them all
 public class PublicKeysHelper {
     public let testKeys: VerifiedPublicKeys
+    public let config: StaticConfig
 
     public static let shared = PublicKeysHelper()
 
     private init() {
-        let config: StaticConfig = .devConfig
-        PublicDataRepository.setup(config)
+        config = .devConfig
         // swiftlint:disable:next force_try
         let publicKeysData = try! PublicKeysHelper.readLocalKeysFile()
         // swiftlint:disable:next force_try
-        let trustedOrganizationSigningKeys = try! PublicKeysHelper.readLocalTrustedOrganizationKeys()
+        let trustedOrganizationSigningKeys = try! PublicKeysHelper.readLocalTrustedOrganizationKeys(config: config)
         let verifiedPublicKeysData = VerifiedPublicKeys(
             publicKeysData: publicKeysData,
             trustedOrganizationPublicKeys: trustedOrganizationSigningKeys,
@@ -96,16 +96,12 @@ public class PublicKeysHelper {
         return data
     }
 
-    public static func readLocalTrustedOrganizationKeys() throws -> [TrustedOrganizationPublicKey] {
-        if let config = PublicDataRepository.appConfig {
-            let trustedRootKeys = try PublicDataRepository.loadTrustedOrganizationPublicKeys(
-                envType: config.envType,
-                now: readLocalGeneratedAtFile()!
-            )
-            return trustedRootKeys
-        } else {
-            return []
-        }
+    public static func readLocalTrustedOrganizationKeys(config: StaticConfig) throws -> [TrustedOrganizationPublicKey] {
+        let trustedRootKeys = try PublicDataRepository.loadTrustedOrganizationPublicKeys(
+            envType: config.envType,
+            now: readLocalGeneratedAtFile()!
+        )
+        return trustedRootKeys
     }
 
     public static func readLocalKeypairFile(path: String) throws -> UnverifiedSignedPublicSigningKeyPairData {
@@ -185,13 +181,9 @@ public class PublicKeysHelper {
     }
 
     public func getTestJournalistMessageKey() async -> JournalistMessagingPublicKey? {
-        guard let publicKeyData = try? await PublicDataRepository.shared
-            .loadAndVerifyPublicKeys(config: StaticConfig.devConfig) else { return nil }
-
         if let defaultJournalist = testDefaultJournalist {
-            return await PublicDataRepository.getLatestMessagingKey(
-                recipientId: defaultJournalist.recipientId,
-                verifiedPublicKeys: publicKeyData
+            return PublicKeysHelper.shared.testKeys.getLatestMessagingKey(
+                journalistId: defaultJournalist.recipientId
             )
         } else {
             return nil

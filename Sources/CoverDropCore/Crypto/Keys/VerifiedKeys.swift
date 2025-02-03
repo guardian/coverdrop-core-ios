@@ -148,6 +148,26 @@ public struct VerifiedPublicKeys {
         }
         return coverNodeIdKeys
     }
+
+    public func getJournalistKeyDataForJournalistId(journalistId: String) -> JournalistData? {
+        guard let profileData = journalistProfiles.first(where: { $0.id == journalistId }) else {
+            return nil
+        }
+
+        return JournalistData(
+            recipientId: journalistId,
+            displayName: profileData.displayName,
+            isDesk: profileData.isDesk,
+            recipientDescription: profileData.description,
+            tag: RecipientTag(tag: profileData.tag.bytes),
+            visibility: profileData.status == .visible ? .visible : .hidden
+        )
+    }
+
+    func getLatestMessagingKey(journalistId: String) -> JournalistMessagingPublicKey? {
+        let messageKeys = allMessageKeysForJournalistId(journalistId: journalistId)
+        return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
+    }
 }
 
 /// This is a verified Public Keys Hierarchy. This means that all the keys have be verified against their signing keys

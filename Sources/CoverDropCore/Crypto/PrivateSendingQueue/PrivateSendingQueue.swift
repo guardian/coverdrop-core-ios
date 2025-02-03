@@ -98,7 +98,7 @@ public struct PrivateSendingQueue: Equatable {
     /// they would be at the front and returned before any cover messages. Afterwards the buffer
     /// is filled up to `self.size` again.
     @discardableResult
-    mutating func sendHeadMessageAndPushNewCoverMessage(coverMessageFactory: CoverMessageFactory) throws
+    mutating func sendHeadMessageAndPushNewCoverMessage(_ coverMessageFactory: CoverMessageFactory) throws
         -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let message = mStorage.removeFirst()
         _ = mHints.removeFirst()

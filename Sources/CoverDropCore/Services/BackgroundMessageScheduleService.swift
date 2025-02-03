@@ -2,23 +2,22 @@ import BackgroundTasks
 import Foundation
 
 enum BackgroundMessageScheduleService {
-    /// This should only be triggered when the app cold starts
-    /// by putting a call in `didFinishLaunchingWithOptions` app delegate function.
+    /// This is called when the library is being initialized
     ///
     /// If work is pending ( got from the `BackgroundWorkPending` state ) we run immediatly
     /// If there is no work pending (note this is a rare occurrence,
     /// and the app should usually schedule work when backgrounded)
     /// we will schedule a cleanup background task
     public static func onAppStart(
-        verifiedPublicKeys: VerifiedPublicKeys,
-        config: CoverDropConfig,
-        _ bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared
-    ) async {
-        let workPendingOption = PublicDataRepository.readBackgroundWorkPending()
+        bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared,
+        publicDataRepository: PublicDataRepository
+    ) async throws {
+        let config = publicDataRepository.config
         // This is the fallback mechanism if the background task didn't run
-        if let workPending = workPendingOption, workPending {
+        if let workPending = BackgroundMessageSendState.readBackgroundWorkPending(),
+           workPending {
             _ = await BackgroundMessageSendJob.run(
-                verifiedPublicKeys: verifiedPublicKeys,
+                publicDataRepository: publicDataRepository,
                 now: DateFunction.currentTime(),
                 numMessagesPerBackgroundRun: config.numMessagesPerBackgroundRun,
                 minDurationBetweenBackgroundRunsInSecs: config.minDurationBetweenBackgroundRunsInSecs
@@ -30,13 +29,13 @@ enum BackgroundMessageScheduleService {
             extraDelaySeconds: extraDelaySeconds,
             bgTaskScheduler: bgTaskScheduler
         )
-        PublicDataRepository.writeBackgroundWorkPending(true)
+        BackgroundMessageSendState.writeBackgroundWorkPending(true)
     }
 
     /// This should be called when the app enters the background from `applicationDidEnterBackground` in app delegate
     /// This will overwrite any previously scheduled background tasks with this most recent one
     public static func onEnterBackground(bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared) async {
         await BackgroundTaskService.scheduleBackgroundSendJob(bgTaskScheduler: bgTaskScheduler)
-        PublicDataRepository.writeBackgroundWorkPending(true)
+        BackgroundMessageSendState.writeBackgroundWorkPending(true)
     }
 }

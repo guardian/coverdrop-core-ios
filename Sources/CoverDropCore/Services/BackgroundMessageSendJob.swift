@@ -35,13 +35,13 @@ enum BackgroundMessageSendServiceError: Error {
 
 enum BackgroundMessageSendJob {
     public static func run(
-        verifiedPublicKeys: VerifiedPublicKeys,
+        publicDataRepository: any PublicDataRepositoryProtocol,
         now: Date,
         numMessagesPerBackgroundRun: Int,
         minDurationBetweenBackgroundRunsInSecs: Int
     ) async -> Result<Void, BackgroundMessageSendServiceError> {
         // Rate limiting
-        if let lastRun = PublicDataRepository.readBackgroundWorkLastSuccessfulRun() {
+        if let lastRun = BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun() {
             let message = """
             Assessing background tasks with now: \(now) last run: \(lastRun)
             min duration: \(minDurationBetweenBackgroundRunsInSecs)
@@ -61,9 +61,7 @@ enum BackgroundMessageSendJob {
         }
 
         // Get our cover message data
-        let coverMessageFactoryOpt = try? CoverDropServices
-            .getCoverMessageFactoryFromPublicKeysRepository(verifiedPublicKeys: verifiedPublicKeys)
-
+        let coverMessageFactoryOpt = try? publicDataRepository.getCoverMessageFactory()
         guard let coverMessageFactory = coverMessageFactoryOpt else {
             return .failure(.failedToGetCoverMessage)
         }
@@ -71,11 +69,11 @@ enum BackgroundMessageSendJob {
         // We try to send as many messages as we can.
         // Any message that fail to send remain in the queue for reprocessing later
         for _ in 0 ..< numMessagesPerBackgroundRun {
-            _ = await PublicDataRepository.trySendMessageAndDequeue(coverMessageFactory: coverMessageFactory)
+            _ = await publicDataRepository.trySendMessageAndDequeue(coverMessageFactory)
         }
 
-        PublicDataRepository.writeBackgroundWorkLastSuccessfulRun(instant: now)
-        PublicDataRepository.writeBackgroundWorkPending(false)
+        BackgroundMessageSendState.writeBackgroundWorkLastSuccessfulRun(instant: now)
+        BackgroundMessageSendState.writeBackgroundWorkPending(false)
         return .success(())
     }
 

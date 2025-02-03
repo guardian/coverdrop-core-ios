@@ -46,8 +46,7 @@ let package = Package(
             name: "CoverDropCoreTests",
             dependencies: ["CoverDropCore", "IOSSecuritySuite"],
             resources: [
-                .copy("Resources/vectors/"),
-                .copy("Resources/static_vectors/")
+                .copy("Resources/vectors/")
             ]
         )
     ]

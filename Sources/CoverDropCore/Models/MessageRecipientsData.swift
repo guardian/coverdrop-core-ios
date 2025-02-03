@@ -16,13 +16,11 @@ public struct MessageRecipients {
     public private(set) var desks: [JournalistData] = []
     public private(set) var defaultRecipient: JournalistData?
 
-    /// Sets up message recipients and sorts into relevant local properties using the provided public keys.
+    /// Sets up message recipients and sorts into relevant local properties
     /// - Parameters:
-    ///   - verifiedPublicKeys:
     ///   - excludingDefaultRecipient: Exclude the default recipient from the `journalists` and `desks` arrays. Defaults
     /// to `true`.
-    public init(verifiedPublicKeys: VerifiedPublicKeys?,
-                excludingDefaultRecipient: Bool = true) throws {
+    public init(verifiedPublicKeys: VerifiedPublicKeys, excludingDefaultRecipient: Bool = true) throws {
         try setupMessageRecipients(with: verifiedPublicKeys, excludingDefaultRecipient: excludingDefaultRecipient)
     }
 

@@ -83,7 +83,7 @@ public actor EncryptedStorage {
     ///   - passphrase: the new passphrase created by the user
     /// - Returns: `EncryptedStorageSession` object
     /// - Throws: if the writing the storage fails
-    public static func createOrResetStorageWithPassphrase(passphrase: ValidPassword) async throws
+    @MainActor public static func createOrResetStorageWithPassphrase(passphrase: ValidPassword) throws
         -> EncryptedStorageSession {
         // Generate a new active session with the new passphrase; this resets the SE key
         let (slothStorageState, kUser) = try rainbowSloth.keygen(
@@ -94,10 +94,10 @@ public actor EncryptedStorage {
         let session = EncryptedStorageSession(cachedKey: [UInt8](kUser), salt: [UInt8](slothStorageState.salt))
 
         // Create an initial empty state
-        let emptyState = try await UnlockedSecretDataService.createNewEmpty()
+        let emptyState = try UnlockedSecretData.createEmpty()
 
         // Store on disk using our newly derived session
-        try await EncryptedStorage.updateStorageOnDisk(
+        try EncryptedStorage.updateStorageOnDisk(
             session: session,
             state: emptyState
         )
@@ -114,10 +114,10 @@ public actor EncryptedStorage {
     ///  - Throws: if password derivation, key loading, encryption, json encoding or file writing fail
     public static func updateStorageOnDisk(
         session: EncryptedStorageSession,
-        state: UnlockedSecretDataService
-    ) async throws {
+        state: UnlockedSecretData
+    ) throws {
         // Pad the new state to a fixed size
-        var statePadded: [UInt8] = await state.unlockedData.asUnencryptedBytes()
+        var statePadded: [UInt8] = state.asUnencryptedBytes()
         Sodium().utils.pad(bytes: &statePadded, blockSize: storagePaddingToSize)
 
         // Encrypt using an AEAD algorithm.
@@ -180,7 +180,7 @@ public actor EncryptedStorage {
     /// `unlockStorageWithPassphrase`
     /// - Returns: `UnlockedSecretData` object
     /// - Throws: If the storage cannot be decrypted; this can be due to a wrong passphrase or a tamered file
-    public static func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretDataService {
+    public static func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretData {
         // retrieve our `Storage` information from disk
         let fileURL = try EncryptedStorage.secureStorageFileURL()
         let readData = try Data(contentsOf: fileURL)
@@ -194,8 +194,7 @@ public actor EncryptedStorage {
 
         // Unpad and decode
         Sodium().utils.unpad(bytes: &plaintext, blockSize: EncryptedStorage.storagePaddingToSize)
-        return try await UnlockedSecretDataService(unlockedData: UnlockedSecretData
-            .fromUnencryptedBytes(bytes: plaintext))
+        return try UnlockedSecretData.fromUnencryptedBytes(bytes: plaintext)
     }
 
     /// - Returns: `URL` to the secure storage file

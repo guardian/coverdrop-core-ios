@@ -76,7 +76,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         case recipient, messageText, dateQueued, hint
     }
 
-    @MainActor public required init(from decoder: Decoder) throws {
+    public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         recipient = try container.decode(JournalistData.self, forKey: .recipient)
         messageText = try container.decode(String.self, forKey: .messageText)
@@ -84,7 +84,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         hint = try container.decode(HintHmac.self, forKey: .hint)
     }
 
-    @MainActor public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(recipient, forKey: .recipient)
         try container.encode(messageText, forKey: .messageText)
@@ -108,26 +108,34 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         return lhs.dateQueued < rhs.dateQueued
     }
 
-    @MainActor public func isInQueue() async {
-        if let isInQueue = try? await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint) {
-            isPending = isInQueue
-        }
-    }
-
     public var expiredStatus: MessageStatus {
         return Message.getExpiredStatus(dateSentOrReceived: dateQueued)
     }
 
-    @MainActor public init(messageRecipient: JournalistData, messageText: String, dateSent: Date, hint: HintHmac) {
-        recipient = messageRecipient
+    @MainActor public init(
+        recipient: JournalistData,
+        messageText: String,
+        dateQueued: Date,
+        hint: HintHmac,
+        isPending: Bool? = nil
+    ) {
+        self.recipient = recipient
         self.messageText = messageText
-        dateQueued = dateSent
+        self.dateQueued = dateQueued
         self.hint = hint
-        Task {
-            sendingQueueSubscriber = await PrivateSendingQueueRepository.shared.$lastUpdated
-                .sink { [weak self] _ in
-                    Task { await self?.isInQueue() }
-                }
+        if let isPending = isPending {
+            self.isPending = isPending
+        } else {
+            Task {
+                sendingQueueSubscriber = await PrivateSendingQueueRepository.shared.$lastUpdated
+                    .sink { [weak self] _ in Task { await self?.loadIsPendingAsync() }}
+            }
+        }
+    }
+
+    @MainActor public func loadIsPendingAsync() async {
+        if let isInQueue = try? await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint) {
+            isPending = isInQueue
         }
     }
 }

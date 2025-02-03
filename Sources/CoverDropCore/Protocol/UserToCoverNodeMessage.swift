@@ -30,18 +30,17 @@ public struct UserToCoverNodeMessageData: Equatable, Encryptable {
     public static func createMessage(
         message: String,
         messageRecipient: JournalistData,
-        covernodeMessagePublicKey: VerifiedPublicKeys,
+        publicDataRepository: any PublicDataRepositoryProtocol,
         userPublicKey: UserPublicKey
     ) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
-        if let messageKey = await PublicDataRepository
+        if let messageKey = try await publicDataRepository
             .getLatestMessagingKey(
-                recipientId: messageRecipient.recipientId,
-                verifiedPublicKeys: covernodeMessagePublicKey
+                recipientId: messageRecipient.recipientId
             ) {
             return try UserToCoverNodeMessage.createMessage(
                 message: message,
                 recipientPublicKey: messageKey,
-                verifiedPublicKeys: covernodeMessagePublicKey,
+                verifiedPublicKeys: publicDataRepository.getVerifiedKeysOrThrow(),
                 userPublicKey: userPublicKey,
                 tag: messageRecipient.tag
             )

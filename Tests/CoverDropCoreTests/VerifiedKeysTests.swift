@@ -2,75 +2,29 @@
 import Sodium
 import XCTest
 
-// swiftlint:disable line_length
 final class VerifiedKeysTests: XCTestCase {
-    func testPublicKeysData() -> PublicKeysData? {
-        let testData = try? FileHelper.dataFromFile(filePath: "static_vectors/verifiedKeys", fileExtension: "json")
-        return try? JSONDecoder().decode(PublicKeysData.self, from: testData!)
-    }
+    func testGetCoverNodeKeys() async throws {
+        let context = IntegrationTestScenarioContext(scenario: .messaging)
+        let verifiedPublicKeys = try context.loadKeysVerified(step: "004_dead_drop_expired_and_no_longer_displayed")
 
-    func getVerifiedKeysFromVector() -> VerifiedPublicKeys? {
-        guard let publicKeysData = testPublicKeysData(),
-              let key = publicKeysData.keys.first?.organizationPublicKey else {
-            return nil
-        }
-        // this sets the current date in the correct time period for the static vector
-        let yearAgo = TimeInterval(-60 * 60 * 24 * 365)
-        let currentDate = key.notValidAfter.date.advanced(by: yearAgo)
-
-        guard let trustedOrganizationPublicKey = SelfSignedPublicSigningKey<TrustedOrganization>.init(
-            key: Sign.KeyPair.PublicKey(key.key.bytes),
-            certificate: Signature<TrustedOrganization>.fromBytes(
-                bytes: key.certificate.bytes
-            ),
-            notValidAfter: key.notValidAfter.date,
-            now: currentDate
-        ) else {
-            return nil
-        }
-
-        let trustedOrganizationPublicKeys = [trustedOrganizationPublicKey]
-
-        let verifiedPublicKeys = VerifiedPublicKeys(
-            publicKeysData: publicKeysData,
-            trustedOrganizationPublicKeys: trustedOrganizationPublicKeys,
-            currentTime: currentDate
+        let coverNodeMessagingKeys = verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
+        XCTAssertEqual(
+            coverNodeMessagingKeys["covernode_001"]?.key.key.hexStr,
+            "13c50b83ad24030b2b2d5a49d7438abe6609988b399f2345e0362be39504c45a"
         )
-        return verifiedPublicKeys
     }
 
-    func testGetCoverNodeKeys() throws {
-        guard let verifiedPublicKeys = getVerifiedKeysFromVector() else {
-            XCTFail("Failed to get verified keys")
-            return
-        }
-        // swiftlint:disable:next identifier_name
-        let mostRecentCoverNodeMessagingKeysFromAllHierarchies: [CoverNodeIdentity: CoverNodeMessagingPublicKey] =
-            verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
-        let expectedKey = "0ce3afeaad3930e9f40555d119c09efcbcf215b7553b08889a4920b8c55a241e"
+    func testGetJounalistMessagingKeys() async throws {
+        // this scenario and step combination offers multiple journalist msg keys
+        let context = IntegrationTestScenarioContext(scenario: .messaging)
+        let verifiedPublicKeys = try context.loadKeysVerified(step: "004_dead_drop_expired_and_no_longer_displayed")
 
-        guard let coverNodeKey = mostRecentCoverNodeMessagingKeysFromAllHierarchies["covernode_001"]?.key.key.hexStr else {
-            XCTFail("Failed to get coverNodeKey")
-            return
-        }
-
-        XCTAssertTrue(coverNodeKey == expectedKey)
-    }
-
-    func testGetJounalistMessagingKeys() throws {
-        guard let verifiedPublicKeys = getVerifiedKeysFromVector() else {
-            XCTFail("Failed to get verified keys")
-            return
-        }
-        let expectedKey = "9d76075636f422fec1f14913b1a2ba07b4bc9979525c95c9963963a3800f3743"
-        let journalistMessageKeys = verifiedPublicKeys.allMessageKeysForJournalistId(journalistId: "rosalind_franklin1")
-        guard let mostRecentKey = journalistMessageKeys.max(by: { $0.notValidAfter < $1.notValidAfter })?.key.key
-            .hexStr else {
-            XCTFail("Failed to get recent keys")
-            return
-        }
-        XCTAssertTrue(mostRecentKey == expectedKey)
+        let journalistMessageKeys = verifiedPublicKeys
+            .allMessageKeysForJournalistId(journalistId: "static_test_journalist")
+        let mostRecentJournalistMessageKey = journalistMessageKeys.max(by: { $0.notValidAfter < $1.notValidAfter })
+        XCTAssertEqual(
+            mostRecentJournalistMessageKey?.key.key.hexStr,
+            "ab780e21bca74478152c75f0d5071a5a6fcbbdbb18b6c6addb206e707b7e2e5a"
+        )
     }
 }
-
-// swiftlint:enable line_length

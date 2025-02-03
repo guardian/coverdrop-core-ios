@@ -4,10 +4,8 @@ import XCTest
 final class BackgroundMessageSendServiceTests: XCTestCase {
     override func setUp() {
         // remove UserDefaults keys so they do not intefer with future test runs
-        UserDefaults.standard.removeObject(
-            forKey: PublicDataRepository.CoverDropBgWorkLastSuccessfulRunTimeKey
-        )
-        UserDefaults.standard.removeObject(forKey: PublicDataRepository.CoverDropBackgroundWorkPendingKey)
+        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey)
+        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.PendingKey)
     }
 
     func testShouldExecute() async throws {
@@ -71,17 +69,14 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
     }
 
     func testRunFunction() async throws {
-        let config = StaticConfig.devConfig
-        PublicDataRepository.setup(config)
+        let context = IntegrationTestScenarioContext(scenario: .minimal)
+        let publicDataRepository = try context.getPublicDataRepositoryWithVerifiedKeys()
 
-        let coverMessageFactory = try PublicDataRepository
-            .getCoverMessageFactory(verifiedPublicKeys: PublicKeysHelper.shared.testKeys)
-
-        _ = try await PrivateSendingQueueRepository.shared
-            .loadOrInitialiseQueue(coverMessageFactory: coverMessageFactory)
+        let coverMessageFactory = try publicDataRepository.getCoverMessageFactory()
+        _ = try await PrivateSendingQueueRepository.shared.loadOrInitialiseQueue(coverMessageFactory)
 
         let lastRun = Date(timeIntervalSince1970: TimeInterval(0))
-        PublicDataRepository.writeBackgroundWorkLastSuccessfulRun(instant: lastRun)
+        BackgroundMessageSendState.writeBackgroundWorkLastSuccessfulRun(instant: lastRun)
 
         let numMessagesPerBackgroundRun = 2
         let minDurationBetweenBackgroundRunsInSecs = 60 * 60
@@ -89,37 +84,36 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
         let now = Date(timeIntervalSince1970: TimeInterval(60 * 62))
         // Our first run of the message send service should always be successful as the UserDefaults state is removed
         _ = await BackgroundMessageSendJob.run(
-            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
+            publicDataRepository: publicDataRepository,
             now: now,
             numMessagesPerBackgroundRun: numMessagesPerBackgroundRun,
             minDurationBetweenBackgroundRunsInSecs: minDurationBetweenBackgroundRunsInSecs
         )
 
-        var result = PublicDataRepository.readBackgroundWorkLastSuccessfulRun()
-
+        var result = BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun()
         XCTAssertEqual(result, now)
 
         // second run should not alter the last run timestamp as it is within the minimumDurationBetweenRuns
         _ = await BackgroundMessageSendJob.run(
-            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
+            publicDataRepository: publicDataRepository,
             now: now,
             numMessagesPerBackgroundRun: numMessagesPerBackgroundRun,
             minDurationBetweenBackgroundRunsInSecs: minDurationBetweenBackgroundRunsInSecs
         )
-        result = PublicDataRepository.readBackgroundWorkLastSuccessfulRun()
 
+        result = BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun()
         XCTAssertEqual(result, now)
 
         let future = now.addingTimeInterval(TimeInterval(61 * 60))
 
         // third run should  alter the last run timestamp its in the future, even though background tasks are pending
         _ = await BackgroundMessageSendJob.run(
-            verifiedPublicKeys: PublicKeysHelper.shared.testKeys,
+            publicDataRepository: publicDataRepository,
             now: future,
             numMessagesPerBackgroundRun: numMessagesPerBackgroundRun,
             minDurationBetweenBackgroundRunsInSecs: minDurationBetweenBackgroundRunsInSecs
         )
-        result = PublicDataRepository.readBackgroundWorkLastSuccessfulRun()
+        result = BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun()
 
         XCTAssertEqual(result, future)
     }

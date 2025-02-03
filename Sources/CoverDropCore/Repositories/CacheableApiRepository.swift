@@ -1,12 +1,14 @@
 import Foundation
 
 public class CacheableApiRepository<T: Codable> {
-    init(maxCacheAge: Double,
-         now: Date,
-         urlSessionConfig: URLSession,
-         defaultResponse: T? = nil,
-         localRepository: any LocalCacheFileRepository<T>,
-         cacheableWebRepository: any CacheableWebRepository<T>) {
+    init(
+        maxCacheAge: Double,
+        now: Date,
+        urlSessionConfig: URLSession,
+        defaultResponse: T? = nil,
+        localRepository: any LocalCacheFileRepository<T>,
+        cacheableWebRepository: any CacheableWebRepository<T>
+    ) {
         self.maxCacheAge = maxCacheAge
         self.now = now
         self.urlSessionConfig = urlSessionConfig
