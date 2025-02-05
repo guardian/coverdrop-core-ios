@@ -6,11 +6,19 @@ enum PasswordGeneratorError: Error {
     case passwordFormatError
 }
 
-public struct ValidPassword: Codable {
+public struct ValidPassword: Codable, Equatable {
     public let password: String
 
     public init(password: String) {
         self.password = password
+    }
+
+    public var words: [String] {
+        password.split(separator: " ").map { String($0) }
+    }
+
+    public static func == (lhs: ValidPassword, rhs: ValidPassword) -> Bool {
+        lhs.password == rhs.password
     }
 }
 
@@ -45,6 +53,18 @@ public extension PasswordGenerator {
             .joined(separator: " ")
 
         return ValidPassword(password: words)
+    }
+
+    /// Generate all valid prefixes of all words. We use this for interactively checking the
+    /// individual words of the passphrase as entered.
+    func generatePrefixes() -> Set<String> {
+        var prefixes: Set<String> = Set()
+        for word in wordList.words {
+            for offset in 1 ... word.count {
+                prefixes.insert(String(word.prefix(offset)))
+            }
+        }
+        return prefixes
     }
 
     /// Verify a password, checking it is the right format, all the words are within the dictionary,
