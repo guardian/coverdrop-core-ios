@@ -4,8 +4,7 @@ import XCTest
 final class BackgroundMessageSendServiceTests: XCTestCase {
     override func setUp() {
         // remove UserDefaults keys so they do not intefer with future test runs
-        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey)
-        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.PendingKey)
+        BackgroundMessageSendState.clearAllState()
     }
 
     func testShouldExecute() async throws {

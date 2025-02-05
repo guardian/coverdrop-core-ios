@@ -69,7 +69,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
     public var dateQueued: Date = .now
     public var hint: HintHmac
 
-    @MainActor @Published public var isPending: Bool = true
+    @Published public var isPending: Bool = true
     private var sendingQueueSubscriber: AnyCancellable?
 
     private enum CodingKeys: String, CodingKey {
@@ -112,7 +112,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         return Message.getExpiredStatus(dateSentOrReceived: dateQueued)
     }
 
-    @MainActor public init(
+    public init(
         recipient: JournalistData,
         messageText: String,
         dateQueued: Date,
@@ -133,7 +133,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         }
     }
 
-    @MainActor public func loadIsPendingAsync() async {
+    public func loadIsPendingAsync() async {
         if let isInQueue = try? await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint) {
             isPending = isInQueue
         }

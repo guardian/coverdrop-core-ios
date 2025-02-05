@@ -81,7 +81,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
         let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
             message: message,
             messageRecipient: recipient,
-            publicDataRepository: lib.publicDataRepository,
+            verifiedPublicKeys: lib.publicDataRepository.getVerifiedKeysOrThrow(),
             userPublicKey: unlockedData.userKey.publicKey
         )
 

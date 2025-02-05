@@ -10,6 +10,7 @@ public enum CoverDropServiceHelper {
             if case let .initialized(lib: lib) = CoverDropService.shared.state {
                 return lib
             }
+            try await Task.sleep(for: .milliseconds(10))
         }
     }
 
@@ -45,7 +46,7 @@ public enum CoverDropServiceHelper {
             let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
                 message: "Hey",
                 messageRecipient: testDefaultJournalist,
-                publicDataRepository: publicDataRepository,
+                verifiedPublicKeys: publicDataRepository.getVerifiedKeysOrThrow(),
                 userPublicKey: userKeyPair.publicKey
             )
 

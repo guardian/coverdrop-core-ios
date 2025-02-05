@@ -1,7 +1,7 @@
 import Foundation
 
 public enum BackgroundMessageSendState {
-    static let PendingKey = "CoverDropBackgroundWorkPending"
+    static private let PendingKey = "CoverDropBackgroundWorkPending"
 
     static func initBackgroundMessageSendState(config: CoverDropConfig) {
         if BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun() == nil {
@@ -21,7 +21,7 @@ public enum BackgroundMessageSendState {
             .object(forKey: BackgroundMessageSendState.PendingKey) as? Bool
     }
 
-    static let LastSuccessfulRunTimeKey = "CoverDropBackgroundWorkLastSuccessfulRunTimestamp"
+    static private let LastSuccessfulRunTimeKey = "CoverDropBackgroundWorkLastSuccessfulRunTimestamp"
 
     static func writeBackgroundWorkLastSuccessfulRun(instant: Date) {
         UserDefaults.standard.set(
@@ -33,5 +33,10 @@ public enum BackgroundMessageSendState {
     static func readBackgroundWorkLastSuccessfulRun() -> Date? {
         return UserDefaults.standard
             .object(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey) as? Date
+    }
+
+    static func clearAllState() {
+        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey)
+        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.PendingKey)
     }
 }

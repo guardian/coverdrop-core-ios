@@ -97,7 +97,7 @@ public class PublicKeysHelper {
     }
 
     public static func readLocalTrustedOrganizationKeys(config: StaticConfig) throws -> [TrustedOrganizationPublicKey] {
-        let trustedRootKeys = try PublicDataRepository.loadTrustedOrganizationPublicKeys(
+        let trustedRootKeys = try OrganizationKeysLoader.loadTrustedOrganizationPublicKeys(
             envType: config.envType,
             now: readLocalGeneratedAtFile()!
         )
