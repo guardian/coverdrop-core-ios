@@ -141,6 +141,14 @@ final class PrivateSendingQueueTests: XCTestCase {
         )
     }
 
+    func testFromByteFailsOnEmptyByteArray() throws {
+        XCTAssertThrowsError(try PrivateSendingQueue.fromBytes(bytes: []))
+    }
+
+    func testFromByteFailsOnTruncatedByteArray() throws {
+        XCTAssertThrowsError(try PrivateSendingQueue.fromBytes(bytes: [] + Data([0x01])))
+    }
+
     func testFromBytesWhenSerdeEmptyThenDeserializesSuccessfully() throws {
         let original = try emptyCoverdropQueue()
         let serialized = try original.serialize()

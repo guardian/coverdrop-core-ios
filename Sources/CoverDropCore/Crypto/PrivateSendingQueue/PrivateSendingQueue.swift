@@ -20,6 +20,7 @@ enum PrivateSendingQueueError: Error {
     case deserializationBufferSizeIncorrect
     case queueSizesVary
     case messageOrHintSizeIncorrect
+    case unexpectedEndOfStream
 }
 
 // This is a Hmac of the encrypted message ciphertext
@@ -192,10 +193,14 @@ public struct PrivateSendingQueue: Equatable {
     ///   - byteLength: the number of bytes to pop from the buffer
     ///   - buffer: a reference to a `Data` buffer
     /// - Returns: the value retrived from the buffer as an `Int32` note that no validation of the output is done
-    static func popInt(byteLength: Int32, buffer: inout Data) -> Int32 {
-        let value = withUnsafeBytes(of: buffer[0 ..< byteLength]) { $0.load(as: Int32.self) }
-        buffer.removeSubrange(0 ..< Int(byteLength))
-        return value
+    static func popInt(byteLength: Int32, buffer: inout Data) throws -> Int32 {
+        if buffer.count >= byteLength {
+            let value = withUnsafeBytes(of: buffer[0 ..< byteLength]) { $0.load(as: Int32.self) }
+            buffer.removeSubrange(0 ..< Int(byteLength))
+            return value
+        } else {
+            throw PrivateSendingQueueError.unexpectedEndOfStream
+        }
     }
 
     /// takes a byte array from `byteLength` from a `Data` buffer and returns it as an `Int32`
@@ -204,10 +209,14 @@ public struct PrivateSendingQueue: Equatable {
     ///   - byteLength: the number of bytes to pop from the buffer
     ///   - buffer: a reference to a `Data` buffer
     /// - Returns: the value retrived from the buffer as a `[UInt8]`
-    static func popArray(byteLength: Int32, buffer: inout Data) -> [UInt8] {
-        let value = Array(buffer[0 ..< byteLength])
-        buffer.removeSubrange(0 ..< Int(byteLength))
-        return value
+    static func popArray(byteLength: Int32, buffer: inout Data) throws -> [UInt8] {
+        if buffer.count >= byteLength {
+            let value = Array(buffer[0 ..< byteLength])
+            buffer.removeSubrange(0 ..< Int(byteLength))
+            return value
+        } else {
+            throw PrivateSendingQueueError.unexpectedEndOfStream
+        }
     }
 
     /// Deserializes a `PrivateSendingQueue` from a `[UInt8]` that was previously
@@ -222,10 +231,10 @@ public struct PrivateSendingQueue: Equatable {
                               .messageSize) throws -> PrivateSendingQueue {
         var buffer = Data(bytes)
 
-        let numberOfMessages: Int32 = popInt(byteLength: currentMessagesIntBytes, buffer: &buffer)
-        let messageSizeInt: Int32 = popInt(byteLength: messageSizeIntBytes, buffer: &buffer)
-        let storageBlock: [UInt8] = popArray(byteLength: numberOfMessages * messageSizeInt, buffer: &buffer)
-        let hintsBlock: [UInt8] = popArray(byteLength: numberOfMessages * hintSizeBytes, buffer: &buffer)
+        let numberOfMessages: Int32 = try popInt(byteLength: currentMessagesIntBytes, buffer: &buffer)
+        let messageSizeInt: Int32 = try popInt(byteLength: messageSizeIntBytes, buffer: &buffer)
+        let storageBlock: [UInt8] = try popArray(byteLength: numberOfMessages * messageSizeInt, buffer: &buffer)
+        let hintsBlock: [UInt8] = try popArray(byteLength: numberOfMessages * hintSizeBytes, buffer: &buffer)
 
         if buffer.count != 0 { throw PrivateSendingQueueError.deserializationBufferSizeIncorrect }
 
