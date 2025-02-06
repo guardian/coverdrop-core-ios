@@ -111,14 +111,6 @@ public class CoverDropService: ObservableObject {
         }
     }
 
-    public func getCoverMessageFactoryFromPublicKeysRepository() async throws -> CoverMessageFactory {
-        if case let .initialized(lib: lib) = state {
-            return try lib.publicDataRepository.getCoverMessageFactory()
-        } else {
-            throw CoverDropServicesError.notInitialized
-        }
-    }
-
     private func didLaunchAsync(config: CoverDropConfig) async throws -> CoverDropLibrary {
         // Setup the public data repository
         let publicDataRepository = PublicDataRepository(config)

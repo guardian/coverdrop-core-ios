@@ -20,7 +20,6 @@ public protocol PublicDataRepositoryProtocol {
     func getVerifiedKeysOrThrow() throws -> VerifiedPublicKeys
     func trySendMessageAndDequeue(_ coverMessageFactory: CoverMessageFactory) async
         -> Result<Int, UserToJournalistMessagingError>
-    func getLatestMessagingKey(recipientId: String) async throws -> JournalistMessagingPublicKey?
 }
 
 public typealias CoverMessageFactory = () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>
@@ -181,11 +180,6 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
         return {
             try self.createCoverMessageToCoverNode(coverNodeKeys: coverNodeKeys)
         }
-    }
-
-    public func getLatestMessagingKey(recipientId: String) async throws -> JournalistMessagingPublicKey? {
-        let verifiedPublicKeys = try getVerifiedKeysOrThrow()
-        return verifiedPublicKeys.getLatestMessagingKey(journalistId: recipientId)
     }
 
     public func loadTrustedOrganizationPublicKeys(envType: EnvType,

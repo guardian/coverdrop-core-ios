@@ -164,7 +164,7 @@ public struct VerifiedPublicKeys {
         )
     }
 
-    func getLatestMessagingKey(journalistId: String) -> JournalistMessagingPublicKey? {
+    public func getLatestMessagingKey(journalistId: String) -> JournalistMessagingPublicKey? {
         let messageKeys = allMessageKeysForJournalistId(journalistId: journalistId)
         return messageKeys.max { $0.notValidAfter < $1.notValidAfter }
     }

@@ -14,8 +14,8 @@ final class PrivateSendingQueueTests: XCTestCase {
 
     private func message(_ message: String) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
-        let recipientPublicKey = try await publicDataRepository
-            .getLatestMessagingKey(recipientId: "static_test_journalist")!
+        let recipientPublicKey = try publicDataRepository
+            .getVerifiedKeysOrThrow().getLatestMessagingKey(journalistId: "static_test_journalist")!
 
         let encryptedMessage = try UserToCoverNodeMessage.createMessage(
             message: message,
