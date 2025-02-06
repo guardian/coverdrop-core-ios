@@ -147,7 +147,7 @@ public class CoverDropService: ObservableObject {
         // Check Encrypted Storage exists, and create if not
         _ = try await EncryptedStorage.onAppStart(config: config)
 
-        let secretDataRepository = SecretDataRepository()
+        let secretDataRepository = SecretDataRepository(publicDataRepository: publicDataRepository)
 
         // Run background task for message sending, this is only done on App startup
         _ = try await BackgroundMessageScheduleService.onAppStart(publicDataRepository: publicDataRepository)

@@ -24,6 +24,11 @@ public protocol SecretDataRepositoryProtocol {
 
 public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtocol {
     @Published public var secretData: SecretData = .lockedSecretData(lockedData: LockedSecretData())
+    private var publicDataRepository: PublicDataRepository
+
+    init(publicDataRepository: PublicDataRepository) {
+        self.publicDataRepository = publicDataRepository
+    }
 
     private var encryptedStorageSession: EncryptedStorageSession?
 
@@ -40,6 +45,14 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
         // unlock session and use it to load the inital data
         encryptedStorageSession = try await EncryptedStorage.unlockStorageWithPassphrase(passphrase: passphrase)
         try await loadData()
+        try await decryptDeadDrops()
+    }
+
+    private func decryptDeadDrops() async throws {
+        try await DeadDropDecryptionService().decryptStoredDeadDrops(
+            publicDataRepository: publicDataRepository,
+            secretDataRepository: self
+        )
     }
 
     private func loadData() async throws {

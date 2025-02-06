@@ -30,7 +30,7 @@ class IntegrationTestScenarioContext {
 
     public func getLibraryWithVerifiedKeys(step: String = "001_default") throws -> CoverDropLibrary {
         let publicDataRepository = try getPublicDataRepositoryWithVerifiedKeys(step: step)
-        let secretDataRepository = SecretDataRepository()
+        let secretDataRepository = SecretDataRepository(publicDataRepository: publicDataRepository)
         return CoverDropLibrary(
             publicDataRepository: publicDataRepository,
             secretDataRepository: secretDataRepository,
