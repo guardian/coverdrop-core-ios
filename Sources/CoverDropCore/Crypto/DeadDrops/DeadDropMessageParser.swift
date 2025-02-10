@@ -1,24 +1,22 @@
 import Foundation
 
 enum DeadDropMessageParser {
-    // The authoritative definition of these constants is in the Rust code:
-    // common/src/api/models/messages/journalist_to_user_message.rs
-    static var typeFlagMessage: UInt8 = 0x00
-    static var typeFlagHandover: UInt8 = 0x01
-    static var journalistIdentityMaxLength: Int = 128
-
-    static func parseMessage(messageBytes: [UInt8], journalistData: JournalistData, deadDropId: Int,
-                             dateReceived: Date) -> Message? {
+    static func parseMessage(
+        messageBytes: [UInt8],
+        journalistData: JournalistData,
+        deadDropId: Int,
+        dateReceived: Date
+    ) -> Message? {
         guard let firstByte = messageBytes.first else { return nil }
         let remainingMessageBytes = Array(messageBytes.suffix(Constants.messagePaddingLen))
-        if firstByte == DeadDropMessageParser.typeFlagMessage {
+        if firstByte == Constants.flagJ2UMessageTypeMessage {
             return parseTextMessage(
                 messageBytes: remainingMessageBytes,
                 journalistData: journalistData,
                 deadDropId: deadDropId,
                 dateReceived: dateReceived
             )
-        } else if firstByte == DeadDropMessageParser.typeFlagHandover {
+        } else if firstByte == Constants.flagJ2UMessageTypeHandover {
             return parseHandoverMessage(
                 messageBytes: remainingMessageBytes,
                 journalistData: journalistData,
@@ -58,12 +56,12 @@ enum DeadDropMessageParser {
         dateReceived: Date
     ) -> Message? {
         guard let endPositionOfJournalistIdentity = messageBytes.firstIndex(of: 0x00),
-              DeadDropMessageParser.journalistIdentityMaxLength >= endPositionOfJournalistIdentity,
+              Constants.maxJournalistIdentityLen >= endPositionOfJournalistIdentity,
               let journalistIdentityString = String(
                   bytes: Array(messageBytes[1 ..< endPositionOfJournalistIdentity]),
                   encoding: .utf8
               ),
-              journalistIdentityString.count <= DeadDropMessageParser.journalistIdentityMaxLength,
+              journalistIdentityString.count <= Constants.maxJournalistIdentityLen,
               let handoverMessage = HandoverMessageData(
                   sender: journalistData,
                   timestamp: dateReceived,

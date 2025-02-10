@@ -169,7 +169,7 @@ public struct HandoverMessageData: Hashable, Codable, Comparable {
     }
 
     init?(sender: JournalistData, timestamp: Date, handoverTo: String) {
-        if handoverTo.count > DeadDropMessageParser.journalistIdentityMaxLength {
+        if handoverTo.count > Constants.maxJournalistIdentityLen {
             return nil
         }
         self.handoverTo = handoverTo

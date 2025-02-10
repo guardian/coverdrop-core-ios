@@ -57,7 +57,7 @@ public enum CoverDropServiceHelper {
 
             var messages: Set<Message> = []
             if config.startWithTestMessages {
-                let outboundMessage = await OutboundMessageData(
+                let outboundMessage = OutboundMessageData(
                     recipient: testDefaultJournalist,
                     messageText: "Hey",
                     dateQueued: Date(),

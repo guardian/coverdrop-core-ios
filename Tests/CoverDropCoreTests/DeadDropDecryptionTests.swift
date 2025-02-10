@@ -42,12 +42,10 @@ final class DeadDropDecryptionTests: XCTestCase {
         let journalistId = "static_test_journalist"
         let journalistIdBytes: [UInt8] = Array(journalistId.utf8)
 
-        var handoverMessage = [DeadDropMessageParser.typeFlagHandover]
-
+        var handoverMessage = [Constants.flagJ2UMessageTypeHandover]
         handoverMessage.append(contentsOf: journalistIdBytes)
 
         let padding: [UInt8] = Array(repeating: 0x00, count: Constants.messagePaddingLen - handoverMessage.count)
-
         handoverMessage.append(contentsOf: padding)
 
         let journalistKey = DeadDropDecryptionTests.testerJournalistData
