@@ -10,10 +10,10 @@ class DeadDropRepository: CacheableApiRepository<DeadDropData> {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,
-            urlSessionConfig: urlSession,
+            urlSession: urlSession,
             defaultResponse: DeadDropData(deadDrops: []),
             localRepository: DeadDropLocalRepository(),
-            cacheableWebRepository: DeadDropWebRepository(session: urlSession, baseUrl: config.apiBaseUrl)
+            cacheableWebRepository: DeadDropWebRepository(urlSession: urlSession, baseUrl: config.apiBaseUrl)
         )
     }
 

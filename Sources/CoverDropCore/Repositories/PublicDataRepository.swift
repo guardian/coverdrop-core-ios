@@ -17,7 +17,7 @@ public protocol PublicDataRepositoryProtocol {
     func loadDeadDrops() async throws -> VerifiedDeadDrops
     func pollPublicKeysAndStatusApis() async throws
     func getCoverMessageFactory() throws -> CoverMessageFactory
-    func getVerifiedKeysOrThrow() throws -> VerifiedPublicKeys
+    func getVerifiedKeys() throws -> VerifiedPublicKeys
     func trySendMessageAndDequeue(_ coverMessageFactory: CoverMessageFactory) async
         -> Result<Int, UserToJournalistMessagingError>
 }
@@ -30,10 +30,13 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     @Published public var cacheEnabled: Bool = true
 
     public private(set) var config: CoverDropConfig
+    private var urlSession: URLSession
+
     private var verifiedPublicKeys: VerifiedPublicKeys? = .none
 
-    init(_ config: CoverDropConfig) {
+    init(_ config: CoverDropConfig, urlSession: URLSession) {
         self.config = config
+        self.urlSession = urlSession
         BackgroundMessageSendState.initBackgroundMessageSendState(config: config)
     }
 
@@ -46,7 +49,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     }
 
     public func loadStatus() async throws {
-        if let currentStatus = try? await StatusRepository(config: config, urlSessionConfig: config.urlSessionConfig)
+        if let currentStatus = try? await StatusRepository(config: config, urlSession: urlSession)
             .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled) {
             await MainActor.run {
                 coverDropServiceStatus = currentStatus
@@ -55,7 +58,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     }
 
     public func loadDeadDrops() async throws -> VerifiedDeadDrops {
-        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: config.urlSessionConfig)
+        let deadDropsOpt = try await DeadDropRepository(config: config, urlSession: urlSession)
             .downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
 
         guard let deadDrops = deadDropsOpt else {
@@ -65,7 +68,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
         // Load dead drops from journalists
         let verifiedDeadDropData = try VerifiedDeadDrops.fromAllDeadDropData(
             deadDrops: deadDrops,
-            verifiedKeys: getVerifiedKeysOrThrow()
+            verifiedKeys: getVerifiedKeys()
         )
 
         return verifiedDeadDropData
@@ -80,7 +83,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
         // Load public keys
         let publicKeysDataOpt = try? await PublicKeyRepository(
             config: config,
-            urlSessionConfig: config.urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches(cacheEnabled: config.cacheEnabled)
 
         let trustedRootKeysOpt = try? loadTrustedOrganizationPublicKeys(
@@ -115,7 +118,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
         }
 
         return try await UserToJournalistMessageWebRepository(
-            session: config.urlSessionConfig,
+            urlSession: urlSession,
             baseUrl: config.messageBaseUrl
         ).sendMessage(jsonData: jsonData)
     }
@@ -171,7 +174,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     }
 
     public func getCoverMessageFactory() throws -> CoverMessageFactory {
-        let verifiedPublicKeys = try getVerifiedKeysOrThrow()
+        let verifiedPublicKeys = try getVerifiedKeys()
         let allCoverNodes = verifiedPublicKeys.mostRecentCoverNodeMessagingKeysFromAllHierarchies()
         if allCoverNodes.isEmpty {
             throw PublicDataRepositoryError.failedToGetCoverNodeMessageKeys
@@ -187,7 +190,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
         try OrganizationKeysLoader.loadTrustedOrganizationPublicKeys(envType: envType, now: now)
     }
 
-    public func getVerifiedKeysOrThrow() throws -> VerifiedPublicKeys {
+    public func getVerifiedKeys() throws -> VerifiedPublicKeys {
         guard let verifiedKeys = verifiedPublicKeys else {
             throw PublicDataRepositoryError.failedToLoadPublicKeys
         }

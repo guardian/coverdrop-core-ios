@@ -23,7 +23,7 @@ class IntegrationTestScenarioContext {
     }
 
     public func getPublicDataRepositoryWithVerifiedKeys(step: String = "001_default") throws -> PublicDataRepository {
-        let publicDataRepository = PublicDataRepository(config)
+        let publicDataRepository = PublicDataRepository(config, urlSession: getMockedUrlSession())
         try publicDataRepository.injectVerifiedPublicKeysForTesting(verifiedPublicKeys: loadKeysVerified(step: step))
         return publicDataRepository
     }
@@ -114,5 +114,12 @@ class IntegrationTestScenarioContext {
             throw IntegrationTestError.badDate
         }
         return DateFormats.validateDate(date: dateString)!
+    }
+
+    private func getMockedUrlSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        URLProtocolMock.mockURLs = MockUrlData.getMockUrlData()
+        config.protocolClasses = [URLProtocolMock.self]
+        return URLSession(configuration: config)
     }
 }

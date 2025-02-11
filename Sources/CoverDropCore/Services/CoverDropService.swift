@@ -57,15 +57,6 @@ public class CoverDropService: ObservableObject {
 
     public func didLaunch(config: CoverDropConfig) throws {
         BackgroundTaskService.registerBackgroundSendJob(config: config)
-        // We support secure DNS via cloudflare by default,
-        // but this can be disabled by the integrating app if required.
-        if config.withSecureDns {
-            let secureDNS = SecureDNSConfig.cloudflare
-            NWParameters.PrivacyContext.default.requireEncryptedNameResolution(
-                true,
-                fallbackResolver: .https(secureDNS.httpsURL, serverAddresses: secureDNS.serverAddresses)
-            )
-        }
 
         switch state {
         case .notInitialized:
@@ -113,7 +104,8 @@ public class CoverDropService: ObservableObject {
 
     private func didLaunchAsync(config: CoverDropConfig) async throws -> CoverDropLibrary {
         // Setup the public data repository
-        let publicDataRepository = PublicDataRepository(config)
+        let urlSession = getUrlSession(config: config)
+        let publicDataRepository = PublicDataRepository(config, urlSession: urlSession)
 
         // Note the app will not be made available if the cache is not enabled in production
         if case config.envType = .prod {
@@ -158,17 +150,43 @@ public class CoverDropService: ObservableObject {
         // We load the dead drops after the service is marked ready
         // so we do not delay startup
         _ = try? await publicDataRepository.loadDeadDrops()
-        #if DEBUG
-            await CoverDropServiceHelper.removeBackgroundSendState(config: config)
-        #endif
 
-        try await CoverDropServiceHelper.addTestStorage(config: config, publicDataRepository: publicDataRepository)
+        // Handle all modifications that might need to happen as a result of passed in test flags
+        try await CoverDropServiceHelper.handleTestingFlags(
+            config: config,
+            verifiedKeys: publicDataRepository.getVerifiedKeys()
+        )
 
         return CoverDropLibrary(
             publicDataRepository: publicDataRepository,
             secretDataRepository: secretDataRepository,
             config: config
         )
+    }
+
+    private func getUrlSession(config: CoverDropConfig) -> URLSession {
+        let urlSession = URLSessionConfiguration.ephemeral
+
+        // We support secure DNS via cloudflare by default,
+        // but this can be disabled by the integrating app if required.
+        if config.withSecureDns {
+            let secureDNS = SecureDNSConfig.cloudflare
+            NWParameters.PrivacyContext.default.requireEncryptedNameResolution(
+                true,
+                fallbackResolver: .https(secureDNS.httpsURL, serverAddresses: secureDNS.serverAddresses)
+            )
+            if #available(iOS 16.0, *) {
+                urlSession.requiresDNSSECValidation = true
+            }
+        }
+
+        // employ mocked url protocol for UI and integration tests
+        if TestingBridge.isMockedDataEnabled() {
+            URLProtocolMock.mockURLs = MockUrlData.getMockUrlData()
+            urlSession.protocolClasses = [URLProtocolMock.self]
+        }
+
+        return URLSession(configuration: urlSession)
     }
 
     public static func willEnterForeground(config _: CoverDropConfig) {

@@ -21,13 +21,9 @@ public enum DateFunction {
 
     public static func currentTime() -> Date {
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("UI_TEST_MODE") {
-                if ProcessInfo.processInfo.arguments.contains("EXPIRED_MESSAGES_SCENARIO") {
-                    let keysDate = DateFunction.currentKeysPublishedTime()
-                    return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
-                } else {
-                    return Date()
-                }
+            if TestingBridge.isEnabled(.mockedDataExpiredMessagesScenario) {
+                let keysDate = DateFunction.currentKeysPublishedTime()
+                return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
             }
         #endif
         return Date()

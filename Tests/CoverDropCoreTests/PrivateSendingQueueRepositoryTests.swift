@@ -13,7 +13,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     }
 
     private func getJournalistMessagingKey() throws -> JournalistMessagingPublicKey {
-        let verifiedKeys = try publicDataRepository.getVerifiedKeysOrThrow()
+        let verifiedKeys = try publicDataRepository.getVerifiedKeys()
         return verifiedKeys.allMessageKeysForJournalistId(journalistId: "static_test_journalist").first!
     }
 
@@ -31,12 +31,12 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
     private func message(_ message: String) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
         let userKeyPair: EncryptionKeypair<User> = try EncryptionKeypair<User>.generateEncryptionKeypair()
         let recipientPublicKey = try publicDataRepository
-            .getVerifiedKeysOrThrow().getLatestMessagingKey(journalistId: "static_test_journalist")!
+            .getVerifiedKeys().getLatestMessagingKey(journalistId: "static_test_journalist")!
 
         let encryptedMessage = try UserToCoverNodeMessage.createMessage(
             message: message,
             recipientPublicKey: recipientPublicKey,
-            verifiedPublicKeys: publicDataRepository.getVerifiedKeysOrThrow(),
+            verifiedPublicKeys: publicDataRepository.getVerifiedKeys(),
             userPublicKey: userKeyPair.publicKey,
             tag: RecipientTag(tag: [2, 3, 3, 3])
         )
@@ -50,7 +50,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let encryptedMessage = try UserToCoverNodeMessage.createMessage(
             message: "message 1",
             recipientPublicKey: getJournalistMessagingKey(),
-            verifiedPublicKeys: publicDataRepository.getVerifiedKeysOrThrow(),
+            verifiedPublicKeys: publicDataRepository.getVerifiedKeys(),
             userPublicKey: userKeyPair.publicKey,
             tag: RecipientTag(tag: [1, 2, 3, 4])
         )

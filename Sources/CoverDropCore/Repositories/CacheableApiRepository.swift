@@ -4,14 +4,14 @@ public class CacheableApiRepository<T: Codable> {
     init(
         maxCacheAge: Double,
         now: Date,
-        urlSessionConfig: URLSession,
+        urlSession: URLSession,
         defaultResponse: T? = nil,
         localRepository: any LocalCacheFileRepository<T>,
         cacheableWebRepository: any CacheableWebRepository<T>
     ) {
         self.maxCacheAge = maxCacheAge
         self.now = now
-        self.urlSessionConfig = urlSessionConfig
+        self.urlSession = urlSession
         self.defaultResponse = defaultResponse
         self.localRepository = localRepository
         self.cacheableWebRepository = cacheableWebRepository
@@ -20,7 +20,7 @@ public class CacheableApiRepository<T: Codable> {
     var maxCacheAge: TimeInterval
 
     public var now: Date
-    public var urlSessionConfig: URLSession
+    public var urlSession: URLSession
 
     public var defaultResponse: T?
 

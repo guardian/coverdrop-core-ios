@@ -2,11 +2,11 @@ import Foundation
 import Sodium
 
 class StatusRepository: CacheableApiRepository<StatusData> {
-    init(now: Date = Date(), config: CoverDropConfig, urlSessionConfig: URLSession) {
+    init(now: Date = Date(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,
-            urlSessionConfig: urlSessionConfig,
+            urlSession: urlSession,
             defaultResponse: StatusData(
                 status: .unavailable,
                 description: "Unavailable",
@@ -14,7 +14,7 @@ class StatusRepository: CacheableApiRepository<StatusData> {
                 isAvailable: false
             ),
             localRepository: StatusLocalRepository(),
-            cacheableWebRepository: StatusWebRepository(session: urlSessionConfig, baseUrl: config.apiBaseUrl)
+            cacheableWebRepository: StatusWebRepository(urlSession: urlSession, baseUrl: config.apiBaseUrl)
         )
     }
 }

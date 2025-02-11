@@ -11,12 +11,12 @@ public enum UserToJournalistMessagingError: Error {
 // MARK: - Implementation
 
 public struct UserToJournalistMessageWebRepository: WebRepository {
-    let session: URLSession
-    let baseURL: String
+    let urlSession: URLSession
+    let baseUrl: String
 
-    public init(session: URLSession, baseUrl: String) {
-        baseURL = baseUrl
-        self.session = session
+    public init(urlSession: URLSession, baseUrl: String) {
+        self.baseUrl = baseUrl
+        self.urlSession = urlSession
     }
 
     public func sendMessage(jsonData: Data) async throws -> HTTPURLResponse {

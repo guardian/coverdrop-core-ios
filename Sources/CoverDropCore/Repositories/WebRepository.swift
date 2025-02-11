@@ -1,16 +1,16 @@
 import Foundation
 
 protocol WebRepository {
-    var session: URLSession { get }
-    var baseURL: String { get }
+    var urlSession: URLSession { get }
+    var baseUrl: String { get }
 }
 
 extension WebRepository {
     func call<Value>(endpoint: APICall, httpCodes _: HTTPCodes = .success) async throws -> Value
         where Value: Decodable {
         do {
-            let request = try endpoint.urlRequest(baseURL: baseURL)
-            let (data, response) = try await session.data(for: request)
+            let request = try endpoint.urlRequest(baseURL: baseUrl)
+            let (data, response) = try await urlSession.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse,
                   HTTPCodes.success.contains(httpResponse.statusCode) else {
                 throw URLError(.badServerResponse)
@@ -23,8 +23,8 @@ extension WebRepository {
     }
 
     func post(endpoint: APICall, httpCodes _: HTTPCodes = .success, body: Data?) async throws -> HTTPURLResponse {
-        let request = try endpoint.urlRequest(baseURL: baseURL, body: body)
-        let (_, response) = try await session.data(for: request)
+        let request = try endpoint.urlRequest(baseURL: baseUrl, body: body)
+        let (_, response) = try await urlSession.data(for: request)
         Debug.println("Made successful post to \(String(describing: request.url))")
         guard let httpResponse = response as? HTTPURLResponse,
               HTTPCodes.success.contains(httpResponse.statusCode) else {

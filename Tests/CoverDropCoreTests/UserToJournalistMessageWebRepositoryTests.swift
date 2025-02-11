@@ -4,7 +4,7 @@ import XCTest
 
 final class UserToJournalistMessageRepositoryTests: XCTestCase {
     func testSendMessageError() async throws {
-        let urlSessionConfig = mockApiResponseFailure()
+        let urlSession = mockApiResponseFailure()
 
         let numRecipients = 1
         let bytesLength = (numRecipients * Sodium().secretBox.KeyBytes + Sodium().box.SealBytes) + Sodium().secretBox
@@ -20,7 +20,7 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         let jsonData: Data = try JSONEncoder().encode(data)
         do {
             _ = try await UserToJournalistMessageWebRepository(
-                session: urlSessionConfig,
+                urlSession: urlSession,
                 baseUrl: StaticConfig.devConfig.messageBaseUrl
             ).sendMessage(jsonData: jsonData)
             XCTFail("API error should have failed")
@@ -28,7 +28,7 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
     }
 
     func testSendMessageSuccess() async throws {
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
 
         let numRecipients = 1
         let bytesLength = (numRecipients * Sodium().secretBox.KeyBytes + Sodium().box.SealBytes) + Sodium().secretBox
@@ -44,7 +44,7 @@ final class UserToJournalistMessageRepositoryTests: XCTestCase {
         let jsonData: Data = try JSONEncoder().encode(data)
         do {
             _ = try await UserToJournalistMessageWebRepository(
-                session: urlSessionConfig,
+                urlSession: urlSession,
                 baseUrl: StaticConfig.devConfig.messageBaseUrl
             ).sendMessage(jsonData: jsonData)
         } catch {

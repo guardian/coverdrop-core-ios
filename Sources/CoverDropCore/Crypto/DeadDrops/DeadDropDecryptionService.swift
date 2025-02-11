@@ -22,7 +22,7 @@ public struct DeadDropDecryptionService {
         // we only have access to the user secret key when we are unlocked
         // so this is the only state we can be in to try and decrypt the data
         if case let .unlockedSecretData(unlockedData: secretData) = secretDataRepository.getSecretData() {
-            let verifiedPublicKeys = try publicDataRepository.getVerifiedKeysOrThrow()
+            let verifiedPublicKeys = try publicDataRepository.getVerifiedKeys()
             let userSecretKey: SecretEncryptionKey<User> = secretData.userKey.secretKey
 
             let currentConversationJournalists = try await secretDataRepository

@@ -12,15 +12,15 @@ enum MockUrlData {
         var deadDropData = MockUrlData.getDeadDrops()
         var statusData = MockUrlData.getStatusData()
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("EMPTY_KEYS_DATA") {
+            if TestingBridge.isEnabled(.mockedDataEmptyKeysData) {
                 publicKeysData = Data()
-            } else if ProcessInfo.processInfo.arguments.contains("MULTIPLE_JOURNALIST_SCENARIO") {
+            } else if TestingBridge.isEnabled(.mockedDataMultipleJournalists) {
                 publicKeysData = MockUrlData.getMultipleJournalistKeys()
                 deadDropData = MockUrlData.getMulitpleJournalistDeadDrops()
-            } else if ProcessInfo.processInfo.arguments.contains("NO_DEFAULT_JOURNALIST") {
+            } else if TestingBridge.isEnabled(.mockedDataNoDefaultJournalist) {
                 publicKeysData = MockUrlData.getJournalistKeysNoDefaultJournalist()
             }
-            if ProcessInfo.processInfo.arguments.contains("STATUS_UNAVAILABLE") {
+            if TestingBridge.isEnabled(.mockedDataStatusUnavailable) {
                 statusData = MockUrlData.getStatusUnavailableData()
             }
         #endif

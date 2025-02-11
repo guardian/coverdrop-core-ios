@@ -8,14 +8,8 @@ import Foundation
 struct DeadDropWebRepository: CacheableWebRepository {
     typealias T = DeadDropData
 
-    let session: URLSession
-    let baseURL: String
-
-    init(session: URLSession,
-         baseUrl: String) {
-        self.session = session
-        baseURL = baseUrl
-    }
+    let urlSession: URLSession
+    let baseUrl: String
 
     func get(params: [String: String]?) async throws -> DeadDropData {
         let response: DeadDropData = try await call(endpoint: API.allDeadDrops(params: params))

@@ -12,12 +12,12 @@ struct PublicKeyWebRepository: CacheableWebRepository {
         return result
     }
 
-    let session: URLSession
-    let baseURL: String
+    let urlSession: URLSession
+    let baseUrl: String
 
     init(config: CoverDropConfig, urlSession: URLSession) {
-        session = urlSession
-        baseURL = config.apiBaseUrl
+        self.urlSession = urlSession
+        baseUrl = config.apiBaseUrl
     }
 }
 

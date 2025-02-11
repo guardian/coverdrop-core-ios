@@ -26,9 +26,9 @@ final class DeadDropRepositoryTests: XCTestCase {
     func testFirstRunDoesNotCacheIfAPIResponseFailedAndCacheEnabled() async throws {
         try await removeDeadDropCacheFile()
 
-        let urlSessionConfig = mockApiResponseFailure()
+        let urlSession = mockApiResponseFailure()
 
-        let results = try await DeadDropRepository(config: config, urlSession: urlSessionConfig)
+        let results = try await DeadDropRepository(config: config, urlSession: urlSession)
             .downloadAndUpdateAllCaches(cacheEnabled: true)
 
         XCTAssertTrue(results!.deadDrops.isEmpty)
@@ -37,9 +37,9 @@ final class DeadDropRepositoryTests: XCTestCase {
     func testFirstRunDoesNotCacheIfAPIResponseFailedAndCacheDisabled() async throws {
         try await removeDeadDropCacheFile()
 
-        let urlSessionConfig = mockApiResponseFailure()
+        let urlSession = mockApiResponseFailure()
 
-        let results = try await DeadDropRepository(config: config, urlSession: urlSessionConfig)
+        let results = try await DeadDropRepository(config: config, urlSession: urlSession)
             .downloadAndUpdateAllCaches(cacheEnabled: false)
 
         XCTAssertTrue(results!.deadDrops.isEmpty)
@@ -48,13 +48,13 @@ final class DeadDropRepositoryTests: XCTestCase {
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDropsAndCacheDisabled() async throws {
         try await removeDeadDropCacheFile()
 
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
 
         // note we are outside the cache window
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 48),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches(cacheEnabled: false)
 
         guard let actualResults = results else {
@@ -68,13 +68,13 @@ final class DeadDropRepositoryTests: XCTestCase {
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDrops() async throws {
         try await removeDeadDropCacheFile()
 
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
 
         // note we are outside the cache window
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 48),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
 
         if let validResults = results {
@@ -87,12 +87,12 @@ final class DeadDropRepositoryTests: XCTestCase {
     func testFirstRunInsideCacheWindowWithApiResponseLoadsDeadDropsAndCachesResponse() async throws {
         try await removeDeadDropCacheFile()
 
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
         // note we are intside the cache window
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 50),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
         let cache = try await DeadDropLocalRepository().load()
         XCTAssertEqual(results?.deadDrops, cache.deadDrops)
@@ -101,12 +101,12 @@ final class DeadDropRepositoryTests: XCTestCase {
     func testFutureRunOutsideCacheWindowWithApiResponseLoadsDeadDropsButNotUpdateId() async throws {
         try await removeDeadDropCacheFile()
 
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
         // note we are outside the cache window
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 2),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
         let cache = try await DeadDropLocalRepository().load()
         XCTAssertEqual(results?.deadDrops, cache.deadDrops)
@@ -114,13 +114,13 @@ final class DeadDropRepositoryTests: XCTestCase {
 
     func testFutureRunInsideCacheWindowWithFailedApiResponse() async throws {
         try await removeDeadDropCacheFile()
-        let urlSessionConfig = mockApiResponseFailure()
+        let urlSession = mockApiResponseFailure()
 
         // note we are inside the cache window
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 50),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches(cacheEnabled: false)
 
         guard let actualResults = results else {
@@ -133,17 +133,17 @@ final class DeadDropRepositoryTests: XCTestCase {
 
     func testCacheInsideCacheWindowUpdatesCache() async throws {
         try await removeDeadDropCacheFile()
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
 
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
         let results2 = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
 
         XCTAssertEqual(results?.deadDrops, results2?.deadDrops)
@@ -151,7 +151,7 @@ final class DeadDropRepositoryTests: XCTestCase {
 
     func testCacheInsideCacheWindowReturnsCachedResults() async throws {
         try await removeDeadDropCacheFile()
-        let urlSessionConfig = mockApiResponse()
+        let urlSession = mockApiResponse()
 
         guard let deadDropDate = try? PublicKeysHelper.readLocalGeneratedAtFile() else {
             XCTFail("Failed to get deadDrop loaded date")
@@ -170,14 +170,14 @@ final class DeadDropRepositoryTests: XCTestCase {
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
         XCTAssertTrue(results?.deadDrops.count == 4)
 
         let results2 = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
         XCTAssertTrue(results2?.deadDrops.count == 4)
     }
@@ -240,7 +240,7 @@ final class DeadDropRepositoryTests: XCTestCase {
             )!
         )]
 
-        let urlSessionConfig = mockApiResponse(mockData: deadDropMockApiResponse)
+        let urlSession = mockApiResponse(mockData: deadDropMockApiResponse)
 
         // check the file size stays consistant, we do this by checking that
         // the count of dead drops stays at 1001, because all the previous dead drops will have been removed
@@ -251,7 +251,7 @@ final class DeadDropRepositoryTests: XCTestCase {
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
-            urlSession: urlSessionConfig
+            urlSession: urlSession
         ).downloadAndUpdateAllCaches()
         XCTAssertTrue(results?.deadDrops.count == 1001)
         let highestStoredDeadDrop = results?.deadDrops.max(by: { $0.id < $1.id })?.id

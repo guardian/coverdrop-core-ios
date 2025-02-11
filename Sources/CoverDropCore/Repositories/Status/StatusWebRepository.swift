@@ -6,14 +6,8 @@ import Foundation
 // swiftlint:disable type_name
 struct StatusWebRepository: CacheableWebRepository {
     typealias T = StatusData
-    let session: URLSession
-    let baseURL: String
-
-    init(session: URLSession,
-         baseUrl: String) {
-        self.session = session
-        baseURL = baseUrl
-    }
+    let urlSession: URLSession
+    let baseUrl: String
 
     func get(params _: [String: String]?) async throws -> StatusData {
         let response: StatusData = try await call(endpoint: API.status)

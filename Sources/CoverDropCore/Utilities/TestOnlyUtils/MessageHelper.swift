@@ -29,7 +29,7 @@ enum MessageHelperError: Error {
         let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
             message: "hey \(recipientUnwrapped.displayName)",
             messageRecipient: recipientUnwrapped,
-            verifiedPublicKeys: try publicDataRepository.getVerifiedKeysOrThrow(),
+            verifiedPublicKeys: publicDataRepository.getVerifiedKeys(),
             userPublicKey: userKeyPair.publicKey
         )
 
@@ -64,7 +64,7 @@ enum MessageHelperError: Error {
         let encryptedMessage2 = try await UserToCoverNodeMessageData.createMessage(
             message: "hey \(recipientUnwrapped.displayName)",
             messageRecipient: recipientUnwrapped,
-            verifiedPublicKeys: publicDataRepository.getVerifiedKeysOrThrow(),
+            verifiedPublicKeys: publicDataRepository.getVerifiedKeys(),
             userPublicKey: userKeyPair.publicKey
         )
 
