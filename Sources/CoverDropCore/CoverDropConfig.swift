@@ -148,6 +148,7 @@ public struct DevConfig: CoverDropConfig {
     public var withSecureDns: Bool = false
 
     public var passphraseWordCount = 3
+
     public let apiBaseUrl = "http://localhost:3000/v1"
     public let messageBaseUrl = "http://localhost:7676"
 

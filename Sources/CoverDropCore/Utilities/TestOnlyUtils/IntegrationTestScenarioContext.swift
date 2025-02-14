@@ -1,7 +1,7 @@
 import Foundation
 import Sodium
 
-enum IntegrationTestScenario: String {
+public enum IntegrationTestScenario: String {
     case minimal = "minimal_scenario"
     case messaging = "messaging_scenario"
     case multipleJournalists = "multiple_journalists_messaging_scenario"
@@ -13,11 +13,11 @@ enum IntegrationTestError: Error {
     case badDate
 }
 
-class IntegrationTestScenarioContext {
+public class IntegrationTestScenarioContext {
     let config: CoverDropConfig
     let scenario: IntegrationTestScenario
 
-    init(scenario: IntegrationTestScenario, config: CoverDropConfig = StaticConfig.devConfig) {
+    public init(scenario: IntegrationTestScenario, config: CoverDropConfig = StaticConfig.devConfig) {
         self.config = config
         self.scenario = scenario
     }
