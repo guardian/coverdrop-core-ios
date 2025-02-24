@@ -11,6 +11,7 @@ public enum TestingFlag: String {
     case mockedDataNoDefaultJournalist = "MOCKED_DATA_NO_DEFAULT_JOURNALIST"
     case mockedDataStatusUnavailable = "STATUS_UNAVAILABLE"
     case mockedDataExpiredMessagesScenario = "EXPIRED_MESSAGES_SCENARIO"
+    case forceSingleRecipient = "FORCE_SINGLE_RECIPIENT"
 }
 
 public class TestingBridge {

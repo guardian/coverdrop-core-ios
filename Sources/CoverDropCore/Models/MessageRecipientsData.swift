@@ -65,6 +65,24 @@ public struct MessageRecipients {
                 }
             }
         }
+
+        #if DEBUG
+            if TestingBridge.isEnabled(.forceSingleRecipient), let journalist = journalists.first {
+                desks = []
+                journalists = [journalist]
+                defaultRecipient = journalist
+            }
+        #endif
+    }
+
+    /// During the testing phase, if the backend returns only one recipient, we force that recipient to be the selected
+    /// recipient and do not give the user the option to use the recipient selection screen.
+    public func forcedPreselectedRecipient() -> JournalistData? {
+        if journalists.count + desks.count == 1 {
+            return defaultRecipient
+        } else {
+            return nil
+        }
     }
 
     // This is just for testing
