@@ -75,7 +75,7 @@ public actor EncryptedStorage {
 
     public static func createOrResetStorageWithRandomPassphrase(passphraseWordCount: Int) async throws {
         let passphrase = newStoragePassphrase(passphraseWordCount: passphraseWordCount)
-        _ = try await createOrResetStorageWithPassphrase(passphrase: passphrase)
+        _ = try createOrResetStorageWithPassphrase(passphrase: passphrase)
     }
 
     /// Creates or resets the storage with a new passphrase. This will irrecoverly remove all existing data.
@@ -83,7 +83,7 @@ public actor EncryptedStorage {
     ///   - passphrase: the new passphrase created by the user
     /// - Returns: `EncryptedStorageSession` object
     /// - Throws: if the writing the storage fails
-    @MainActor public static func createOrResetStorageWithPassphrase(passphrase: ValidPassword) throws
+    public static func createOrResetStorageWithPassphrase(passphrase: ValidPassword) throws
         -> EncryptedStorageSession {
         // Generate a new active session with the new passphrase; this resets the SE key
         let (slothStorageState, kUser) = try rainbowSloth.keygen(
