@@ -7,13 +7,28 @@ public enum FileHelper {
                                               appropriateFor: nil,
                                               create: true)
 
+        // The application support directory isn't automatically created on app install
+        // So we have to check it exists and create it if not.
+        try ensureApplicationSupportDirectory(at: url.path())
+
         var fullPath = url.appendingPathComponent(fileName)
+
         var res = URLResourceValues()
         res.isExcludedFromBackup = true
         if FileManager.default.fileExists(atPath: fullPath.path) {
             try fullPath.setResourceValues(res)
         }
         return fullPath
+    }
+
+    public static func ensureApplicationSupportDirectory(at path: String) throws {
+        if !FileManager.default.fileExists(atPath: path) {
+            try FileManager.default.createDirectory(
+                atPath: path,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        }
     }
 
     /// This function checks the last updated date
