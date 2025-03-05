@@ -7,7 +7,9 @@ public protocol CoverDropConfig {
     var messageBaseUrl: String { get }
     var cacheEnabled: Bool { get }
     var passphraseWordCount: Int { get }
+    // This is the duration between background message sending
     var minDurationBetweenBackgroundRunsInSecs: Int { get }
+    // This is the longest duration you can have the app in the background before you are logged out
     var maxBackgroundDurationInSeconds: Int { get }
     var numMessagesPerBackgroundRun: Int { get }
     var withSecureDns: Bool { get }
@@ -154,7 +156,9 @@ public struct DevConfig: CoverDropConfig {
 
     public let cacheEnabled = false
 
-    public let maxBackgroundDurationInSeconds = 10
-    public var minDurationBetweenBackgroundRunsInSecs = 30
+    // The maxBackgroundDurationInSeconds is longer that minDurationBetweenBackgroundRunsInSecs
+    // so we can test the background sending when foregrounding the app without the auto logout being triggered
+    public let maxBackgroundDurationInSeconds = 20
+    public var minDurationBetweenBackgroundRunsInSecs = 10
     public var numMessagesPerBackgroundRun = 2
 }

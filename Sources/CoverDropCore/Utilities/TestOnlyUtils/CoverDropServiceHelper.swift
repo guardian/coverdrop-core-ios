@@ -91,7 +91,7 @@ public enum CoverDropServiceHelper {
         }
 
         let passphrase = ValidPassword(password: "external jersey squeeze")
-        let session = try await EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        let session = try EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
 
         // Set our test user keys
         let userSecretMessageKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
@@ -113,7 +113,7 @@ public enum CoverDropServiceHelper {
 
         var messages: Set<Message> = []
         if includeMessages {
-            let outboundMessage = OutboundMessageData(
+            let outboundMessage = await OutboundMessageData(
                 recipient: testDefaultJournalist,
                 messageText: "Hey",
                 dateQueued: Date(),

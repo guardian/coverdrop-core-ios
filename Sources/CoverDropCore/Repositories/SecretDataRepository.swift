@@ -104,7 +104,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
             message: encryptedMessage
         )
 
-        let outboundMessage = OutboundMessageData(
+        let outboundMessage = await OutboundMessageData(
             recipient: recipient,
             messageText: message,
             dateQueued: dateSent,

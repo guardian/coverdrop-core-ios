@@ -8,11 +8,11 @@ enum BackgroundMessageScheduleService {
     /// If there is no work pending (note this is a rare occurrence,
     /// and the app should usually schedule work when backgrounded)
     /// we will schedule a cleanup background task
-    public static func onAppStart(
+    public static func onAppForeground(
         bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared,
-        publicDataRepository: PublicDataRepository
+        publicDataRepository: PublicDataRepositoryProtocol,
+        config: CoverDropConfig
     ) async throws {
-        let config = publicDataRepository.config
         // This is the fallback mechanism if the background task didn't run
         if let workPending = BackgroundMessageSendState.readBackgroundWorkPending(),
            workPending {

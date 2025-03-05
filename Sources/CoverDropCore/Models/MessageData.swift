@@ -112,7 +112,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         return Message.getExpiredStatus(dateSentOrReceived: dateQueued)
     }
 
-    public init(
+    @MainActor public init(
         recipient: JournalistData,
         messageText: String,
         dateQueued: Date,
@@ -133,7 +133,7 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         }
     }
 
-    public func loadIsPendingAsync() async {
+    @MainActor public func loadIsPendingAsync() async {
         if let isInQueue = try? await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint) {
             isPending = isInQueue
         }

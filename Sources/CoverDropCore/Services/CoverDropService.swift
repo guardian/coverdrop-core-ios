@@ -66,6 +66,9 @@ public class CoverDropService: ObservableObject {
                     let lib = try await didLaunchAsync(config: config)
                     await MainActor.run {
                         state = .initialized(lib: lib)
+                        // Run foreground checks so that there is the same behaviour when app is started,
+                        // as when its foregrounded, and the app needs to be initialized for this to run.
+                        CoverDropService.willEnterForeground(config: config)
                     }
                 } catch {
                     await MainActor.run {
@@ -133,13 +136,6 @@ public class CoverDropService: ObservableObject {
 
         let secretDataRepository = SecretDataRepository(publicDataRepository: publicDataRepository)
 
-        // Run background task for message sending, this is only done on App startup
-        _ = try await BackgroundMessageScheduleService.onAppStart(publicDataRepository: publicDataRepository)
-
-        // Run foreground checks so that there is the same behaviour when app is started,
-        // as when its foregrounded
-        CoverDropService.willEnterForeground(config: config)
-
         // Check app resiliance guards
         await SecuritySuite.shared.checkForJailbreak()
         await SecuritySuite.shared.checkForDebuggable()
@@ -189,15 +185,19 @@ public class CoverDropService: ObservableObject {
         return URLSession(configuration: urlSession)
     }
 
-    public static func willEnterForeground(config _: CoverDropConfig) {
+    public static func willEnterForeground(config: CoverDropConfig) {
         Task {
             if case let .initialized(repositories) = CoverDropService.shared.state {
                 async let logout: () = BackgroundLogoutService.logoutIfBackgroundedForTooLong()
+                // Run background task for message sending, this is done on app foreground
+                async let messageSending: () = try await BackgroundMessageScheduleService
+                    .onAppForeground(publicDataRepository: repositories.publicDataRepository, config: config)
                 async let publicKeysAndStatus: () = repositories.publicDataRepository
                     .pollPublicKeysAndStatusApis()
                 async let deadDrops = repositories.publicDataRepository.loadDeadDrops()
 
                 try? await logout
+                try? await messageSending
                 try? await publicKeysAndStatus
                 _ = try? await deadDrops
             }
