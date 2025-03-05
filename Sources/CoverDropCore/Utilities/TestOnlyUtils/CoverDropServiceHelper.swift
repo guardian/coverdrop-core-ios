@@ -31,6 +31,56 @@ public enum CoverDropServiceHelper {
         }
     }
 
+    public static func addTestMessagesToLib(
+        lib: CoverDropLibrary
+    ) async throws -> UnlockedSecretData {
+        guard let testDefaultJournalist = PublicKeysHelper.shared.testDefaultJournalist else {
+            throw CoverDropServiceHelperError.cannotGetTestJournalist
+        }
+
+        // Set our test user keys
+        let userSecretMessageKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
+        let userPublicMessageKey = try PublicKeysHelper.shared.getTestUserMessagePublicKey()
+        let userKeyPair = EncryptionKeypair(publicKey: userPublicMessageKey, secretKey: userSecretMessageKey)
+        let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
+        let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
+            message: "Hey",
+            messageRecipient: testDefaultJournalist,
+            verifiedPublicKeys: lib.publicDataRepository.getVerifiedKeys(),
+            userPublicKey: userKeyPair.publicKey
+        )
+
+        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(
+            secretKey: privateSendingQueueSecret.bytes,
+            message: encryptedMessage.asBytes()
+        ))
+
+        var messages: Set<Message> = []
+
+        let outboundMessage = OutboundMessageData(
+            recipient: testDefaultJournalist,
+            messageText: "Hey",
+            dateQueued: Date(),
+            hint: hint
+        )
+
+        messages = [
+            .outboundMessage(message: outboundMessage),
+            .incomingMessage(message: .textMessage(message: IncomingMessageData(
+                sender: testDefaultJournalist,
+                messageText: "Hey",
+                dateReceived: Date()
+            )))
+        ]
+
+        let data = UnlockedSecretData(
+            messageMailbox: messages,
+            userKey: userKeyPair,
+            privateSendingQueueSecret: privateSendingQueueSecret
+        )
+        return data
+    }
+
     private static func addTestStorage(
         includeMessages: Bool,
         config _: CoverDropConfig,

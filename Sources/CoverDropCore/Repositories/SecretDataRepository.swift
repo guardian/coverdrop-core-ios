@@ -20,6 +20,7 @@ public protocol SecretDataRepositoryProtocol {
         to recipient: JournalistData,
         dateSent: Date
     ) async throws
+    func setUnlockedDataForTesting(unlockedData: UnlockedSecretData)
 }
 
 public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtocol {
@@ -37,7 +38,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
     }
 
     public func createOrReset(passphrase: ValidPassword) async throws {
-        encryptedStorageSession = try await EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        encryptedStorageSession = try EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
         try await loadData()
     }
 
@@ -155,7 +156,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
         return Array(uniqueRecipients)
     }
 
-    func setUnlockedDataForTesting(unlockedData: UnlockedSecretData) {
+    public func setUnlockedDataForTesting(unlockedData: UnlockedSecretData) {
         secretData = .unlockedSecretData(unlockedData: unlockedData)
     }
 }
