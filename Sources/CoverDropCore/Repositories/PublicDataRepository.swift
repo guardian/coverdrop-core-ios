@@ -77,7 +77,7 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     /// This loads and verifies the public key and dead drops from the API.
     /// Once verified, they are added to the `publicData` thus available throughtout the app.
     /// Public keys and dead drops can be updated at any time in the API, so we poll to stay up to date.
-    @MainActor public func loadAndVerifyPublicKeys() async throws -> VerifiedPublicKeys {
+    public func loadAndVerifyPublicKeys() async throws -> VerifiedPublicKeys {
         let currentKeysPublishedTime = DateFunction.currentKeysPublishedTime()
 
         // Load public keys
@@ -101,8 +101,11 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
             trustedOrganizationPublicKeys: trustedRootKeys,
             currentTime: currentKeysPublishedTime
         )
-        areKeysAvailable = true
-        verifiedPublicKeys = verifiedPublicKeysData
+
+        await MainActor.run {
+            areKeysAvailable = true
+            verifiedPublicKeys = verifiedPublicKeysData
+        }
         return verifiedPublicKeysData
     }
 

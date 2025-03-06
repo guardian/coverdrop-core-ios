@@ -162,7 +162,6 @@ public class CoverDropService: ObservableObject {
 
     private func getUrlSession(config: CoverDropConfig) -> URLSession {
         let urlSession = URLSessionConfiguration.ephemeral
-
         // We support secure DNS via cloudflare by default,
         // but this can be disabled by the integrating app if required.
         if config.withSecureDns {
@@ -177,7 +176,7 @@ public class CoverDropService: ObservableObject {
         }
 
         // employ mocked url protocol for UI and integration tests
-        if TestingBridge.isMockedDataEnabled() {
+        if TestingBridge.isMockedDataEnabled(config: config) {
             URLProtocolMock.mockURLs = MockUrlData.getMockUrlData()
             urlSession.protocolClasses = [URLProtocolMock.self]
         }
