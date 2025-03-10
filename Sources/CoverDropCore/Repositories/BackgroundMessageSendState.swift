@@ -1,16 +1,7 @@
 import Foundation
 
 public enum BackgroundMessageSendState {
-    static private let PendingKey = "CoverDropBackgroundWorkPending"
-
-    static func initBackgroundMessageSendState(config: CoverDropConfig) {
-        if BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun() == nil {
-            let now = DateFunction.currentTime()
-            let oneEpochAgo = now.advanced(by: TimeInterval(0 - config.minDurationBetweenBackgroundRunsInSecs))
-            BackgroundMessageSendState.writeBackgroundWorkLastSuccessfulRun(instant: oneEpochAgo)
-            BackgroundMessageSendState.writeBackgroundWorkPending(false)
-        }
-    }
+    private static let PendingKey = "CoverDropBackgroundWorkPending"
 
     static func writeBackgroundWorkPending(_ result: Bool) {
         UserDefaults.standard.set(result, forKey: BackgroundMessageSendState.PendingKey)
@@ -21,7 +12,7 @@ public enum BackgroundMessageSendState {
             .object(forKey: BackgroundMessageSendState.PendingKey) as? Bool
     }
 
-    static private let LastSuccessfulRunTimeKey = "CoverDropBackgroundWorkLastSuccessfulRunTimestamp"
+    private static let LastSuccessfulRunTimeKey = "CoverDropBackgroundWorkLastSuccessfulRunTimestamp"
 
     static func writeBackgroundWorkLastSuccessfulRun(instant: Date) {
         UserDefaults.standard.set(
@@ -35,8 +26,23 @@ public enum BackgroundMessageSendState {
             .object(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey) as? Date
     }
 
+    private static let LastTriggerTimeKey = "CoverDropBackgroundWorkLastTriggerTimestamp"
+
+    static func writeBackgroundWorkLastTrigger(instant: Date) {
+        UserDefaults.standard.set(
+            instant,
+            forKey: BackgroundMessageSendState.LastTriggerTimeKey
+        )
+    }
+
+    static func readBackgroundWorkLastTrigger() -> Date? {
+        return UserDefaults.standard
+            .object(forKey: BackgroundMessageSendState.LastTriggerTimeKey) as? Date
+    }
+
     static func clearAllState() {
-        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey)
         UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.PendingKey)
+        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.LastSuccessfulRunTimeKey)
+        UserDefaults.standard.removeObject(forKey: BackgroundMessageSendState.LastTriggerTimeKey)
     }
 }

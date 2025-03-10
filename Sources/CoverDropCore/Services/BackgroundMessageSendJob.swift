@@ -40,6 +40,8 @@ enum BackgroundMessageSendJob {
         numMessagesPerBackgroundRun: Int,
         minDurationBetweenBackgroundRunsInSecs: Int
     ) async -> Result<Void, BackgroundMessageSendServiceError> {
+        BackgroundMessageSendState.writeBackgroundWorkLastTrigger(instant: now)
+
         // Rate limiting
         if let lastRun = BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun() {
             let message = """

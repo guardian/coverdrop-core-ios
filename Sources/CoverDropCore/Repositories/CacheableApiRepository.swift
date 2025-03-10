@@ -91,4 +91,14 @@ public class CacheableApiRepository<T: Codable> {
         }
         return response
     }
+
+    func getTimestampOfCachedFile() async throws -> Date? {
+        let fileUrl = try await localRepository.fileURL()
+        let hasCache = FileManager.default.fileExists(atPath: fileUrl.path)
+        if hasCache {
+            return try FileHelper.getLastUpdatedDate(fileUrl: fileUrl)
+        } else {
+            return nil
+        }
+    }
 }

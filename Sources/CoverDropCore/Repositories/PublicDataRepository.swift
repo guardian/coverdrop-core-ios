@@ -20,6 +20,7 @@ public protocol PublicDataRepositoryProtocol {
     func getVerifiedKeys() throws -> VerifiedPublicKeys
     func trySendMessageAndDequeue(_ coverMessageFactory: CoverMessageFactory) async
         -> Result<Int, UserToJournalistMessagingError>
+    func getDebugContext() async throws -> DebugContext
 }
 
 public typealias CoverMessageFactory = () throws -> MultiAnonymousBox<UserToCoverNodeMessageData>
@@ -37,7 +38,6 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     init(_ config: CoverDropConfig, urlSession: URLSession) {
         self.config = config
         self.urlSession = urlSession
-        BackgroundMessageSendState.initBackgroundMessageSendState(config: config)
     }
 
     public func pollPublicKeysAndStatusApis() async throws {
@@ -188,8 +188,10 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
         }
     }
 
-    public func loadTrustedOrganizationPublicKeys(envType: EnvType,
-                                                  now: Date) throws -> [TrustedOrganizationPublicKey] {
+    public func loadTrustedOrganizationPublicKeys(
+        envType: EnvType,
+        now: Date
+    ) throws -> [TrustedOrganizationPublicKey] {
         try OrganizationKeysLoader.loadTrustedOrganizationPublicKeys(envType: envType, now: now)
     }
 
@@ -198,5 +200,32 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
             throw PublicDataRepositoryError.failedToLoadPublicKeys
         }
         return verifiedKeys
+    }
+
+    public func getDebugContext() async throws -> DebugContext {
+        let maybeVerifiedKeys = try? getVerifiedKeys()
+        let orgKeys = maybeVerifiedKeys?.verifiedHierarchies.map { $0.organizationPublicKey }
+        let keyDigests = orgKeys?.map { getHumanReadableDigest(key: $0.key) }
+        let maybeKeyDigestsString = keyDigests?.joinTo(separator: "; ", prefix: "[", suffix: "]")
+
+        let lastUpdatePublicKeys = try? await PublicKeyRepository(
+            config: config,
+            urlSession: urlSession
+        ).getTimestampOfCachedFile()
+        let lastUpdateDeadDrops = try? await DeadDropRepository(
+            config: config,
+            urlSession: urlSession
+        ).getTimestampOfCachedFile()
+
+        let lastBackgroundTry = BackgroundMessageSendState.readBackgroundWorkLastTrigger()
+        let lastBackgroundSend = BackgroundMessageSendState.readBackgroundWorkLastSuccessfulRun()
+
+        return DebugContext(
+            lastUpdatePublicKeys: lastUpdatePublicKeys,
+            lastUpdateDeadDrops: lastUpdateDeadDrops,
+            lastBackgroundTry: lastBackgroundTry,
+            lastBackgroundSend: lastBackgroundSend,
+            hashedOrgKeys: maybeKeyDigestsString
+        )
     }
 }

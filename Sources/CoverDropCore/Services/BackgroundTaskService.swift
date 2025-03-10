@@ -8,11 +8,17 @@ let extraDelaySeconds = 10 * 60
 
 public enum BackgroundTaskService {
     static var serviceName = "com.theguardian.coverdrop.reference.refresh"
+    static var hasBeenRegistered = false
 
     static func scheduleBackgroundSendJob(
         extraDelaySeconds: Int = 0,
         bgTaskScheduler: TaskScheduler = BGTaskScheduler.shared
     ) async {
+        if !hasBeenRegistered {
+            Debug.println("Background task not registered yet")
+            return
+        }
+
         let request = BGAppRefreshTaskRequest(identifier: serviceName)
         let delay = try? Int(SecureRandomUtils.nextDurationFromExponentialDistribution(
             expectedMeanDuration: Duration.seconds(expectedMeanDelaySeconds),
@@ -37,16 +43,17 @@ public enum BackgroundTaskService {
                     task: task as! BGAppRefreshTask,
                     config: config
                 )
-                Debug.println("Registered Background task")
             }
         }
+        hasBeenRegistered = true
+        Debug.println("Registered Background task")
     }
 
     static func handleAppRefresh(
         task: BGAppRefreshTask,
         config: CoverDropConfig
     ) async {
-        Debug.println("Background task run")
+        Debug.println("Background task run start...")
         do {
             let lib = try await CoverDropService.getLibraryBlocking()
 
@@ -66,5 +73,6 @@ public enum BackgroundTaskService {
         } catch {
             task.setTaskCompleted(success: false)
         }
+        Debug.println("Background task run finished")
     }
 }
