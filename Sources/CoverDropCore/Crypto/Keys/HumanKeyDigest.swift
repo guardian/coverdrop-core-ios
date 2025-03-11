@@ -2,11 +2,9 @@ import CryptoKit
 import Foundation
 import Sodium
 
-/**
- * A representation that matches the format of the key to be added to the imprint. We compute
- * the SHA-512 digest of the public key, truncate to the first 128 bit, and encode the result
- * in Base64 (blocks of 6 characters)
- */
+/// A representation that matches the format of the key to be added to the imprint. We
+/// the SHA-512 digest of the public key, truncate to the first 128 bit, and encode the result
+/// in Base64 (blocks of 6 characters)
 func getHumanReadableDigest(key: Sign.KeyPair.PublicKey) -> String {
     let digest = SHA512.hash(data: key)
 
