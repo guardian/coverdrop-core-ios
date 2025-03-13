@@ -203,8 +203,10 @@ public class PublicDataRepository: ObservableObject, PublicDataRepositoryProtoco
     }
 
     public func getDebugContext() async throws -> DebugContext {
-        let maybeVerifiedKeys = try? getVerifiedKeys()
-        let orgKeys = maybeVerifiedKeys?.verifiedHierarchies.map { $0.organizationPublicKey }
+        let orgKeys = try? loadTrustedOrganizationPublicKeys(
+            envType: config.envType,
+            now: DateFunction.currentTime()
+        )
         let keyDigests = orgKeys?.map { getHumanReadableDigest(key: $0.key) }
         let maybeKeyDigestsString = keyDigests?.joinTo(separator: "; ", prefix: "[", suffix: "]")
 
