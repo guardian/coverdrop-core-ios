@@ -10,9 +10,9 @@ enum MessageHelperError: Error {
 @MainActor public enum MessageHelper {
     public static func addMessagesToInbox(publicDataRepository: any PublicDataRepositoryProtocol) async throws
         -> SecretData {
-        let twoDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 2))
-        let twelveDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 12))
-        let thirteenDaysAgo = TimeInterval(1 - (60 * 60 * 24 * 13))
+        let twoDaysAgo = -TimeInterval(60 * 60 * 24 * 2)
+        let twelveDaysAgo = -TimeInterval(60 * 60 * 24 * 12)
+        let thirteenDaysAgo = -TimeInterval(60 * 60 * 24 * 13)
 
         let recipient = PublicKeysHelper.shared.testDefaultJournalist
 

@@ -19,7 +19,11 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
         }
     }
 
-    static func formatExpiryDate(messageDate: Date, expiry: Date) -> String? {
+    static func formatExpiryDate(messageDate: Date, expiry: Date?) -> String? {
+        // This is just to deal with the optional expiry date and generally wont fail
+        guard let expiry = expiry else {
+            return nil
+        }
         let timeTillExpiry = expiry.distance(to: messageDate)
         let formatter = DateComponentsFormatter()
         formatter.unitsStyle = .abbreviated
@@ -28,13 +32,18 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
         return formattedExpiry
     }
 
-    public static var expiryWindow: Date {
+    // Frustratingly the calendar date fucntions return an optional date
+    public static var expiryWindow: Date? {
+        let calendar = Calendar.current
         let expiryWindow = Constants.messageValidForDurationInSeconds
-        let expiryDate = Date(timeIntervalSinceNow: TimeInterval(1 - expiryWindow))
+        let expiryDate = calendar.date(byAdding: .second, value: -expiryWindow, to: DateFunction.currentTime())
         return expiryDate
     }
 
     public static func getExpiredStatus(dateSentOrReceived: Date) -> MessageStatus {
+        if Message.hasExpired(dateSentOrReceived: dateSentOrReceived) {
+            return .expired
+        }
         if Message.isExpiring(dateSentOrReceived: dateSentOrReceived) {
             if let formattedExpiry = Message.formatExpiryDate(
                 messageDate: dateSentOrReceived,
@@ -49,14 +58,26 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
         }
     }
 
+    private static func hasExpired(dateSentOrReceived: Date) -> Bool {
+        // if the expiryDate is greater tham date send we have not expired
+        if let expiryDate = Message.expiryWindow {
+            return expiryDate > dateSentOrReceived
+        } else {
+            return false
+        }
+    }
+
     private static func isExpiring(dateSentOrReceived: Date) -> Bool {
+        guard let expiryWindow = Message.expiryWindow else {
+            return false
+        }
         let expiryWarningDuration = Double(Constants.messageExpiryWarningInSeconds)
-        return Message.expiryWindow.distance(to: dateSentOrReceived) < expiryWarningDuration
+        return expiryWindow.distance(to: dateSentOrReceived) < expiryWarningDuration
     }
 }
 
-public enum MessageStatus {
-    case pendingOrSent, expiring(time: String)
+public enum MessageStatus: Equatable {
+    case pendingOrSent, expiring(time: String), expired
 }
 
 enum OutboundMessageError: Error {

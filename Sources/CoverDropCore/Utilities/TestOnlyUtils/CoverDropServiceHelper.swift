@@ -59,7 +59,7 @@ public enum CoverDropServiceHelper {
 
         let outboundMessage = await OutboundMessageData(
             recipient: testDefaultJournalist,
-            messageText: "Hey",
+            messageText: "Hey this is pending",
             dateQueued: Date(),
             hint: hint
         )
@@ -68,7 +68,17 @@ public enum CoverDropServiceHelper {
             .outboundMessage(message: outboundMessage),
             .incomingMessage(message: .textMessage(message: IncomingMessageData(
                 sender: testDefaultJournalist,
-                messageText: "Hey",
+                messageText: "Hey this has expired",
+                dateReceived: Date(timeIntervalSinceNow: -TimeInterval(60 * 60 * 24 * 15))
+            ))),
+            .incomingMessage(message: .textMessage(message: IncomingMessageData(
+                sender: testDefaultJournalist,
+                messageText: "Hey this has expiry warning",
+                dateReceived: Date(timeIntervalSinceNow: -TimeInterval(60 * 60 * 24 * 13))
+            ))),
+            .incomingMessage(message: .textMessage(message: IncomingMessageData(
+                sender: testDefaultJournalist,
+                messageText: "Hey this was sent today",
                 dateReceived: Date()
             )))
         ]
@@ -91,7 +101,7 @@ public enum CoverDropServiceHelper {
         }
 
         let passphrase = ValidPassword(password: "external jersey squeeze")
-        let session = try await EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        let session = try EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
 
         // Set our test user keys
         let userSecretMessageKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()

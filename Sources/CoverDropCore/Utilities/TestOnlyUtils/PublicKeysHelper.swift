@@ -23,7 +23,7 @@ public enum DateFunction {
         #if DEBUG
             if TestingBridge.isEnabled(.mockedDataExpiredMessagesScenario) {
                 let keysDate = DateFunction.currentKeysPublishedTime()
-                return Date(timeInterval: TimeInterval(1 - (60 * 60 * 24 * 13)), since: keysDate)
+                return Date(timeInterval: -TimeInterval(60 * 60 * 24 * 13), since: keysDate)
             }
         #endif
         return Date()
