@@ -66,7 +66,7 @@ public class CoverDropService: ObservableObject {
                     let lib = try await didLaunchAsync(config: config)
                     await MainActor.run {
                         state = .initialized(lib: lib)
-                        // Run foreground checks so that there is the same behaviour when app is started,
+                        // Run foreground checks so that there is the same behavior when app is started,
                         // as when its foregrounded, and the app needs to be initialized for this to run.
                         CoverDropService.willEnterForeground(config: config)
                     }
@@ -199,6 +199,12 @@ public class CoverDropService: ObservableObject {
                 try? await messageSending
                 try? await publicKeysAndStatus
                 _ = try? await deadDrops
+            }
+            // It's possible that coverdrop has been enabled remotely while the user still had the app open
+            // So the service will never initialize until the app is restarted.
+            // To avoid this, we check the state on foreground, and start the service if needed.
+            if case let .notInitialized = CoverDropService.shared.state {
+                try? CoverDropService.shared.didLaunch(config: config)
             }
         }
     }
