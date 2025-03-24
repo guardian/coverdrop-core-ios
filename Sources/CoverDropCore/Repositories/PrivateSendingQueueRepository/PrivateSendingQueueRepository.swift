@@ -116,7 +116,7 @@ public actor PrivateSendingQueueRepository: ObservableObject {
             throw PrivateSendingQueueRepositoryError.queueNotAvailable
         }
         let fileURL = try PrivateSendingQueueRepository.privateSendingQueueStorageFileURL
-        try Data(currentQueue.serialize()).write(to: fileURL, options: .completeFileProtection)
+        try Data(currentQueue.serialize()).write(to: fileURL)
         return currentQueue
     }
 }
