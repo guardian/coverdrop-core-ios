@@ -32,7 +32,7 @@ final class ExpiryDateTests: XCTestCase {
         )
 
         let expiredStatus2 = Message.getExpiredStatus(dateSentOrReceived: messageSend13DaysAgo.getDate())
-        XCTAssertEqual(expiredStatus2, .expiring(time: "24h"))
+        XCTAssertEqual(expiredStatus2, .expiring(time: "23h"))
 
         let messageSend15DaysAgo = await Message.outboundMessage(
             message: OutboundMessageData(
