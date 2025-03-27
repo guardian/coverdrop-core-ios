@@ -32,12 +32,9 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
         return formattedExpiry
     }
 
-    // Frustratingly the calendar date fucntions return an optional date
     public static var expiryWindow: Date? {
-        let calendar = Calendar.current
-        let expiryWindow = Constants.messageValidForDurationInSeconds
-        let expiryDate = calendar.date(byAdding: .second, value: -expiryWindow, to: DateFunction.currentTime())
-        return expiryDate
+        let now = DateFunction.currentTime()
+        return try? now.minusSeconds(Constants.messageValidForDurationInSeconds)
     }
 
     public static func getExpiredStatus(dateSentOrReceived: Date) -> MessageStatus {

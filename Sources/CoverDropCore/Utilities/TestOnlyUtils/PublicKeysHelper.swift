@@ -6,30 +6,6 @@ public enum KeysError: Error {
     case cannotFindKey
 }
 
-public enum DateFunction {
-    public static func currentKeysPublishedTime() -> Date {
-        var date = Date()
-        #if DEBUG
-            do {
-                if let generatedAtDate = try PublicKeysHelper.readLocalGeneratedAtFile() {
-                    date = generatedAtDate
-                }
-            } catch { Debug.println("Failed to get local keys generated file") }
-        #endif
-        return date
-    }
-
-    public static func currentTime() -> Date {
-        #if DEBUG
-            if TestingBridge.isEnabled(.mockedDataExpiredMessagesScenario) {
-                let keysDate = DateFunction.currentKeysPublishedTime()
-                return Date(timeInterval: -TimeInterval(60 * 60 * 24 * 13), since: keysDate)
-            }
-        #endif
-        return Date()
-    }
-}
-
 /// This helper is used to load the public keys fixture data from disk for the purpose of unit and UI testing
 /// It is located here because our tests are defined across multiple packages, and CoverDropCore is a common dependency
 /// of them all

@@ -78,6 +78,14 @@ public class UnlockedSecretData: Codable, Equatable, ObservableObject {
         }
     }
 
+    public func removeExpiredMessages(cutoff: Date) async {
+        let expiredMessages = messageMailbox.filter { $0.getDate() < cutoff }
+        messageMailbox.subtract(expiredMessages)
+        _ = await MainActor.run {
+            publishedMessageMailbox.subtract(expiredMessages)
+        }
+    }
+
     public static func == (lhs: UnlockedSecretData, rhs: UnlockedSecretData) -> Bool {
         return lhs.messageMailbox == rhs.messageMailbox &&
             lhs.userKey.publicKey.key == rhs.userKey.publicKey.key &&

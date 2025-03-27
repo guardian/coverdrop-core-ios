@@ -27,6 +27,16 @@ public enum TestingBridge {
         }
     }
 
+    static var currentTimeOverride: Date?
+
+    static func setCurrentTimeOverride(override: Date?) {
+        currentTimeOverride = override
+    }
+
+    public static func getCurrentTimeOverride() -> Date? {
+        return currentTimeOverride
+    }
+
     /// Returns `true` if the reference app should enable mocked API resonses
     public static func isMockedDataEnabled(config: CoverDropConfig) -> Bool {
         #if DEBUG

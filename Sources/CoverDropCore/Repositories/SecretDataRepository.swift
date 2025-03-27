@@ -64,15 +64,13 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
     }
 
     public func lock() async throws {
+        // Note that we expire old messages when we save the mailbox content, and not when unlocking. This ensures that
+        // messages we just received, but which might be very old based on their dead drop timestamp, are displayed at
+        // least once.
+        try await expireOldMessages()
         try await storeData()
         await MainActor.run {
             secretData = .lockedSecretData(lockedData: LockedSecretData())
-        }
-    }
-
-    public func storeData() async throws {
-        if case let .unlockedSecretData(unlockedData: unlockedData) = secretData {
-            try EncryptedStorage.updateStorageOnDisk(session: encryptedStorageSession!, state: unlockedData)
         }
     }
 
@@ -81,9 +79,6 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
         to recipient: JournalistData,
         dateSent: Date
     ) async throws {
-        // add the current message to the private sending queue and
-        // secret Data  Repository
-
         guard case let .unlockedSecretData(unlockedData: unlockedData) = secretData else {
             throw SecretDataRepositoryError.secretDataIsLocked
         }
@@ -126,6 +121,21 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
         if case let .unlockedSecretData(unlockedData: unlockedData) = secretData {
             await unlockedData.addMessages(messages: messages)
             try await storeData()
+        }
+    }
+
+    public func expireOldMessages() async throws {
+        if case let .unlockedSecretData(unlockedData: unlockedData) = secretData {
+            let now = DateFunction.currentTime()
+            let cutoff = try now.minusSeconds(Constants.messageValidForDurationInSeconds)
+            await unlockedData.removeExpiredMessages(cutoff: cutoff)
+            try await storeData()
+        }
+    }
+
+    public func storeData() async throws {
+        if case let .unlockedSecretData(unlockedData: unlockedData) = secretData {
+            try EncryptedStorage.updateStorageOnDisk(session: encryptedStorageSession!, state: unlockedData)
         }
     }
 
