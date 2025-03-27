@@ -12,7 +12,12 @@ public enum FileHelper {
         try ensureApplicationSupportDirectory(at: url.path())
 
         var fullPath = url.appendingPathComponent(fileName)
-
+        // File protection options can cause issues accessing files
+        // when we are in the background, so we make sure they are not set
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.none],
+            ofItemAtPath: fullPath.absoluteString
+        )
         var res = URLResourceValues()
         res.isExcludedFromBackup = true
         if FileManager.default.fileExists(atPath: fullPath.path) {

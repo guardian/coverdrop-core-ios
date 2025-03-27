@@ -11,7 +11,7 @@ public actor PrivateSendingQueueRepository: ObservableObject {
 
     @Published public var lastUpdated: Date = .now
 
-    private static let privateSendingQueueFileName = "privateSendingQueue"
+    private static let privateSendingQueueFileName = "privateSendingQueue_v2"
 
     private init() {}
 
