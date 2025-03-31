@@ -55,15 +55,26 @@ public class CoverDropService: ObservableObject {
 
     public static var shared = CoverDropService()
 
+    /// Must only be called from the integrating application's `AppDelegate` during `application`.
     public func didLaunch(config: CoverDropConfig) throws {
+        // We must ONLY register background tasks if we are actually in an app launch sequence. We msut not
+        // do so during any of the fallback mechanisms (https://github.com/guardian/coverdrop/issues/2899)
         BackgroundTaskService.registerBackgroundSendJob(config: config)
 
+        try ensureInitialized(config: config)
+    }
+
+    /// May be called from various parts of the app to ensure that the `CoverDropService` is intialized
+    /// so that subsequent calls to `getLibrary()` succeed.
+    public func ensureInitialized(config: CoverDropConfig) throws {
         switch state {
         case .notInitialized:
-            state = .initializing
             Task {
+                await MainActor.run {
+                    state = .initializing
+                }
                 do {
-                    let lib = try await didLaunchAsync(config: config)
+                    let lib = try await ensureInitializedAsync(config: config)
                     await MainActor.run {
                         state = .initialized(lib: lib)
                         // Run foreground checks so that there is the same behavior when app is started,
@@ -100,12 +111,12 @@ public class CoverDropService: ObservableObject {
             case let .failedToInitialize(reason: reason):
                 throw reason
             case .initializing, .notInitialized:
-                try await Task.sleep(nanoseconds: UInt64(0.1))
+                try await Task.sleep(nanoseconds: UInt64(1_000_000))
             }
         }
     }
 
-    private func didLaunchAsync(config: CoverDropConfig) async throws -> CoverDropLibrary {
+    private func ensureInitializedAsync(config: CoverDropConfig) async throws -> CoverDropLibrary {
         // Setup the public data repository
         let urlSession = getUrlSession(config: config)
         let publicDataRepository = PublicDataRepository(config, urlSession: urlSession)
@@ -203,8 +214,8 @@ public class CoverDropService: ObservableObject {
             // It's possible that coverdrop has been enabled remotely while the user still had the app open
             // So the service will never initialize until the app is restarted.
             // To avoid this, we check the state on foreground, and start the service if needed.
-            if case let .notInitialized = CoverDropService.shared.state {
-                try? CoverDropService.shared.didLaunch(config: config)
+            if case .notInitialized = CoverDropService.shared.state {
+                try? CoverDropService.shared.ensureInitialized(config: config)
             }
         }
     }
