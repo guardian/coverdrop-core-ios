@@ -18,63 +18,22 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
             return message.dateQueued
         }
     }
-
-    static func formatExpiryDate(messageDate: Date, expiry: Date?) -> String? {
-        // This is just to deal with the optional expiry date and generally wont fail
-        guard let expiry = expiry else {
-            return nil
-        }
-        let timeTillExpiry = expiry.distance(to: messageDate)
-        let formatter = DateComponentsFormatter()
-        formatter.unitsStyle = .abbreviated
-        formatter.allowedUnits = [.hour]
-        let formattedExpiry = formatter.string(from: timeTillExpiry)
-        return formattedExpiry
-    }
-
-    public static var expiryWindow: Date? {
-        let now = DateFunction.currentTime()
-        return try? now.minusSeconds(Constants.messageValidForDurationInSeconds)
-    }
-
-    public static func getExpiredStatus(dateSentOrReceived: Date) -> MessageStatus {
-        if Message.hasExpired(dateSentOrReceived: dateSentOrReceived) {
-            return .expired
-        }
-        if Message.isExpiring(dateSentOrReceived: dateSentOrReceived) {
-            if let formattedExpiry = Message.formatExpiryDate(
-                messageDate: dateSentOrReceived,
-                expiry: Message.expiryWindow
-            ) {
-                return .expiring(time: formattedExpiry)
-            } else {
-                return .pendingOrSent
-            }
-        } else {
-            return .pendingOrSent
-        }
-    }
-
-    private static func hasExpired(dateSentOrReceived: Date) -> Bool {
-        // if the expiryDate is greater tham date send we have not expired
-        if let expiryDate = Message.expiryWindow {
-            return expiryDate > dateSentOrReceived
-        } else {
-            return false
-        }
-    }
-
-    private static func isExpiring(dateSentOrReceived: Date) -> Bool {
-        guard let expiryWindow = Message.expiryWindow else {
-            return false
-        }
-        let expiryWarningDuration = Double(Constants.messageExpiryWarningInSeconds)
-        return expiryWindow.distance(to: dateSentOrReceived) < expiryWarningDuration
-    }
 }
 
-public enum MessageStatus: Equatable {
-    case pendingOrSent, expiring(time: String), expired
+public extension Set where Element == Message {
+    /// Returns the oldest date of the messages that are in the `.soonToBeExpired` state
+    func maybeExpiryDate() -> String? {
+        let oldestFirst = sorted { $0.getDate() > $1.getDate() }
+        for message in oldestFirst {
+            let state = try? getExpiryState(messageDate: message.getDate())
+            if case let .soonToBeExpired(expiryCountdownString) = state {
+                if let expiryCountdownString = expiryCountdownString {
+                    return expiryCountdownString
+                }
+            }
+        }
+        return nil
+    }
 }
 
 enum OutboundMessageError: Error {
@@ -83,12 +42,9 @@ enum OutboundMessageError: Error {
 
 public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObject {
     public var recipient: JournalistData
-    public var messageText: String = ""
-    public var dateQueued: Date = .now
+    public var messageText: String
+    public var dateQueued: Date
     public var hint: HintHmac
-
-    @Published public var isPending: Bool = true
-    private var sendingQueueSubscriber: AnyCancellable?
 
     private enum CodingKeys: String, CodingKey {
         case recipient, messageText, dateQueued, hint
@@ -126,35 +82,16 @@ public class OutboundMessageData: Hashable, Codable, Comparable, ObservableObjec
         return lhs.dateQueued < rhs.dateQueued
     }
 
-    public var expiredStatus: MessageStatus {
-        return Message.getExpiredStatus(dateSentOrReceived: dateQueued)
-    }
-
-    @MainActor public init(
+    public init(
         recipient: JournalistData,
         messageText: String,
         dateQueued: Date,
-        hint: HintHmac,
-        isPending: Bool? = nil
+        hint: HintHmac
     ) {
         self.recipient = recipient
         self.messageText = messageText
         self.dateQueued = dateQueued
         self.hint = hint
-        if let isPending = isPending {
-            self.isPending = isPending
-        } else {
-            Task {
-                sendingQueueSubscriber = await PrivateSendingQueueRepository.shared.$lastUpdated
-                    .sink { [weak self] _ in Task { await self?.loadIsPendingAsync() }}
-            }
-        }
-    }
-
-    @MainActor public func loadIsPendingAsync() async {
-        if let isInQueue = try? await PrivateSendingQueueRepository.shared.isMessageInQueue(hint: hint) {
-            isPending = isInQueue
-        }
     }
 }
 
@@ -208,10 +145,6 @@ public struct IncomingMessageData: Hashable, Codable, Comparable {
 
     public static func < (lhs: IncomingMessageData, rhs: IncomingMessageData) -> Bool {
         return lhs.dateReceived < rhs.dateReceived
-    }
-
-    public var expiredStatus: MessageStatus {
-        return Message.getExpiredStatus(dateSentOrReceived: dateReceived)
     }
 
     public init(sender: JournalistData, messageText: String, dateReceived: Date, deadDropId: Int = 0) {

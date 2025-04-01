@@ -31,7 +31,7 @@ public enum DateFunction {
     }
 }
 
-extension Date {
+public extension Date {
     func plusSeconds(_ seconds: Int) throws -> Date {
         guard let result = Calendar.current.date(
             byAdding: .second,

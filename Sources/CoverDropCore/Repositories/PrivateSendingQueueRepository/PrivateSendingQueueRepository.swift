@@ -9,7 +9,7 @@ enum PrivateSendingQueueRepositoryError: Error {
 public actor PrivateSendingQueueRepository: ObservableObject {
     public static let shared = PrivateSendingQueueRepository()
 
-    @Published public var lastUpdated: Date = .now
+    @MainActor @Published public var hintsInFlight: [HintHmac] = []
 
     private static let privateSendingQueueFileName = "privateSendingQueue_v2"
 
@@ -20,7 +20,9 @@ public actor PrivateSendingQueueRepository: ObservableObject {
     public func loadOrInitialiseQueue(_ coverMessageFactory: CoverMessageFactory) async throws -> PrivateSendingQueue {
         let configuration = PrivateSendingQueueConfiguration.default
         if let queueFromDisk = try await loadQueue() {
-            return queueFromDisk
+            let psq = queueFromDisk
+            try await updateHintsInFlight(psq)
+            return psq
         } else {
             let queue = try PrivateSendingQueue(
                 totalQueueSize: configuration.totalQueueSize,
@@ -58,7 +60,6 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         }
         let hint = try queue.enqueue(secret: secret, message: message)
         try await saveQueue(queue)
-        lastUpdated = Date.now
         return hint
     }
 
@@ -70,7 +71,6 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         let message = try queue.sendHeadMessageAndPushNewCoverMessage(coverMessageFactory)
 
         try await saveQueue(queue)
-        lastUpdated = Date.now
         return message
     }
 
@@ -117,6 +117,17 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         }
         let fileURL = try PrivateSendingQueueRepository.privateSendingQueueStorageFileURL
         try Data(currentQueue.serialize()).write(to: fileURL)
+        try await updateHintsInFlight(currentQueue)
         return currentQueue
+    }
+
+    /// Publishes the current set of hints that are waiting to be sent to the UI process. This is then used
+    /// to indicate which messages are "pending" and which are "sent".
+    public func updateHintsInFlight(_ psq: PrivateSendingQueue) async throws {
+        let hints = Set(psq.mHints)
+        await MainActor.run {
+            hintsInFlight.removeAll()
+            hintsInFlight.insert(contentsOf: hints, at: 0)
+        }
     }
 }

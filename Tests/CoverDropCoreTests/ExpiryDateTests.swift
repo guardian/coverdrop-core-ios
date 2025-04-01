@@ -5,46 +5,18 @@ import XCTest
 // This tests the 3 expiry statuses for messages
 final class ExpiryDateTests: XCTestCase {
     func testExpiry() async throws {
-        let now = Date()
-        let calendar = Calendar.current
+        let now = DateFunction.currentTime()
 
-        let messageSend1DayAgo = await Message.outboundMessage(
-            message: OutboundMessageData(
-                recipient: PublicKeysHelper.shared.testDefaultJournalist!,
-                messageText: "Test",
-                // swiftlint:disable:next force_unwrapping
-                dateQueued: calendar.date(byAdding: .day, value: -1, to: now)!,
-                hint: HintHmac(hint: [0, 0, 0, 0])
-            )
-        )
+        let messageSend1DayAgo = try now.minusSeconds(1 * 24 * 3600)
+        let expiredStatus1 = try getExpiryState(messageDate: messageSend1DayAgo)
+        XCTAssertEqual(expiredStatus1, .fresh)
 
-        let expiredStatus = Message.getExpiredStatus(dateSentOrReceived: messageSend1DayAgo.getDate())
-        XCTAssertEqual(expiredStatus, .pendingOrSent)
+        let messageSend13DaysAgo = try now.minusSeconds(13 * 24 * 3600)
+        let expiredStatus2 = try getExpiryState(messageDate: messageSend13DaysAgo)
+        XCTAssertEqual(expiredStatus2, .soonToBeExpired(expiryCountdownString: "23h"))
 
-        let messageSend13DaysAgo = await Message.outboundMessage(
-            message: OutboundMessageData(
-                recipient: PublicKeysHelper.shared.testDefaultJournalist!,
-                messageText: "Test",
-                // swiftlint:disable:next force_unwrapping
-                dateQueued: calendar.date(byAdding: .day, value: -13, to: now)!,
-                hint: HintHmac(hint: [0, 0, 0, 0])
-            )
-        )
-
-        let expiredStatus2 = Message.getExpiredStatus(dateSentOrReceived: messageSend13DaysAgo.getDate())
-        XCTAssertEqual(expiredStatus2, .expiring(time: "23h"))
-
-        let messageSend15DaysAgo = await Message.outboundMessage(
-            message: OutboundMessageData(
-                recipient: PublicKeysHelper.shared.testDefaultJournalist!,
-                messageText: "Test",
-                // swiftlint:disable:next force_unwrapping
-                dateQueued: calendar.date(byAdding: .day, value: -15, to: now)!,
-                hint: HintHmac(hint: [0, 0, 0, 0])
-            )
-        )
-
-        let expiredStatus3 = Message.getExpiredStatus(dateSentOrReceived: messageSend15DaysAgo.getDate())
+        let messageSend15DaysAgo = try now.minusSeconds(15 * 24 * 3600)
+        let expiredStatus3 = try getExpiryState(messageDate: messageSend15DaysAgo)
         XCTAssertEqual(expiredStatus3, .expired)
     }
 }

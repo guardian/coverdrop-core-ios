@@ -44,7 +44,7 @@ public enum CoverDropServiceHelper {
         let userKeyPair = EncryptionKeypair(publicKey: userPublicMessageKey, secretKey: userSecretMessageKey)
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
         let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
-            message: "Hey",
+            message: "Hey this is pending",
             messageRecipient: testDefaultJournalist,
             verifiedPublicKeys: lib.publicDataRepository.getVerifiedKeys(),
             userPublicKey: userKeyPair.publicKey
@@ -57,7 +57,7 @@ public enum CoverDropServiceHelper {
 
         var messages: Set<Message> = []
 
-        let outboundMessage = await OutboundMessageData(
+        let outboundMessage = OutboundMessageData(
             recipient: testDefaultJournalist,
             messageText: "Hey this is pending",
             dateQueued: Date(),
@@ -92,7 +92,7 @@ public enum CoverDropServiceHelper {
     }
 
     private static func addTestStorage(
-        includeMessages: Bool,
+        includeMessages _: Bool,
         config _: CoverDropConfig,
         verifiedKeys: VerifiedPublicKeys
     ) async throws {
@@ -110,35 +110,47 @@ public enum CoverDropServiceHelper {
         let privateSendingQueueSecret = try PrivateSendingQueueSecret.fromSecureRandom()
 
         let encryptedMessage = try await UserToCoverNodeMessageData.createMessage(
-            message: "Hey",
+            message: "Hey this is pending",
             messageRecipient: testDefaultJournalist,
             verifiedPublicKeys: verifiedKeys,
             userPublicKey: userKeyPair.publicKey
         )
 
-        let hint = HintHmac(hint: PrivateSendingQueueHmac.hmac(
-            secretKey: privateSendingQueueSecret.bytes,
-            message: encryptedMessage.asBytes()
-        ))
+        let hint = try await PrivateSendingQueueRepository.shared.enqueue(
+            secret: privateSendingQueueSecret,
+            message: MultiAnonymousBox(bytes: encryptedMessage.bytes)
+        )
 
         var messages: Set<Message> = []
-        if includeMessages {
-            let outboundMessage = await OutboundMessageData(
-                recipient: testDefaultJournalist,
-                messageText: "Hey",
-                dateQueued: Date(),
-                hint: hint
-            )
 
-            messages = [
-                .outboundMessage(message: outboundMessage),
-                .incomingMessage(message: .textMessage(message: IncomingMessageData(
-                    sender: testDefaultJournalist,
-                    messageText: "Hey",
-                    dateReceived: Date()
-                )))
-            ]
-        }
+        let outboundMessage = OutboundMessageData(
+            recipient: testDefaultJournalist,
+            messageText: "Hey this is pending",
+            dateQueued: Date(),
+            hint: hint
+        )
+
+        let outboundMessage2 = OutboundMessageData(
+            recipient: testDefaultJournalist,
+            messageText: "Hey this is sent",
+            dateQueued: Date(),
+            hint: HintHmac(hint: [0, 0, 0, 0])
+        )
+
+        messages = [
+            .outboundMessage(message: outboundMessage),
+            .outboundMessage(message: outboundMessage2),
+            .incomingMessage(message: .textMessage(message: IncomingMessageData(
+                sender: testDefaultJournalist,
+                messageText: "Hey this has expired",
+                dateReceived: Date(timeIntervalSinceNow: -TimeInterval(60 * 60 * 24 * 15))
+            ))),
+            .incomingMessage(message: .textMessage(message: IncomingMessageData(
+                sender: testDefaultJournalist,
+                messageText: "Hey this has expiry warning",
+                dateReceived: Date(timeIntervalSinceNow: -TimeInterval(60 * 60 * 24 * 13))
+            )))
+        ]
 
         let data = UnlockedSecretData(
             messageMailbox: messages,

@@ -156,10 +156,11 @@ public struct PrivateSendingQueue: Equatable {
     ///   - sendingQueueMessageSize: the expected message size of the private sending queue. Defaults to the value
     /// specified in the `PrivateSendignQueueConfiguration.default.messageSize`.
     /// - throws: if the queue is full  of real messages or an incorrect size
-    mutating func enqueue(secret: PrivateSendingQueueSecret,
-                          message: MultiAnonymousBox<UserToCoverNodeMessageData>,
-                          sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default
-                              .messageSize) throws -> HintHmac {
+    mutating func enqueue(
+        secret: PrivateSendingQueueSecret,
+        message: MultiAnonymousBox<UserToCoverNodeMessageData>,
+        sendingQueueMessageSize: Int32 = PrivateSendingQueueConfiguration.default.messageSize
+    ) throws -> HintHmac {
         let fillLevel = getFillLevel(secret: secret)
 
         if fillLevel == totalQueueSize {
@@ -167,7 +168,7 @@ public struct PrivateSendingQueue: Equatable {
         }
 
         if message.asBytes().count != sendingQueueMessageSize {
-            throw PrivateSendingQueueError.queueIsFull
+            throw PrivateSendingQueueError.messageOrHintSizeIncorrect
         }
 
         mStorage.insert(message, at: fillLevel)
