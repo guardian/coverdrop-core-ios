@@ -60,7 +60,7 @@ public enum CoverDropServiceHelper {
         let outboundMessage = OutboundMessageData(
             recipient: testDefaultJournalist,
             messageText: "Hey this is pending",
-            dateQueued: Date(),
+            dateQueued: DateFunction.currentTime(),
             hint: hint
         )
 
@@ -79,7 +79,7 @@ public enum CoverDropServiceHelper {
             .incomingMessage(message: .textMessage(message: IncomingMessageData(
                 sender: testDefaultJournalist,
                 messageText: "Hey this was sent today",
-                dateReceived: Date()
+                dateReceived: DateFunction.currentTime()
             )))
         ]
 
@@ -126,14 +126,14 @@ public enum CoverDropServiceHelper {
         let outboundMessage = OutboundMessageData(
             recipient: testDefaultJournalist,
             messageText: "Hey this is pending",
-            dateQueued: Date(),
+            dateQueued: DateFunction.currentTime(),
             hint: hint
         )
 
         let outboundMessage2 = OutboundMessageData(
             recipient: testDefaultJournalist,
             messageText: "Hey this is sent",
-            dateQueued: Date(),
+            dateQueued: DateFunction.currentTime(),
             hint: HintHmac(hint: [0, 0, 0, 0])
         )
 

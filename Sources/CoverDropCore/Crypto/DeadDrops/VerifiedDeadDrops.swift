@@ -27,8 +27,10 @@ public extension VerifiedDeadDrops {
         return VerifiedDeadDrops(deadDrops: verifiedDeadDrops)
     }
 
-    static func allVerifiedDeadDropsFromDeadDropData(deadDrops: DeadDropData,
-                                                     verifiedKeys: VerifiedPublicKeys) -> [VerifiedDeadDrop] {
+    static func allVerifiedDeadDropsFromDeadDropData(
+        deadDrops: DeadDropData,
+        verifiedKeys: VerifiedPublicKeys
+    ) -> [VerifiedDeadDrop] {
         var verifiedDeadDrops: [VerifiedDeadDrop] = []
 
         let coverNodeIdKeys: [String: [CoverNodeIdPublicKey]] = verifiedKeys.getAllCoverNodeIdKeysInAllHierarchies()
@@ -68,14 +70,18 @@ public struct VerifiedDeadDrop {
             ) {
                 let parsedDeadDropData = try VerifiedDeadDrop.parseDeadDropData(data: unverifiedDeadDrop.data.bytes)
                 let validDeadDropDate = unverifiedDeadDrop.createdAt.date
-                // Check the deaddrop publish date is not more that 1 week in the future
-                // This is to make sure no-one has tampered with the deaddrop api dates.
-                let isValidDateLessThan7DaysInTheFuture = Date().distance(to: validDeadDropDate) < 60 * 60 * 24 * 7
-                if isValidDateLessThan7DaysInTheFuture {
-                    id = unverifiedDeadDrop.id
-                    data = parsedDeadDropData
-                    publishedDate = validDeadDropDate
-                } else { return nil }
+
+                // Check the deaddrop publish date is not more that 1 week in the future which might be caused
+                // by dramatic clock skew between us and the API. In that case, we ignore and hope for better
+                // alignment for the next try.
+                if DateFunction.currentTime().distance(to: validDeadDropDate) > 7 * 24 * 3600 {
+                    return nil
+                }
+
+                // All checks passed
+                id = unverifiedDeadDrop.id
+                data = parsedDeadDropData
+                publishedDate = validDeadDropDate
             } else { return nil }
         } catch { return nil }
     }
@@ -106,9 +112,11 @@ public struct VerifiedDeadDrop {
     ///   - data: the dead drop data
     ///   - signature: the signature provided alongside the dead drop data in the API respose
     /// - Returns: `true` if the verfication is sucessful, `false` if verification fails
-    static func verify(signingPk: CoverNodeIdPublicKey,
-                       data: [UInt8],
-                       signature: Signature<CoverNodeId>) -> Bool {
+    static func verify(
+        signingPk: CoverNodeIdPublicKey,
+        data: [UInt8],
+        signature: Signature<CoverNodeId>
+    ) -> Bool {
         return Sodium().sign.verify(message: data, publicKey: signingPk.key, signature: signature.certificate)
     }
 }

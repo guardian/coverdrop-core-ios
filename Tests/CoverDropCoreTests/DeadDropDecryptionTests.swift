@@ -13,7 +13,7 @@ final class DeadDropDecryptionTests: XCTestCase {
             messageBytes: textMessage,
             journalistData: journalistData,
             deadDropId: 1,
-            dateReceived: Date()
+            dateReceived: DateFunction.currentTime()
         )
         if case let .incomingMessage(message: incomingMessage) = result,
            case let .textMessage(message: messageText) = incomingMessage {
@@ -39,7 +39,7 @@ final class DeadDropDecryptionTests: XCTestCase {
             messageBytes: handoverMessage,
             journalistData: journalistKey,
             deadDropId: 1,
-            dateReceived: Date()
+            dateReceived: DateFunction.currentTime()
         )
         if case let .incomingMessage(message: incomingMessage) = result,
            case let .handoverMessage(message: messageData) = incomingMessage {
@@ -57,7 +57,7 @@ final class DeadDropDecryptionTests: XCTestCase {
             messageBytes: handoverMessage,
             journalistData: journalistData,
             deadDropId: 1,
-            dateReceived: Date()
+            dateReceived: DateFunction.currentTime()
         )
         XCTAssertNil(result)
     }

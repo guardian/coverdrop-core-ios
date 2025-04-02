@@ -9,7 +9,7 @@ protocol PublicKeyRepositoryProtocol {
 /// web api
 /// and store the results to file before returning them
 public class PublicKeyRepository: CacheableApiRepository<PublicKeysData> {
-    init(now: Date = Date(), config: CoverDropConfig, urlSession: URLSession) {
+    init(now: Date = DateFunction.currentTime(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,

@@ -50,7 +50,7 @@ public struct SelfSignedPublicSigningKey<T: Role>: SigningKey, Codable, Equatabl
         return notValidAfter < now
     }
 
-    public func verify(now: Date = Date()) -> Bool {
+    public func verify(now: Date = DateFunction.currentTime()) -> Bool {
         let isDateValid = !isExpired(now: now)
         // The certificate for this also includes the timestamp,
         let validationCertificate = KeyCertificateData.newForSigningKey(key: key, notValidAfter: notValidAfter)
@@ -89,7 +89,7 @@ public class SignedPublicSigningKey<T: Role, S: SigningKey>: SigningKey, Codable
         return notValidAfter < now
     }
 
-    public func verify(signingKey: some SigningKey, now: Date = Date()) -> Bool {
+    public func verify(signingKey: some SigningKey, now: Date = DateFunction.currentTime()) -> Bool {
         let isDateValid = !isExpired(now: now)
         // The certificate for this also includes the timestamp,
         let validationCertificate = KeyCertificateData.newForSigningKey(key: key, notValidAfter: notValidAfter)
@@ -144,7 +144,7 @@ public class SignedPublicEncryptionKey<T: Role, S: SigningKey>: Codable {
         return notValidAfter < now
     }
 
-    public func verify(signingKey: some SigningKey, now: Date = Date()) -> Bool {
+    public func verify(signingKey: some SigningKey, now: Date = DateFunction.currentTime()) -> Bool {
         let isDateValid = !isExpired(now: now)
         // The certificate for this also includes the timestamp,
         let validationCertificate = KeyCertificateData.newForEncryptionKey(key: key, notValidAfter: notValidAfter)

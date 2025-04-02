@@ -222,7 +222,7 @@ public class CoverDropService: ObservableObject {
 
     public static func didEnterBackground() {
         // This is called when the app enters the background
-        UserDefaults.standard.set(Date(), forKey: "LastBackgroundDate")
+        UserDefaults.standard.set(DateFunction.currentTime(), forKey: "LastBackgroundDate")
         do {
             let fileURL = try EncryptedStorage.secureStorageFileURL()
             try EncryptedStorage.touchExistingStorage(fileUrl: fileURL)

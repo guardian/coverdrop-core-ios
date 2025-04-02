@@ -21,35 +21,35 @@ final class DeadDropLocalRepositoryTests: XCTestCase {
     func testDeadDrops_whenDownloadedWithNonEmptyStorage_thenMergedTrimmedAndAvailableAsMostRecent() async throws {
         let deadDropApril01 = fakeUserFacingDeadDrop(
             id: 10,
-            createdAt: DateFormats.validateDate(date: "2023-04-01T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-04-01T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropApril05 = fakeUserFacingDeadDrop(
             id: 20,
-            createdAt: DateFormats.validateDate(date: "2023-04-05T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-04-05T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropApril06 = fakeUserFacingDeadDrop(
             id: 21,
-            createdAt: DateFormats.validateDate(date: "2023-04-06T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-04-06T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropApril10 = fakeUserFacingDeadDrop(
             id: 40,
-            createdAt: DateFormats.validateDate(date: "2023-04-10T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-04-10T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropApril11 = fakeUserFacingDeadDrop(
             id: 50,
-            createdAt: DateFormats.validateDate(date: "2023-04-11T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-04-11T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropApril20 = fakeUserFacingDeadDrop(
             id: 80,
-            createdAt: DateFormats.validateDate(date: "2023-04-20T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-04-20T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropJune01 = fakeUserFacingDeadDrop(
             id: 200,
-            createdAt: DateFormats.validateDate(date: "2023-06-01T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-06-01T00:00:00Z") ?? DateFunction.currentTime()
         )
         let deadDropJune07 = fakeUserFacingDeadDrop(
             id: 201,
-            createdAt: DateFormats.validateDate(date: "2023-06-01T00:00:00Z") ?? Date()
+            createdAt: DateFormats.validateDate(date: "2023-06-01T00:00:00Z") ?? DateFunction.currentTime()
         )
 
         // Start with an empty storage

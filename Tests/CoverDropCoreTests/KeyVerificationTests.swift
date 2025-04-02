@@ -120,8 +120,8 @@ final class KeyVerificationTests: XCTestCase {
             key: Sign.KeyPair.PublicKey(journalistIdKey!),
             certificate: journalistIdCertObj,
             signingKey: organizationSigningKey,
-            notValidAfter: Date(),
-            now: Date()
+            notValidAfter: DateFunction.currentTime(),
+            now: DateFunction.currentTime()
         )
 
         XCTAssertTrue(journoKey == nil)

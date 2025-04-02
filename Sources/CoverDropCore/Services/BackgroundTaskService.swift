@@ -59,7 +59,7 @@ public enum BackgroundTaskService {
 
             let result = await BackgroundMessageSendJob.run(
                 publicDataRepository: lib.publicDataRepository,
-                now: Date(),
+                now: DateFunction.currentTime(),
                 numMessagesPerBackgroundRun: config.numMessagesPerBackgroundRun,
                 minDurationBetweenBackgroundRunsInSecs: config.minDurationBetweenBackgroundRunsInSecs
             )

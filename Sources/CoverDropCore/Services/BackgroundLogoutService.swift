@@ -15,7 +15,7 @@ public enum BackgroundLogoutService {
             throw BackgroundLogoutServiceError.missingLastBackgroundDateConfig
         }
 
-        let timeIntervalSinceLastBackground = Date().timeIntervalSince(lastBackgroundDate)
+        let timeIntervalSinceLastBackground = DateFunction.currentTime().timeIntervalSince(lastBackgroundDate)
         if timeIntervalSinceLastBackground > TimeInterval(appConfig.maxBackgroundDurationInSeconds) {
             try await lib.secretDataRepository.lock()
         }

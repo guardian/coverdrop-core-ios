@@ -58,7 +58,7 @@ enum MessageHelperError: Error {
         let realReplyMessage = Message.incomingMessage(message: .textMessage(message: IncomingMessageData(
             sender: recipientUnwrapped,
             messageText: "hey user, from: \(recipientUnwrapped.displayName)",
-            dateReceived: Date()
+            dateReceived: DateFunction.currentTime()
         )))
 
         let encryptedMessage2 = try await UserToCoverNodeMessageData.createMessage(

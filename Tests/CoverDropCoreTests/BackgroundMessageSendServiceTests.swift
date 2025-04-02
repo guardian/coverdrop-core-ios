@@ -22,8 +22,8 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
         }
 
         // Test run where last run was 40 seconds ago with minimum run of 30 seconds
-        let now = Date()
-        var lastRun = Date().addingTimeInterval(-TimeInterval(40))
+        let now = DateFunction.currentTime()
+        var lastRun = try now.minusSeconds(40)
         var minimumDurationBetweenRuns = TimeInterval(30)
 
         runTest(
@@ -35,7 +35,7 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
         // Test run where last run was 20 seconds ago with minimum run of 30 seconds,
         // should be false due to duration having not passed yet
 
-        lastRun = Date().addingTimeInterval(-TimeInterval(20))
+        lastRun = try now.minusSeconds(20)
         minimumDurationBetweenRuns = TimeInterval(30)
 
         runTest(
@@ -47,7 +47,7 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
         // Test run where last run was 40 seconds ago with minimum run of 30 seconds,
         // shouldRetryDueToPreviousFailure is true should be true due to shouldRetryDueToPreviousFailure being true
 
-        lastRun = Date().addingTimeInterval(-TimeInterval(40))
+        lastRun = try now.minusSeconds(40)
         minimumDurationBetweenRuns = TimeInterval(30)
         runTest(
             lastRun: lastRun,
@@ -58,7 +58,7 @@ final class BackgroundMessageSendServiceTests: XCTestCase {
         // Test run where last run was 10 seconds in the future with minimum run of 30 seconds
         // should be true due to shouldRetryDueToPreviousFailure being true
 
-        lastRun = Date().addingTimeInterval(TimeInterval(10))
+        lastRun = DateFunction.currentTime().addingTimeInterval(TimeInterval(10))
         minimumDurationBetweenRuns = TimeInterval(30)
         runTest(
             lastRun: lastRun,
