@@ -2,28 +2,36 @@ import Foundation
 
 public enum FileHelper {
     public static func getPath(fileName: String) throws -> URL {
-        let url = try FileManager.default.url(for: .applicationSupportDirectory,
-                                              in: .userDomainMask,
-                                              appropriateFor: nil,
-                                              create: true)
+        let url = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
 
         // The application support directory isn't automatically created on app install
         // So we have to check it exists and create it if not.
         try ensureApplicationSupportDirectory(at: url.path())
 
         var fullPath = url.appendingPathComponent(fileName)
-        // File protection options can cause issues accessing files
-        // when we are in the background, so we make sure they are not set
-        try FileManager.default.setAttributes(
-            [.protectionKey: FileProtectionType.none],
-            ofItemAtPath: fullPath.absoluteString
-        )
-        var res = URLResourceValues()
-        res.isExcludedFromBackup = true
+        try ensureCorrectFilePermissions(fullPath: &fullPath)
+        return fullPath
+    }
+
+    public static func ensureCorrectFilePermissions(fullPath: inout URL) throws {
         if FileManager.default.fileExists(atPath: fullPath.path) {
+            // File protection options can cause issues accessing files
+            // when we are in the background, so we make sure they are not set
+            try? FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.none],
+                ofItemAtPath: fullPath.path
+            )
+
+            // Exclude from backups
+            var res = URLResourceValues()
+            res.isExcludedFromBackup = true
             try fullPath.setResourceValues(res)
         }
-        return fullPath
     }
 
     public static func ensureApplicationSupportDirectory(at path: String) throws {
