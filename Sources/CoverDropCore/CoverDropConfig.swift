@@ -16,14 +16,14 @@ public protocol CoverDropConfig {
 }
 
 public enum EnvType {
-    case dev, code, prod, audit, demo
+    case dev, code, prod, staging, demo
 }
 
 public enum StaticConfig: CoverDropConfig {
     case devConfig
     case codeConfig
     case prodConfig
-    case auditConfig
+    case stagingConfig
     case demoConfig
 
     private func internalGetConfig() -> CoverDropConfig {
@@ -34,8 +34,8 @@ public enum StaticConfig: CoverDropConfig {
             return CodeConfig()
         case .prodConfig:
             return ProdConfig()
-        case .auditConfig:
-            return AuditConfig()
+        case .stagingConfig:
+            return StagingConfig()
         case .demoConfig:
             return DemoConfig()
         }
@@ -111,14 +111,14 @@ public struct DemoConfig: CoverDropConfig {
     public var removeBackgroundSendStateOnStart = false
 }
 
-public struct AuditConfig: CoverDropConfig {
-    public var envType: EnvType = .audit
+public struct StagingConfig: CoverDropConfig {
+    public var envType: EnvType = .staging
     public var withSecureDns: Bool = true
 
     public var passphraseWordCount = 3
 
-    public let apiBaseUrl = "https://secure-messaging-api-audit.guardianapis.com/v1"
-    public let messageBaseUrl = "https://secure-messaging-msg-audit.guardianapis.com"
+    public let apiBaseUrl = "https://secure-messaging-api-staging.guardianapis.com/v1"
+    public let messageBaseUrl = "https://secure-messaging-msg-staging.guardianapis.com"
 
     public let cacheEnabled = true
 
