@@ -28,8 +28,8 @@ public class KeyCertificateData: Codable {
     private static func newForKeyBytes(keyBytes: [UInt8], notValidAfter: Date) -> KeyCertificateData {
         // Use network endianess since we have to pick a cross-platform representation
         // We need to make sure its BigEndian here !
-        let notValidAfterSecs: [UInt8] =
-            Array(withUnsafeBytes(of: Int64(bigEndian: Int64(notValidAfter.timeIntervalSince1970))) { Data($0) })
+        let epochSeconds = Int64(notValidAfter.timeIntervalSince1970)
+        let notValidAfterSecs: [UInt8] = Array(withUnsafeBytes(of: Int64(bigEndian: epochSeconds)) { Data($0) })
 
         var buf = keyBytes
         buf.append(contentsOf: notValidAfterSecs)

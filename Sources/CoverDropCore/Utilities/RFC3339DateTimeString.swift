@@ -13,6 +13,10 @@ public struct RFC3339DateTimeString: Codable, Equatable, Comparable {
 
     public var date: Date
 
+    public var epochSeconds: Int64 {
+        Int64(date.timeIntervalSince1970)
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let string = try container.decode(String.self)

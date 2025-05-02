@@ -3,6 +3,7 @@ import Sodium
 
 public enum IntegrationTestScenario: String {
     case minimal = "minimal_scenario"
+    case minimalLegacy = "minimal_scenario_legacy"
     case messaging = "messaging_scenario"
     case multipleJournalists = "multiple_journalists_messaging_scenario"
 }
