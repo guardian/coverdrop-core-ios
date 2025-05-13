@@ -2,7 +2,6 @@
 import Sodium
 import XCTest
 
-// swiftlint:disable line_length
 final class DeadDropRepositoryTests: XCTestCase {
     let config: StaticConfig = .devConfig
 
@@ -367,5 +366,3 @@ final class DeadDropRepositoryTests: XCTestCase {
         ))
     }
 }
-
-// swiftlint:enable line_length
