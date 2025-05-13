@@ -27,37 +27,39 @@ enum EncryptedStorageError: Error {
 
 /// The `EncryptedStorage` encrypts the mailbox content using a key that is derived using the Sloth library.
 /// The Sloth library (and its iOS variant `RainbowSloth`) store a secret inside the Secure Enclave to
-/// effectively rate-limit the guess rate of passprhases.
-public actor EncryptedStorage {
+/// effectively rate-limit the guess rate of passphrases.
+public class EncryptedStorage {
     public static let fileName = "coverdrop"
     public static let storagePaddingToSize = 512 * 1024 // 512 KiB
 
     /// The parameter N for RainbowSloth is chosen based on the paper and translates to at least ~1 seconds
-    static let rainbowSloth = RainbowSloth(withN: 200)
-    static let rainbowSlothKeyHandle = "coverdop"
-    static let xchacha20poly1305KeySize = 32
+    let rainbowSloth = RainbowSloth(withN: 200)
+    let rainbowSlothKeyHandle = "coverdop"
+    let xchacha20poly1305KeySize = 32
 
-    /// For the EncryptedStorage to be ready, we expect a file to be on disk
-    /// As a side effect of creating the storage, we also expect a key to be create in the secure enclave if available
-    /// As its a side effect, we don't explicitly check for it, but just assume it has happened.
-    public static var isReady: Bool {
-        guard let fileURL = try? EncryptedStorage.secureStorageFileURL() else { return false }
-        return FileManager.default.fileExists(atPath: fileURL.path)
-    }
+    fileprivate init() {}
 
     /// To be called on every app start. If no storage exists, a new one is created with an undisclosed passphrase. If
     /// one already exists, its last-modified date is updated.
     /// - Returns: `Storage` object with encrypted `blob`
     /// - Throws: if touching or creating storage fails
-    public static func onAppStart(config: CoverDropConfig) async throws {
-        let fileURL = try EncryptedStorage.secureStorageFileURL()
+    public func onAppStart(config: CoverDropConfig) throws {
+        let fileURL = try secureStorageFileURL()
 
         if FileManager.default.fileExists(atPath: fileURL.path) {
             // If there is an existing storage, update its creation and last-modified timestamps
             try touchExistingStorage(fileUrl: fileURL)
         } else {
             // Else there is no storage yet and we create it with a random passphrase
-            try await createOrResetStorageWithRandomPassphrase(passphraseWordCount: config.passphraseWordCount)
+            let passphrase = PasswordGenerator.shared.generate(wordCount: config.passphraseWordCount)
+            _ = try createOrResetStorageWithPassphrase(passphrase: passphrase)
+        }
+    }
+
+    public func onDidEnterBackground() throws {
+        let fileURL = try secureStorageFileURL()
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try touchExistingStorage(fileUrl: fileURL)
         }
     }
 
@@ -67,15 +69,10 @@ public actor EncryptedStorage {
     /// - Parameters:
     ///  - fileUrl: the `URL` of the storage file to write to
     /// - Throws: if attribute setting fails
-    static func touchExistingStorage(fileUrl: URL) throws {
+    func touchExistingStorage(fileUrl: URL) throws {
         let date = NSDate()
         try FileManager.default.setAttributes([FileAttributeKey.modificationDate: date], ofItemAtPath: fileUrl.path)
         try FileManager.default.setAttributes([FileAttributeKey.creationDate: date], ofItemAtPath: fileUrl.path)
-    }
-
-    public static func createOrResetStorageWithRandomPassphrase(passphraseWordCount: Int) async throws {
-        let passphrase = newStoragePassphrase(passphraseWordCount: passphraseWordCount)
-        _ = try createOrResetStorageWithPassphrase(passphrase: passphrase)
     }
 
     /// Creates or resets the storage with a new passphrase. This will irrecoverly remove all existing data.
@@ -83,7 +80,7 @@ public actor EncryptedStorage {
     ///   - passphrase: the new passphrase created by the user
     /// - Returns: `EncryptedStorageSession` object
     /// - Throws: if the writing the storage fails
-    public static func createOrResetStorageWithPassphrase(passphrase: ValidPassword) throws
+    public func createOrResetStorageWithPassphrase(passphrase: ValidPassword) throws
         -> EncryptedStorageSession {
         // Generate a new active session with the new passphrase; this resets the SE key
         let (slothStorageState, kUser) = try rainbowSloth.keygen(
@@ -97,7 +94,7 @@ public actor EncryptedStorage {
         let emptyState = try UnlockedSecretData.createEmpty()
 
         // Store on disk using our newly derived session
-        try EncryptedStorage.updateStorageOnDisk(
+        try updateStorageOnDisk(
             session: session,
             state: emptyState
         )
@@ -112,13 +109,13 @@ public actor EncryptedStorage {
     ///   - state: a `UnlockedSecretData` with the new state we want to update storage with, Any existing data will be
     /// overwritten.
     ///  - Throws: if password derivation, key loading, encryption, json encoding or file writing fail
-    public static func updateStorageOnDisk(
+    public func updateStorageOnDisk(
         session: EncryptedStorageSession,
         state: UnlockedSecretData
     ) throws {
         // Pad the new state to a fixed size
         var statePadded: [UInt8] = state.asUnencryptedBytes()
-        Sodium().utils.pad(bytes: &statePadded, blockSize: storagePaddingToSize)
+        Sodium().utils.pad(bytes: &statePadded, blockSize: EncryptedStorage.storagePaddingToSize)
 
         // Encrypt using an AEAD algorithm.
         // This sets an IV/nonce internally making it CPA and CCA secure.
@@ -143,9 +140,9 @@ public actor EncryptedStorage {
     ///   - passphrase: the new passphrase created by the user
     /// - Returns: `EncryptedStorageSession` object
     /// - Throws: if the unlocking fails; this can be due to a wrong passphrase or a tampered file
-    public static func unlockStorageWithPassphrase(passphrase: ValidPassword) async throws -> EncryptedStorageSession {
+    public func unlockStorageWithPassphrase(passphrase: ValidPassword) async throws -> EncryptedStorageSession {
         // retrieve our `Storage` information from disk
-        let fileURL = try EncryptedStorage.secureStorageFileURL()
+        let fileURL = try secureStorageFileURL()
 
         guard let readData = try? Data(contentsOf: fileURL) else { throw EncryptedStorageError.storageFileMissing }
 
@@ -180,9 +177,9 @@ public actor EncryptedStorage {
     /// `unlockStorageWithPassphrase`
     /// - Returns: `UnlockedSecretData` object
     /// - Throws: If the storage cannot be decrypted; this can be due to a wrong passphrase or a tamered file
-    public static func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretData {
+    public func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretData {
         // retrieve our `Storage` information from disk
-        let fileURL = try EncryptedStorage.secureStorageFileURL()
+        let fileURL = try secureStorageFileURL()
         let readData = try Data(contentsOf: fileURL)
         let storage: Storage = try JSONDecoder().decode(Storage.self, from: readData)
 
@@ -198,14 +195,18 @@ public actor EncryptedStorage {
     }
 
     /// - Returns: `URL` to the secure storage file
-    public static func secureStorageFileURL() throws -> URL {
-        return try FileHelper.getPath(fileName: fileName)
+    public func secureStorageFileURL() throws -> URL {
+        return try FileHelper.getPath(fileName: EncryptedStorage.fileName)
     }
 
-    /// Creates a new passphrase.
-    /// - Returns: `ValidPassword` with the relevant word count
-    public static func newStoragePassphrase(passphraseWordCount: Int) -> ValidPassword {
-        let generator = PasswordGenerator.shared
-        return generator.generate(wordCount: passphraseWordCount)
+    /// Named initializer to highlight that this should only be created from the secret data repository.
+    /// Creating a parallel `EncryptedStorage` instance can lead to race conditions and data loss.
+    static func createForSecretDataRepository() -> EncryptedStorage {
+        return EncryptedStorage()
+    }
+
+    /// Only for testing purposes. This should not never be called in production code.
+    static func createForTesting() -> EncryptedStorage {
+        return EncryptedStorage()
     }
 }

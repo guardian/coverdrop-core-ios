@@ -142,10 +142,9 @@ public class CoverDropService: ObservableObject {
         // 6. create the private sending queue on disk if it does not exist
         _ = try await PrivateSendingQueueRepository.shared.loadOrInitialiseQueue(coverMessageFactory)
 
-        // Check Encrypted Storage exists, and create if not
-        _ = try await EncryptedStorage.onAppStart(config: config)
-
+        // This creates the encrypted storage if it does not exist yet (or touches it if it does)
         let secretDataRepository = SecretDataRepository(publicDataRepository: publicDataRepository)
+        try await secretDataRepository.onAppStart()
 
         // Check app resiliance guards
         await SecuritySuite.shared.checkForJailbreak()
@@ -195,6 +194,7 @@ public class CoverDropService: ObservableObject {
         return URLSession(configuration: urlSession)
     }
 
+    /// This is called when the app is foregrounded
     public static func willEnterForeground(config: CoverDropConfig) {
         Task {
             if case let .initialized(repositories) = CoverDropService.shared.state {
@@ -220,14 +220,18 @@ public class CoverDropService: ObservableObject {
         }
     }
 
+    /// This is called when the app enters the background
     public static func didEnterBackground() {
-        // This is called when the app enters the background
         UserDefaults.standard.set(DateFunction.currentTime(), forKey: "LastBackgroundDate")
-        do {
-            let fileURL = try EncryptedStorage.secureStorageFileURL()
-            try EncryptedStorage.touchExistingStorage(fileUrl: fileURL)
-        } catch {
-            Debug.println("Failed to touch storage on close")
+
+        Task {
+            do {
+                if case let .initialized(repositories) = CoverDropService.shared.state {
+                    try await repositories.secretDataRepository.onDidEnterBackground()
+                }
+            } catch {
+                Debug.println("Failed to touch storage on close")
+            }
         }
 
         // This puts the setting up of background traffic sending into a async task
@@ -238,7 +242,6 @@ public class CoverDropService: ObservableObject {
         // But if they don't it will required a http round trip.
         // If this doesn't complete in time, we won't schedule a background task, but this will get picked up
         // by the BackgroundMessageScheduleService.onAppStart cleanup function
-
         Task { await BackgroundMessageScheduleService.onEnterBackground() }
     }
 }

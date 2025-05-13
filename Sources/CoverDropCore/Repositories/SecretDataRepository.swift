@@ -8,24 +8,50 @@ enum SecretDataRepositoryError: Error {
 }
 
 public protocol SecretDataRepositoryProtocol {
+    /// Callback whenever the app starts or CoverDrop is initialized for the first time.
+    func onAppStart() async throws
+
+    /// Callback whenever the app enters background.
+    func onDidEnterBackground() async throws
+
+    /// Returns the current secret data state (might be unlocked or locked)
     func getSecretData() -> SecretData
+
+    /// Creates or resets the vault with the given passphrase.
     func createOrReset(passphrase: ValidPassword) async throws
+
+    /// Deletes the vault and resets the passphrase to a randomly generated one.
+    func deleteVault() async throws
+
+    /// Locks the vault and clears the secret data.
     func lock() async throws
+
+    /// Unlocks the vault with the given passphrase. Throws if the passphrase is incorrect.
     func unlock(passphrase: ValidPassword) async throws
+
+    /// Returns all mailbox recipients (journalists or desks) that the user has had conversations with.
     func getMailboxRecipients(publicKeyData: VerifiedPublicKeys) async throws -> [JournalistData]
+
+    /// Adds a new message to the mailbox (will automatically sorted to the right conversation).
     func addMessage(message: Message) async throws
+
+    /// Adds a new messages to the mailbox (will automatically sorted to the right conversation).
     func addMessages(messages: Set<Message>) async throws
+
+    /// Sends a message to a recipient. This will encrypt the message, add it to the PSQ, and add it to the mailbox.
     func sendMessage(
         _ message: String,
         to recipient: JournalistData,
         dateSent: Date
     ) async throws
+
     func setUnlockedDataForTesting(unlockedData: UnlockedSecretData)
 }
 
 public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtocol {
     @Published public var secretData: SecretData = .lockedSecretData(lockedData: LockedSecretData())
     private var publicDataRepository: PublicDataRepository
+    private var encryptedStorage: EncryptedStorage = EncryptedStorage.createForSecretDataRepository()
 
     init(publicDataRepository: PublicDataRepository) {
         self.publicDataRepository = publicDataRepository
@@ -33,18 +59,42 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
 
     private var encryptedStorageSession: EncryptedStorageSession?
 
+    public func onAppStart() async throws {
+        try encryptedStorage.onAppStart(config: publicDataRepository.config)
+    }
+
+    public func onDidEnterBackground() async throws {
+        try encryptedStorage.onDidEnterBackground()
+    }
+
     public func getSecretData() -> SecretData {
         return secretData
     }
 
     public func createOrReset(passphrase: ValidPassword) async throws {
-        encryptedStorageSession = try EncryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        encryptedStorageSession = try encryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
         try await loadData()
+    }
+
+    /// Deletes the vault and resets the passphrase to a randomly generated one. This will also
+    /// wipe the private sending queue to remove any pending messages. Afterwards, the
+    /// session will be set to a locked state.
+    public func deleteVault() async throws {
+        let passphrase = PasswordGenerator.shared.generate(wordCount: publicDataRepository.config.passphraseWordCount)
+        try await createOrReset(passphrase: passphrase)
+
+        if let coverMessageFactory = try? publicDataRepository.getCoverMessageFactory() {
+            try await PrivateSendingQueueRepository.shared.wipeQueue(coverMessageFactory)
+        }
+
+        await MainActor.run {
+            secretData = .lockedSecretData(lockedData: LockedSecretData())
+        }
     }
 
     public func unlock(passphrase: ValidPassword) async throws {
         // unlock session and use it to load the inital data
-        encryptedStorageSession = try await EncryptedStorage.unlockStorageWithPassphrase(passphrase: passphrase)
+        encryptedStorageSession = try await encryptedStorage.unlockStorageWithPassphrase(passphrase: passphrase)
         try await loadData()
         try await decryptDeadDrops()
     }
@@ -57,7 +107,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
     }
 
     private func loadData() async throws {
-        let unlockedData = try await EncryptedStorage.loadStorageFromDisk(session: encryptedStorageSession!)
+        let unlockedData = try await encryptedStorage.loadStorageFromDisk(session: encryptedStorageSession!)
         await MainActor.run {
             secretData = .unlockedSecretData(unlockedData: unlockedData)
         }
@@ -135,7 +185,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
 
     public func storeData() async throws {
         if case let .unlockedSecretData(unlockedData: unlockedData) = secretData {
-            try EncryptedStorage.updateStorageOnDisk(session: encryptedStorageSession!, state: unlockedData)
+            try encryptedStorage.updateStorageOnDisk(session: encryptedStorageSession!, state: unlockedData)
         }
     }
 
