@@ -29,13 +29,14 @@ enum EncryptedStorageError: Error {
 /// The Sloth library (and its iOS variant `RainbowSloth`) store a secret inside the Secure Enclave to
 /// effectively rate-limit the guess rate of passphrases.
 public class EncryptedStorage {
-    public static let fileName = "coverdrop"
     public static let storagePaddingToSize = 512 * 1024 // 512 KiB
 
     /// The parameter N for RainbowSloth is chosen based on the paper and translates to at least ~1 seconds
     let rainbowSloth = RainbowSloth(withN: 200)
+
     let rainbowSlothKeyHandle = "coverdop"
     let xchacha20poly1305KeySize = 32
+    let file = CoverDropFiles.encryptedStorage
 
     fileprivate init() {}
 
@@ -43,28 +44,25 @@ public class EncryptedStorage {
     /// one already exists, its last-modified date is updated.
     /// - Returns: `Storage` object with encrypted `blob`
     /// - Throws: if touching or creating storage fails
-    public func onAppStart(config: CoverDropConfig) throws {
-        let fileURL = try secureStorageFileURL()
-
-        if FileManager.default.fileExists(atPath: fileURL.path) {
+    public func onAppStart(config: CoverDropConfig) async throws {
+        if StorageManager.shared.doesFileExist(file: file) {
             // If there is an existing storage, update its creation and last-modified timestamps
-            try touchExistingStorage(fileUrl: fileURL)
+            try StorageManager.shared.touchFile(file: file)
         } else {
-            // Else there is no storage yet and we create it with a random passphrase
+            // Otherwise, there is no storage yet and we create it with a random passphrase
             let passphrase = PasswordGenerator.shared.generate(wordCount: config.passphraseWordCount)
-            _ = try createOrResetStorageWithPassphrase(passphrase: passphrase)
+            _ = try await createOrResetStorageWithPassphrase(passphrase: passphrase)
         }
     }
 
     public func onDidEnterBackground() throws {
-        let fileURL = try secureStorageFileURL()
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-            try touchExistingStorage(fileUrl: fileURL)
+        if StorageManager.shared.doesFileExist(file: file) {
+            try StorageManager.shared.touchFile(file: file)
         }
     }
 
     /// This will update the modification date on the on-Disk storage file to the current datetime.
-    /// To make sure this is done correctly we set the `modificationDate`and `creationDate` attributes, and then read
+    /// To make sure this is done correctly we set the `modificationDate`and `creationDate` attributes, and then read
     /// the attribute again
     /// - Parameters:
     ///  - fileUrl: the `URL` of the storage file to write to
@@ -80,7 +78,7 @@ public class EncryptedStorage {
     ///   - passphrase: the new passphrase created by the user
     /// - Returns: `EncryptedStorageSession` object
     /// - Throws: if the writing the storage fails
-    public func createOrResetStorageWithPassphrase(passphrase: ValidPassword) throws
+    public func createOrResetStorageWithPassphrase(passphrase: ValidPassword) async throws
         -> EncryptedStorageSession {
         // Generate a new active session with the new passphrase; this resets the SE key
         let (slothStorageState, kUser) = try rainbowSloth.keygen(
@@ -94,7 +92,7 @@ public class EncryptedStorage {
         let emptyState = try UnlockedSecretData.createEmpty()
 
         // Store on disk using our newly derived session
-        try updateStorageOnDisk(
+        try await updateStorageOnDisk(
             session: session,
             state: emptyState
         )
@@ -112,7 +110,7 @@ public class EncryptedStorage {
     public func updateStorageOnDisk(
         session: EncryptedStorageSession,
         state: UnlockedSecretData
-    ) throws {
+    ) async throws {
         // Pad the new state to a fixed size
         var statePadded: [UInt8] = state.asUnencryptedBytes()
         Sodium().utils.pad(bytes: &statePadded, blockSize: EncryptedStorage.storagePaddingToSize)
@@ -127,12 +125,14 @@ public class EncryptedStorage {
 
         // create the `Storage` object that encodes all our information that we need to persist on disk
         let storage = Storage(salt: session.salt, blobData: ciphertext)
-        let outfile = try secureStorageFileURL()
 
         let jsonEncoder = JSONEncoder()
         jsonEncoder.outputFormatting = .sortedKeys
         let jsonData = try jsonEncoder.encode(storage)
-        try jsonData.write(to: outfile, options: .completeFileProtection)
+        try StorageManager.shared.writeFile(
+            file: file,
+            data: Array(jsonData)
+        )
     }
 
     /// Derives a session with the provided passphrase that allows reading and writing to the storage.
@@ -142,11 +142,13 @@ public class EncryptedStorage {
     /// - Throws: if the unlocking fails; this can be due to a wrong passphrase or a tampered file
     public func unlockStorageWithPassphrase(passphrase: ValidPassword) async throws -> EncryptedStorageSession {
         // retrieve our `Storage` information from disk
-        let fileURL = try secureStorageFileURL()
+        if !StorageManager.shared.doesFileExist(file: file) {
+            throw EncryptedStorageError.storageFileMissing
+        }
 
-        guard let readData = try? Data(contentsOf: fileURL) else { throw EncryptedStorageError.storageFileMissing }
+        let readData = try StorageManager.shared.readFile(file: file)
 
-        guard let storage: Storage = try? JSONDecoder().decode(Storage.self, from: readData) else {
+        guard let storage: Storage = try? JSONDecoder().decode(Storage.self, from: Data(readData)) else {
             throw EncryptedStorageError.storageFileDeserializationFailed
         }
 
@@ -179,9 +181,8 @@ public class EncryptedStorage {
     /// - Throws: If the storage cannot be decrypted; this can be due to a wrong passphrase or a tamered file
     public func loadStorageFromDisk(session: EncryptedStorageSession) async throws -> UnlockedSecretData {
         // retrieve our `Storage` information from disk
-        let fileURL = try secureStorageFileURL()
-        let readData = try Data(contentsOf: fileURL)
-        let storage: Storage = try JSONDecoder().decode(Storage.self, from: readData)
+        let readData = try StorageManager.shared.readFile(file: file)
+        let storage: Storage = try JSONDecoder().decode(Storage.self, from: Data(readData))
 
         // Try decrypting... this will fail both when the passphrase is wrong or the file has been tampered with.
         guard var plaintext: Bytes = Sodium().aead.xchacha20poly1305ietf.decrypt(
@@ -192,11 +193,6 @@ public class EncryptedStorage {
         // Unpad and decode
         Sodium().utils.unpad(bytes: &plaintext, blockSize: EncryptedStorage.storagePaddingToSize)
         return try UnlockedSecretData.fromUnencryptedBytes(bytes: plaintext)
-    }
-
-    /// - Returns: `URL` to the secure storage file
-    public func secureStorageFileURL() throws -> URL {
-        return try FileHelper.getPath(fileName: EncryptedStorage.fileName)
     }
 
     /// Named initializer to highlight that this should only be created from the secret data repository.

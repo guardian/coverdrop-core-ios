@@ -5,18 +5,11 @@ import XCTest
 final class StatusRepositoryTests: XCTestCase {
     let config: StaticConfig = .devConfig
 
-    func removeStatusCacheFile() async throws {
-        let fileManager = FileManager.default
-        let fileURL = try await StatusLocalRepository().fileURL()
-
-        if fileManager.fileExists(atPath: fileURL.path) {
-            try fileManager.removeItem(atPath: fileURL.path)
-        }
+    override func setUp() async throws {
+        try StorageManager.shared.deleteFile(file: CoverDropFiles.statusCache)
     }
 
     func testFirstRunDoesNotCacheIfAPIResponseFailedAndCacheDisabled() async throws {
-        try await removeStatusCacheFile()
-
         let urlSession = mockApiResponseFailure()
 
         let results = try await StatusRepository(config: config, urlSession: urlSession)
@@ -26,8 +19,6 @@ final class StatusRepositoryTests: XCTestCase {
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDropsAndCacheDisabled() async throws {
-        try await removeStatusCacheFile()
-
         let urlSession = mockApiResponse()
 
         // note we are outside the cache window
@@ -40,8 +31,6 @@ final class StatusRepositoryTests: XCTestCase {
     }
 
     func testFirstRunReturnsDefaultStatusIfAPIResponseFails() async throws {
-        try await removeStatusCacheFile()
-
         let urlSession = mockApiResponseFailure()
 
         let results = try await StatusRepository(config: config, urlSession: urlSession)
@@ -51,8 +40,6 @@ final class StatusRepositoryTests: XCTestCase {
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDrops() async throws {
-        try await removeStatusCacheFile()
-
         let urlSession = mockApiResponse()
 
         // note we are outside the cache window
@@ -66,35 +53,35 @@ final class StatusRepositoryTests: XCTestCase {
     }
 
     func testFirstRunInsideCacheWindowWithApiResponseLoadsStatusAndCachesResponse() async throws {
-        try await removeStatusCacheFile()
-
         let urlSession = mockApiResponse()
-        // note we are intside the cache window
-        let results = try await StatusRepository(
+        let repo = StatusRepository(
             now: Date(timeIntervalSinceNow: 60 * 50),
             config: config,
             urlSession: urlSession
-        ).downloadAndUpdateAllCaches()
-        let cache = try await StatusLocalRepository().load()
+        )
+
+        // note we are intside the cache window
+        let results = try await repo.downloadAndUpdateAllCaches()
+
+        let cache = try await repo.localRepository.load()
         XCTAssertEqual(results, cache)
     }
 
     func testFutureRunOutsideCacheWindowWithApiResponseLoadsStatusButNotUpdateId() async throws {
-        try await removeStatusCacheFile()
-
         let urlSession = mockApiResponse()
-        // note we are outside the cache window
-        let results = try await StatusRepository(
+        let repo = StatusRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 2),
             config: config,
             urlSession: urlSession
-        ).downloadAndUpdateAllCaches()
-        let cache = try await StatusLocalRepository().load()
+        )
+
+        // note we are outside the cache window
+        let results = try await repo.downloadAndUpdateAllCaches()
+        let cache = try await repo.localRepository.load()
         XCTAssertEqual(results, cache)
     }
 
     func testFutureRunInsideCacheWindowWithFailedApiResponseReturnsDefaults() async throws {
-        try await removeStatusCacheFile()
         let urlSession = mockApiResponseFailure()
 
         // note we are inside the cache window
@@ -108,7 +95,6 @@ final class StatusRepositoryTests: XCTestCase {
     }
 
     func testCacheInsideCacheWindowUpdatesCache() async throws {
-        try await removeStatusCacheFile()
         let urlSession = mockApiResponse()
 
         let results = try await StatusRepository(

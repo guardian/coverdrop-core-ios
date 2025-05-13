@@ -5,27 +5,19 @@ import XCTest
 // swiftlint:disable line_length
 final class DeadDropRepositoryTests: XCTestCase {
     let config: StaticConfig = .devConfig
-    func removeDeadDropCacheFile() async throws {
-        let fileManager = FileManager.default
-        let fileURL = try await DeadDropLocalRepository().fileURL()
 
-        if fileManager.fileExists(atPath: fileURL.path) {
-            try fileManager.removeItem(atPath: fileURL.path)
-        }
+    override func setUp() async throws {
+        try StorageManager.shared.deleteFile(file: CoverDropFiles.deadDropId)
+        try StorageManager.shared.deleteFile(file: CoverDropFiles.deadDropCache)
     }
 
     func fakeUserFacingDeadDrop(id: Int, createdAt: Date) -> DeadDrop {
-        let emptyMessage = Base64EncodedString(bytes: "this is a test message".asBytes())
-        let emptyCert =
-            HexEncodedString(bytes:
-                "68cce4ab0dc9e071f497ce8d37ec01265bf283f5f2a0038f3861bc78a18d16287ec0172b23dbe808c56101810e363c51260c8cf7fda5d634e5c627f80c8b5e08"
-                    .asBytes())
+        let emptyMessage = Base64EncodedString(bytes: "".asBytes())
+        let emptyCert = HexEncodedString(bytes: "".asBytes())
         return DeadDrop(id: id, createdAt: RFC3339DateTimeString(date: createdAt), data: emptyMessage, cert: emptyCert)
     }
 
     func testFirstRunDoesNotCacheIfAPIResponseFailedAndCacheEnabled() async throws {
-        try await removeDeadDropCacheFile()
-
         let urlSession = mockApiResponseFailure()
 
         let results = try await DeadDropRepository(config: config, urlSession: urlSession)
@@ -35,8 +27,6 @@ final class DeadDropRepositoryTests: XCTestCase {
     }
 
     func testFirstRunDoesNotCacheIfAPIResponseFailedAndCacheDisabled() async throws {
-        try await removeDeadDropCacheFile()
-
         let urlSession = mockApiResponseFailure()
 
         let results = try await DeadDropRepository(config: config, urlSession: urlSession)
@@ -46,8 +36,6 @@ final class DeadDropRepositoryTests: XCTestCase {
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDropsAndCacheDisabled() async throws {
-        try await removeDeadDropCacheFile()
-
         let urlSession = mockApiResponse()
 
         // note we are outside the cache window
@@ -66,8 +54,6 @@ final class DeadDropRepositoryTests: XCTestCase {
     }
 
     func testFirstRunWithOutsideCacheWindowApiResponseLoadsDeadDrops() async throws {
-        try await removeDeadDropCacheFile()
-
         let urlSession = mockApiResponse()
 
         // note we are outside the cache window
@@ -85,35 +71,35 @@ final class DeadDropRepositoryTests: XCTestCase {
     }
 
     func testFirstRunInsideCacheWindowWithApiResponseLoadsDeadDropsAndCachesResponse() async throws {
-        try await removeDeadDropCacheFile()
-
         let urlSession = mockApiResponse()
-        // note we are intside the cache window
-        let results = try await DeadDropRepository(
+        let repo = DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 50),
             config: config,
             urlSession: urlSession
-        ).downloadAndUpdateAllCaches()
-        let cache = try await DeadDropLocalRepository().load()
+        )
+
+        // note we are intside the cache window
+        let results = try await repo.downloadAndUpdateAllCaches()
+        let cache = try await repo.localRepository.load()
         XCTAssertEqual(results?.deadDrops, cache.deadDrops)
     }
 
     func testFutureRunOutsideCacheWindowWithApiResponseLoadsDeadDropsButNotUpdateId() async throws {
-        try await removeDeadDropCacheFile()
-
         let urlSession = mockApiResponse()
-        // note we are outside the cache window
-        let results = try await DeadDropRepository(
+        let repo = DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 2),
             config: config,
             urlSession: urlSession
-        ).downloadAndUpdateAllCaches()
-        let cache = try await DeadDropLocalRepository().load()
+        )
+
+        // note we are outside the cache window
+        let results = try await repo.downloadAndUpdateAllCaches()
+
+        let cache = try await repo.localRepository.load()
         XCTAssertEqual(results?.deadDrops, cache.deadDrops)
     }
 
     func testFutureRunInsideCacheWindowWithFailedApiResponse() async throws {
-        try await removeDeadDropCacheFile()
         let urlSession = mockApiResponseFailure()
 
         // note we are inside the cache window
@@ -132,7 +118,6 @@ final class DeadDropRepositoryTests: XCTestCase {
     }
 
     func testCacheInsideCacheWindowUpdatesCache() async throws {
-        try await removeDeadDropCacheFile()
         let urlSession = mockApiResponse()
 
         let results = try await DeadDropRepository(
@@ -150,7 +135,6 @@ final class DeadDropRepositoryTests: XCTestCase {
     }
 
     func testCacheInsideCacheWindowReturnsCachedResults() async throws {
-        try await removeDeadDropCacheFile()
         let urlSession = mockApiResponse()
 
         guard let deadDropDate = try? PublicKeysHelper.readLocalGeneratedAtFile() else {
@@ -165,25 +149,25 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         let cached = DeadDropData(deadDrops: [deadDropApril01, deadDropApril05, deadDropApril06])
 
-        try await DeadDropLocalRepository().save(data: cached)
+        let repo = DeadDropRepository(config: config, urlSession: urlSession)
+        try await repo.localRepository.save(data: cached)
 
         let results = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
             urlSession: urlSession
         ).downloadAndUpdateAllCaches()
-        XCTAssertTrue(results?.deadDrops.count == 4)
+        XCTAssertEqual(results?.deadDrops.count, 4)
 
         let results2 = try await DeadDropRepository(
             now: Date(timeIntervalSinceNow: 60 * 90),
             config: config,
             urlSession: urlSession
         ).downloadAndUpdateAllCaches()
-        XCTAssertTrue(results2?.deadDrops.count == 4)
+        XCTAssertEqual(results2?.deadDrops.count, 4)
     }
 
     func testCacheFileDoesNotGetTooLarge() async throws {
-        try await removeDeadDropCacheFile()
         // fill the cache file with 1000 deadDrops
         let maxDeadDropId = 1000
         let twoWeeksInSeconds = 60 * 60 * 24 * 14
@@ -199,11 +183,12 @@ final class DeadDropRepositoryTests: XCTestCase {
 
         // store the dead drops in the cache
         let cached = DeadDropData(deadDrops: cachedDeadDrops)
-        try await DeadDropLocalRepository().save(data: cached)
+        let repo = DeadDropRepository(config: config, urlSession: mockApiResponse())
+        try await repo.localRepository.save(data: cached)
 
         // validate the dead drops were saved correctly
-        let cachedDeadDropFromFile = try await DeadDropLocalRepository().load()
-        XCTAssertTrue(cachedDeadDropFromFile.deadDrops.count == 1001)
+        let cachedDeadDropFromFile = try await repo.localRepository.load()
+        XCTAssertEqual(cachedDeadDropFromFile.deadDrops.count, 1001)
 
         // generate more dead drops to be returned as part of the dead drop api mock response
         let apiResponseDeadDropIdOffset = 2000
@@ -253,13 +238,17 @@ final class DeadDropRepositoryTests: XCTestCase {
             config: config,
             urlSession: urlSession
         ).downloadAndUpdateAllCaches()
-        XCTAssertTrue(results?.deadDrops.count == 1001)
+        XCTAssertEqual(results?.deadDrops.count, 1001)
         let highestStoredDeadDrop = results?.deadDrops.max(by: { $0.id < $1.id })?.id
-        XCTAssertTrue(highestStoredDeadDrop == 3000)
+        XCTAssertEqual(highestStoredDeadDrop, 3000)
     }
 
-    func generateBulkDeadDrops(maxDeadDropId: Int, idOffset: Int, timeSpan: TimeInterval,
-                               timeOffset: TimeInterval) -> [DeadDrop] {
+    func generateBulkDeadDrops(
+        maxDeadDropId: Int,
+        idOffset: Int,
+        timeSpan: TimeInterval,
+        timeOffset: TimeInterval
+    ) -> [DeadDrop] {
         var cachedDeadDrops: [DeadDrop] = []
         for deadDropId in Array(0 ... maxDeadDropId) {
             let deadDropDate = Date(timeIntervalSinceNow: -((Double(deadDropId) * timeSpan) + timeOffset))
@@ -289,6 +278,93 @@ final class DeadDropRepositoryTests: XCTestCase {
         urlSessionConfig.protocolClasses = [URLProtocolMock.self]
         let urlSession = URLSession(configuration: urlSessionConfig)
         return urlSession
+    }
+
+    func testDeadDrops_whenDownloadedWithNonEmptyStorage_thenMergedTrimmedAndAvailableAsMostRecent() async throws {
+        let deadDropApril01 = fakeUserFacingDeadDrop(
+            id: 10,
+            createdAt: DateFormats.validateDate(date: "2023-04-01T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropApril05 = fakeUserFacingDeadDrop(
+            id: 20,
+            createdAt: DateFormats.validateDate(date: "2023-04-05T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropApril06 = fakeUserFacingDeadDrop(
+            id: 21,
+            createdAt: DateFormats.validateDate(date: "2023-04-06T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropApril10 = fakeUserFacingDeadDrop(
+            id: 40,
+            createdAt: DateFormats.validateDate(date: "2023-04-10T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropApril11 = fakeUserFacingDeadDrop(
+            id: 50,
+            createdAt: DateFormats.validateDate(date: "2023-04-11T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropApril20 = fakeUserFacingDeadDrop(
+            id: 80,
+            createdAt: DateFormats.validateDate(date: "2023-04-20T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropJune01 = fakeUserFacingDeadDrop(
+            id: 200,
+            createdAt: DateFormats.validateDate(date: "2023-06-01T00:00:00Z") ?? DateFunction.currentTime()
+        )
+        let deadDropJune07 = fakeUserFacingDeadDrop(
+            id: 201,
+            createdAt: DateFormats.validateDate(date: "2023-06-01T00:00:00Z") ?? DateFunction.currentTime()
+        )
+
+        // Start with an empty storage
+        var existingDeadDrops = DeadDropData(deadDrops: [])
+
+        // Add dead drops on April 10 that range from April 1 to April 10
+        let newDeadDropsApril10 = DeadDropData(deadDrops:
+            [deadDropApril01, deadDropApril05, deadDropApril06, deadDropApril10])
+
+        // After merging and trimming we expect that we only have dead drops that range from
+        // April 1 to April 10. I.e., all of them
+        existingDeadDrops = DeadDropRepository.mergeAndTrim(
+            existingDeadDrops: existingDeadDrops,
+            newDeadDrops: newDeadDropsApril10
+        )
+        XCTAssertTrue(existingDeadDrops.deadDrops.containsExactly([
+            deadDropApril01,
+            deadDropApril05,
+            deadDropApril06,
+            deadDropApril10
+        ]))
+
+        // Add dead drops on April 20 that range from April 11 to April 20
+        let newDeadDropsApril20 = DeadDropData(deadDrops:
+            [deadDropApril11, deadDropApril20])
+
+        // After merging and trimming we expect that we only have dead drops that range from
+        // April 6 to April 20 (i.e. deadDropCacheTTL).
+        existingDeadDrops = DeadDropRepository.mergeAndTrim(
+            existingDeadDrops: existingDeadDrops,
+            newDeadDrops: newDeadDropsApril20
+        )
+        XCTAssertTrue(existingDeadDrops.deadDrops.containsExactly(
+            [deadDropApril06, // just barely in by 1 second because the cut-off-date is inclusive
+             deadDropApril10,
+             deadDropApril11,
+             deadDropApril20]
+        ))
+
+        // Add dead drops on June 7 that range from June 1 to June 7
+        let newDeadDropsJune07 = DeadDropData(deadDrops:
+            [deadDropJune01, deadDropJune07])
+
+        // After merging and trimming we expect that we only have dead drops that range from
+        // June 1 to June 7.
+        existingDeadDrops = DeadDropRepository.mergeAndTrim(
+            existingDeadDrops: existingDeadDrops,
+            newDeadDrops: newDeadDropsJune07
+        )
+        XCTAssertTrue(existingDeadDrops.deadDrops.containsExactly(
+            [deadDropJune01,
+             deadDropJune07]
+        ))
     }
 }
 

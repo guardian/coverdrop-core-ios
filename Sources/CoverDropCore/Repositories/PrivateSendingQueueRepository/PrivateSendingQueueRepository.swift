@@ -7,16 +7,18 @@ enum PrivateSendingQueueRepositoryError: Error {
 /// This repository actor is the main interface for the app for creating and managing its instance of the global
 /// `PrivateSendingQueue` via a  `shared` singleton instance.
 public actor PrivateSendingQueueRepository: ObservableObject {
-    public static let shared = PrivateSendingQueueRepository()
+    public static let shared = PrivateSendingQueueRepository(StorageManager.shared)
 
     @MainActor @Published public var hintsInFlight: [HintHmac] = []
 
-    private static let privateSendingQueueFileName = "privateSendingQueue_v2"
+    private let storageManager: StorageManager
+    private let psqFile = CoverDropFiles.privateSendingQueueV2
 
-    private init() {}
+    private init(_ storageManager: StorageManager) {
+        self.storageManager = storageManager
+    }
 
-    /// Starts the repository by creating the `PrivateSendingQueue` and storing it to disk.
-    /// - Parameter configuration: An optional configuration for setting up the managed`PrivateSendingQueue`.
+    /// Tries to load the `PrivateSendingQueue` from disk. If it doesn't exist, it will create a new one.
     public func loadOrInitialiseQueue(_ coverMessageFactory: CoverMessageFactory) async throws -> PrivateSendingQueue {
         let configuration = PrivateSendingQueueConfiguration.default
         if let queueFromDisk = try await loadQueue() {
@@ -93,21 +95,11 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         return message
     }
 
-    public static var privateSendingQueueStorageFileURL: URL {
-        get throws {
-            try FileHelper.getPath(fileName: privateSendingQueueFileName)
-        }
-    }
-
     public func loadQueue() async throws -> PrivateSendingQueue? {
-        let fileURL = try PrivateSendingQueueRepository.privateSendingQueueStorageFileURL
-
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-            let fileContents = try Data(contentsOf: fileURL)
-            return try PrivateSendingQueue.fromBytes(bytes: Array(fileContents))
-        } else {
+        guard let bytes = try? storageManager.readFile(file: psqFile) else {
             return nil
         }
+        return try PrivateSendingQueue.fromBytes(bytes: bytes)
     }
 
     @discardableResult
@@ -115,9 +107,9 @@ public actor PrivateSendingQueueRepository: ObservableObject {
         guard let currentQueue else {
             throw PrivateSendingQueueRepositoryError.queueNotAvailable
         }
-        var fileURL = try PrivateSendingQueueRepository.privateSendingQueueStorageFileURL
-        try Data(currentQueue.serialize()).write(to: fileURL)
-        try FileHelper.ensureCorrectFilePermissions(fullPath: &fileURL)
+
+        let bytes = try currentQueue.serialize()
+        try StorageManager.shared.writeFile(file: psqFile, data: bytes)
 
         try await updateHintsInFlight(currentQueue)
         return currentQueue

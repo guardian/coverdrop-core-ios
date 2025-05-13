@@ -1,22 +1,15 @@
 import Foundation
-import SwiftUI
 
 actor DeadDropIdRepository {
-    private let deadDropFileLocation = "deadDropId.json"
+    let file = CoverDropFiles.deadDropId
 
-    public func fileURL() throws -> URL {
-        return try FileHelper.getPath(fileName: deadDropFileLocation)
+    func load() async throws -> DeadDropId {
+        let data = try StorageManager.shared.readFile(file: file)
+        return try JSONDecoder().decode(DeadDropId.self, from: Data(data))
     }
 
-    func load() throws -> DeadDropId {
-        let fileURL = try fileURL()
-        let data = try Data(contentsOf: fileURL)
-        return try JSONDecoder().decode(DeadDropId.self, from: data)
-    }
-
-    func save(deadDrops: DeadDropId) throws {
-        let data = try JSONEncoder().encode(deadDrops)
-        let outfile = try fileURL()
-        try data.write(to: outfile)
+    func save(deadDropId: DeadDropId) async throws {
+        let encodedData = try JSONEncoder().encode(deadDropId)
+        try StorageManager.shared.writeFile(file: file, data: Array(encodedData))
     }
 }

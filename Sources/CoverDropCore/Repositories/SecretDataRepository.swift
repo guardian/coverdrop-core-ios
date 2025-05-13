@@ -60,7 +60,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
     private var encryptedStorageSession: EncryptedStorageSession?
 
     public func onAppStart() async throws {
-        try encryptedStorage.onAppStart(config: publicDataRepository.config)
+        try await encryptedStorage.onAppStart(config: publicDataRepository.config)
     }
 
     public func onDidEnterBackground() async throws {
@@ -72,7 +72,7 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
     }
 
     public func createOrReset(passphrase: ValidPassword) async throws {
-        encryptedStorageSession = try encryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        encryptedStorageSession = try await encryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
         try await loadData()
     }
 
@@ -185,7 +185,10 @@ public class SecretDataRepository: ObservableObject, SecretDataRepositoryProtoco
 
     public func storeData() async throws {
         if case let .unlockedSecretData(unlockedData: unlockedData) = secretData {
-            try encryptedStorage.updateStorageOnDisk(session: encryptedStorageSession!, state: unlockedData)
+            try await encryptedStorage.updateStorageOnDisk(
+                session: encryptedStorageSession!,
+                state: unlockedData
+            )
         }
     }
 

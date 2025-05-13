@@ -10,10 +10,14 @@ class StatusRepository: CacheableApiRepository<StatusData> {
             defaultResponse: StatusData(
                 status: .unavailable,
                 description: "Unavailable",
-                timestamp: RFC3339DateTimeString(date: DateFunction.currentTime()),
+                timestamp: RFC3339DateTimeString(
+                    date: DateFunction.currentTime()
+                ),
                 isAvailable: false
             ),
-            localRepository: StatusLocalRepository(),
+            localRepository: LocalCacheFileRepository<StatusData>(
+                file: CoverDropFiles.statusCache
+            ),
             cacheableWebRepository: StatusWebRepository(urlSession: urlSession, baseUrl: config.apiBaseUrl)
         )
     }

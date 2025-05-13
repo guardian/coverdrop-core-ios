@@ -103,7 +103,7 @@ public enum CoverDropServiceHelper {
         let passphrase = ValidPassword(password: "external jersey squeeze")
 
         let encryptedStorage = EncryptedStorage.createForTesting()
-        let session = try encryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
+        let session = try await encryptedStorage.createOrResetStorageWithPassphrase(passphrase: passphrase)
 
         // Set our test user keys
         let userSecretMessageKey = try PublicKeysHelper.shared.getTestUserMessageSecretKey()
@@ -159,7 +159,7 @@ public enum CoverDropServiceHelper {
             userKey: userKeyPair,
             privateSendingQueueSecret: privateSendingQueueSecret
         )
-        try encryptedStorage.updateStorageOnDisk(
+        try await encryptedStorage.updateStorageOnDisk(
             session: session,
             state: data
         )

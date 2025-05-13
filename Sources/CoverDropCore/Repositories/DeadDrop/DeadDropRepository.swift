@@ -3,8 +3,6 @@ import Foundation
 /// This repository is for managing dead drops published from the API `/users/dead-drops`
 /// 1. This repository tries to load the last succesfull dead drop ID from disk, if this fails it will then try and get
 /// dead drops from id 0
-///
-
 class DeadDropRepository: CacheableApiRepository<DeadDropData> {
     init(now: Date = DateFunction.currentTime(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
@@ -12,7 +10,9 @@ class DeadDropRepository: CacheableApiRepository<DeadDropData> {
             now: now,
             urlSession: urlSession,
             defaultResponse: DeadDropData(deadDrops: []),
-            localRepository: DeadDropLocalRepository(),
+            localRepository: LocalCacheFileRepository<DeadDropData>(
+                file: CoverDropFiles.deadDropCache
+            ),
             cacheableWebRepository: DeadDropWebRepository(urlSession: urlSession, baseUrl: config.apiBaseUrl)
         )
     }
@@ -36,7 +36,7 @@ class DeadDropRepository: CacheableApiRepository<DeadDropData> {
             let params = ["ids_greater_than": String(highestCachedDeadDropId)]
             let webData: DeadDropData = try await cacheableWebRepository.get(params: params)
 
-            let mergedDeadDrops = await DeadDropLocalRepository().mergeAndTrim(
+            let mergedDeadDrops = DeadDropRepository.mergeAndTrim(
                 existingDeadDrops: availableCachedData,
                 newDeadDrops: webData
             )
@@ -55,5 +55,32 @@ class DeadDropRepository: CacheableApiRepository<DeadDropData> {
         } else {
             return nil
         }
+    }
+
+    /// Merges two sets of dead drops, with duplicate entries being merged.
+    /// Then trims the merged dead drops by `clientDeadDropCacheTtlSeconds` using the `mostRecentTimestamp`
+    /// from the most recent dead drops createdAt date.
+    /// Any dead drops older than `clientDeadDropCacheTtlSeconds` will be removed
+    /// - Parameters:
+    ///   - existingDeadDrops: a `DeadDropData` object, normally loaded from a file cache
+    ///   - newDeadDrops: a `DeadDropData` object, normally loaded from the dead drop api.
+    /// - Returns: The merged and trimmed resulting `DeadDropData`
+    static func mergeAndTrim(existingDeadDrops: DeadDropData, newDeadDrops: DeadDropData) -> DeadDropData {
+        let deadDropCacheTTL = TimeInterval(Constants.clientDeadDropCacheTtlSeconds)
+
+        let mergedDeadDrops: [DeadDrop] = existingDeadDrops.deadDrops + newDeadDrops.deadDrops
+
+        let uniqueDeadDrops = Set(mergedDeadDrops)
+
+        // identify the newest dead-drop timestamp. We use that as a reference for "now" to avoid
+        // using the device clock which might be out-of-sync and could lead to evicting more of
+        // fewer items than intended
+        guard let mostRecentTimestamp = uniqueDeadDrops.max(by: { $0.createdAt < $1.createdAt }) else {
+            return DeadDropData(deadDrops: [])
+        }
+        let cutOffDate = mostRecentTimestamp.createdAt.date - deadDropCacheTTL
+        let mergedAndTrimmedDeadDrops = uniqueDeadDrops.filter { $0.createdAt.date >= cutOffDate }
+
+        return DeadDropData(deadDrops: Array(mergedAndTrimmedDeadDrops))
     }
 }

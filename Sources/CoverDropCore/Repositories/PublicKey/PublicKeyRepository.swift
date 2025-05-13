@@ -14,7 +14,9 @@ public class PublicKeyRepository: CacheableApiRepository<PublicKeysData> {
             maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
             now: now,
             urlSession: urlSession,
-            localRepository: PublicKeyLocalRepository(),
+            localRepository: LocalCacheFileRepository<PublicKeysData>(
+                file: CoverDropFiles.publicKeysCache
+            ),
             cacheableWebRepository: PublicKeyWebRepository(config: config, urlSession: urlSession)
         )
     }

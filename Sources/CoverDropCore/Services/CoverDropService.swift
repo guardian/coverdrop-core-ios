@@ -117,6 +117,9 @@ public class CoverDropService: ObservableObject {
     }
 
     private func ensureInitializedAsync(config: CoverDropConfig) async throws -> CoverDropLibrary {
+        // Initialize the StorageManager (ensures base folder and correct permissions for existing files)
+        try StorageManager.shared.onAppStart()
+
         // Setup the public data repository
         let urlSession = getUrlSession(config: config)
         let publicDataRepository = PublicDataRepository(config, urlSession: urlSession)

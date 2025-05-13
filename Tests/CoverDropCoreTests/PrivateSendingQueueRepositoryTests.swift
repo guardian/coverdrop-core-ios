@@ -4,6 +4,7 @@ import XCTest
 
 final class PrivateSendingQueueRepositoryTests: XCTestCase {
     private let secret = PrivateSendingQueueSecret(bytes: "secret__secret__".asBytes())!
+
     // swiftlint:disable:next force_try
     private let publicDataRepository: PublicDataRepository = try! getPublicDataRepository()
 
@@ -17,15 +18,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         return verifiedKeys.allMessageKeysForJournalistId(journalistId: "static_test_journalist").first!
     }
 
-    override func setUp() {
-        do {
-            let fileURL = try PrivateSendingQueueRepository.privateSendingQueueStorageFileURL.path
-            if FileManager.default.fileExists(atPath: fileURL) {
-                try FileManager.default.removeItem(atPath: fileURL)
-            }
-        } catch {
-            XCTFail("Failed to setup test")
-        }
+    override func setUp() async throws {
+        try StorageManager.shared.deleteFile(file: CoverDropFiles.privateSendingQueueV2)
     }
 
     private func message(_ message: String) async throws -> MultiAnonymousBox<UserToCoverNodeMessageData> {
@@ -78,7 +72,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let errorsCount = try await addTwoMessagesConcurrentlyReturningErrorCount(to: testableRepo)
 
         // THEN 0 errors should be thrown
-        XCTAssert(errorsCount == 0)
+        XCTAssertEqual(errorsCount, 0)
     }
 
     func testAddingOneMessageBeyondCapacity() async throws {
@@ -96,7 +90,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let errorsCount = try await addTwoMessagesConcurrentlyReturningErrorCount(to: testableRepo)
 
         // THEN 1 errors should be thrown
-        XCTAssert(errorsCount == 1)
+        XCTAssertEqual(errorsCount, 1)
     }
 
     func testAddingTwoMessagesBeyondCapacity() async throws {
@@ -114,14 +108,13 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         let errorsCount = try await addTwoMessagesConcurrentlyReturningErrorCount(to: testableRepo)
 
         // THEN 2 errors should be thrown
-        XCTAssert(errorsCount == 2)
+        XCTAssertEqual(errorsCount, 2)
     }
 
     @discardableResult
     private func addTwoMessagesConcurrentlyReturningErrorCount(
         to repository: PrivateSendingQueueRepository
-    ) async throws
-        -> Int {
+    ) async throws -> Int {
         let taskPriorities: [TaskPriority] = [.low, .high, .medium, .utility, .background, .userInitiated]
 
         let message = try await message("message1")
@@ -158,7 +151,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
 
         // THEN the queue should be empty initially
         let fillLevel = initialQueue.getFillLevel(secret: secret)
-        XCTAssert(fillLevel == 0)
+        XCTAssertEqual(fillLevel, 0)
 
         // WHEN two messages are added
         try await addTwoMessagesConcurrentlyReturningErrorCount(to: testableRepo)
@@ -166,7 +159,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         // THEN the repo's queue should have 2 messages in memory
         let filled = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory)
         let fillLevel2 = filled.getFillLevel(secret: secret)
-        XCTAssert(fillLevel2 == 2)
+        XCTAssertEqual(fillLevel2, 2)
     }
 
     func testDequeue() async throws {
@@ -182,7 +175,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         // THEN the queue should have 1 message left
         let queue = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory)
         let fillLevel = queue.getFillLevel(secret: secret)
-        XCTAssert(fillLevel == 1)
+        XCTAssertEqual(fillLevel, 1)
     }
 
     func testPeek() async throws {
@@ -196,7 +189,7 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         // THEN the queue should still have 2 message left
         let queue = try await testableRepo.loadOrInitialiseQueue(coverMessageFactory)
         let fillLevel = queue.getFillLevel(secret: secret)
-        XCTAssert(fillLevel == 2)
+        XCTAssertEqual(fillLevel, 2)
     }
 
     func testWipe() async throws {
@@ -238,9 +231,8 @@ final class PrivateSendingQueueRepositoryTests: XCTestCase {
         try await sut.saveQueue(queue)
 
         // THEN if the queue is later loaded from disk, it is equivalent to the queue in memory
-        let fileURL = try PrivateSendingQueueRepository.privateSendingQueueStorageFileURL
-        let fileContents = try Data(contentsOf: fileURL)
-        let newQueue = try PrivateSendingQueue.fromBytes(bytes: Array(fileContents))
+        let fileContents = try StorageManager.shared.readFile(file: CoverDropFiles.privateSendingQueueV2)
+        let newQueue = try PrivateSendingQueue.fromBytes(bytes: fileContents)
         XCTAssert(newQueue == queue)
     }
 

@@ -6,7 +6,7 @@ public class CacheableApiRepository<T: Codable> {
         now: Date,
         urlSession: URLSession,
         defaultResponse: T? = nil,
-        localRepository: any LocalCacheFileRepository<T>,
+        localRepository: LocalCacheFileRepository<T>,
         cacheableWebRepository: any CacheableWebRepository<T>
     ) {
         self.maxCacheAge = maxCacheAge
@@ -24,7 +24,7 @@ public class CacheableApiRepository<T: Codable> {
 
     public var defaultResponse: T?
 
-    var localRepository: any LocalCacheFileRepository<T>
+    var localRepository: LocalCacheFileRepository<T>
     var cacheableWebRepository: any CacheableWebRepository<T>
 
     public func downloadAndUpdateAllCaches(cacheEnabled: Bool = true) async throws -> T? {
@@ -39,20 +39,14 @@ public class CacheableApiRepository<T: Codable> {
         }
 
         // Check to see if the local cache file exists
-        let fileUrl = try await localRepository.fileURL()
-        let hasCache = FileManager.default.fileExists(atPath: fileUrl.path)
+        let hasCache = localRepository.doesCacheExists()
 
         // This should only run on first ever load.
         if !hasCache {
             return await initCache()
         }
 
-        let shouldDownload = hasCache && FileHelper.isFileOlderThan(
-            durationInSeconds: maxCacheAge,
-            fileUrl: fileUrl,
-            now: now
-        )
-
+        let shouldDownload = await shouldDownload()
         if shouldDownload {
             _ = await getFromApiAndCache()
         }
@@ -92,13 +86,21 @@ public class CacheableApiRepository<T: Codable> {
         return response
     }
 
+    /// We want to download when we have a cache that is older than the `maxCacheAge`.
+    /// In case of errors we err on the side of action and suggest we should download.
+    func shouldDownload() async -> Bool {
+        if let cacheAge = try? localRepository.getCacheAge(nowOverride: now) {
+            return cacheAge > maxCacheAge
+        }
+        return true
+    }
+
+    /// For debugging purposes
     func getTimestampOfCachedFile() async throws -> Date? {
-        let fileUrl = try await localRepository.fileURL()
-        let hasCache = FileManager.default.fileExists(atPath: fileUrl.path)
-        if hasCache {
-            return try FileHelper.getLastUpdatedDate(fileUrl: fileUrl)
-        } else {
+        if !localRepository.doesCacheExists() {
             return nil
         }
+
+        return try localRepository.getCacheLastUpdateDate()
     }
 }

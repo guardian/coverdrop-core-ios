@@ -5,21 +5,16 @@ import XCTest
 final class PublicKeyRepositoryTests: XCTestCase {
     let config: StaticConfig = .devConfig
 
-    func removeCurrentCacheFile() async throws {
-        let fileManager = FileManager.default
-        let fileURL = try await PublicKeyLocalRepository().fileURL()
-
-        if fileManager.fileExists(atPath: fileURL.path) {
-            try fileManager.removeItem(atPath: fileURL.path)
-        }
+    override func setUp() async throws {
+        try StorageManager.shared.deleteFile(file: CoverDropFiles.publicKeysCache)
     }
 
     func testCachedKeysAreLoadedWhenInCacheTimeframe() async throws {
-        try await removeCurrentCacheFile()
+        let repo = PublicKeyRepository(config: config, urlSession: mockAPIResponse())
 
         // 1. create a local file with valid content using the mock data
         let keys = try PublicKeysHelper.readLocalKeysFile()
-        try await PublicKeyLocalRepository().save(data: keys)
+        try await repo.localRepository.save(data: keys)
 
         // 2. call the loadKeys function
         let urlSession = mockAPIResponse()
@@ -31,11 +26,11 @@ final class PublicKeyRepositoryTests: XCTestCase {
     }
 
     func testApiIsCalledWhenOutsideCacheTimeframe() async throws {
-        try await removeCurrentCacheFile()
+        let repo = PublicKeyRepository(config: config, urlSession: mockAPIResponse())
 
         // 1. create a local file with valid content using the mock data
         let keys = try PublicKeysHelper.readLocalKeysFile()
-        try await PublicKeyLocalRepository().save(data: keys)
+        try await repo.localRepository.save(data: keys)
 
         // 2. stub the API response to return a valid value
         let urlSession = mockAPIResponse()
@@ -51,12 +46,13 @@ final class PublicKeyRepositoryTests: XCTestCase {
     }
 
     func testWhenOutsideCacheTimeframeAndApiFailButFileLoads() async throws {
-        try await removeCurrentCacheFile()
+        let repo = PublicKeyRepository(config: config, urlSession: mockAPIResponse())
+
         // 3. call the loadKeys function
         let urlSession = mockApiResponseFailure()
 
         let keys = try PublicKeysHelper.readLocalKeysFile()
-        try await PublicKeyLocalRepository().save(data: keys)
+        try await repo.localRepository.save(data: keys)
 
         let results = try await PublicKeyRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 48),
@@ -68,15 +64,15 @@ final class PublicKeyRepositoryTests: XCTestCase {
     }
 
     func testFailsWhenWhenOutsideCacheTimeframeAndFileLoadAndApiFail() async throws {
-        try await removeCurrentCacheFile()
         let sessionConfig = mockApiResponseFailure()
 
-        let results = try? await PublicKeyRepository(
+        let repo = PublicKeyRepository(
             now: Date(timeIntervalSinceNow: 60 * 60 * 48),
             config: config,
             urlSession: sessionConfig
-        ).downloadAndUpdateAllCaches()
+        )
 
+        let results = try? await repo.downloadAndUpdateAllCaches()
         XCTAssertNil(results)
     }
 
