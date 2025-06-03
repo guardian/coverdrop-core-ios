@@ -6,7 +6,7 @@ import Foundation
 class DeadDropRepository: CacheableApiRepository<DeadDropData> {
     init(now: Date = DateFunction.currentTime(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
-            maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
+            maxCacheAge: TimeInterval(Constants.clientDefaultDownloadRateSeconds),
             now: now,
             urlSession: urlSession,
             defaultResponse: DeadDropData(deadDrops: []),

@@ -11,7 +11,7 @@ protocol PublicKeyRepositoryProtocol {
 public class PublicKeyRepository: CacheableApiRepository<PublicKeysData> {
     init(now: Date = DateFunction.currentTime(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
-            maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
+            maxCacheAge: TimeInterval(Constants.clientDefaultDownloadRateSeconds),
             now: now,
             urlSession: urlSession,
             localRepository: LocalCacheFileRepository<PublicKeysData>(

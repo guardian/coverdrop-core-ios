@@ -4,7 +4,7 @@ import Sodium
 class StatusRepository: CacheableApiRepository<StatusData> {
     init(now: Date = DateFunction.currentTime(), config: CoverDropConfig, urlSession: URLSession) {
         super.init(
-            maxCacheAge: TimeInterval(Constants.localCacheDurationBetweenDownloadsSeconds),
+            maxCacheAge: TimeInterval(Constants.clientStatusDownloadRateSeconds),
             now: now,
             urlSession: urlSession,
             defaultResponse: StatusData(

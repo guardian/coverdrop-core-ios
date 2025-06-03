@@ -30,7 +30,8 @@ public enum Constants {
     public static let messageExpiryWarningInSeconds = 172_800
     public static let maxBackgroundDurationInSeconds = 300
     public static let clientDeadDropCacheTtlSeconds = 1_209_600
-    public static let localCacheDurationBetweenDownloadsSeconds = 3600
+    public static let clientDefaultDownloadRateSeconds = 3600
+    public static let clientStatusDownloadRateSeconds = 300
     public static let covernodeWrappingKeyCount = 2
     public static let maxJournalistIdentityLen = 128
     public static let flagJ2UMessageTypeMessage: UInt8 = 0x00
