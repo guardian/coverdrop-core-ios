@@ -64,6 +64,13 @@ public enum UiMessage {
     public var isIncoming: Bool {
         return !isOutgoing
     }
+
+    public var isMessagePending: Bool {
+        switch self {
+            case .incoming(_, _, _): return false
+            case let .outgoing(_, _, _, pending): return pending
+        }
+    }
 }
 
 public extension Message {
