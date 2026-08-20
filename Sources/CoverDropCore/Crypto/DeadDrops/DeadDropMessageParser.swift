@@ -4,7 +4,6 @@ enum DeadDropMessageParser {
     static func parseMessage(
         messageBytes: [UInt8],
         journalistData: JournalistData,
-        deadDropId: Int,
         dateReceived: Date
     ) -> Message? {
         guard let firstByte = messageBytes.first else { return nil }
@@ -13,17 +12,11 @@ enum DeadDropMessageParser {
             return parseTextMessage(
                 messageBytes: remainingMessageBytes,
                 journalistData: journalistData,
-                deadDropId: deadDropId,
-                dateReceived: dateReceived
-            )
-        } else if firstByte == Constants.flagJ2UMessageTypeHandover {
-            return parseHandoverMessage(
-                messageBytes: remainingMessageBytes,
-                journalistData: journalistData,
-                deadDropId: deadDropId,
                 dateReceived: dateReceived
             )
         } else {
+            // this includes the deprecated handover flag (0x01) which must not
+            // trigger any logic
             return nil
         }
     }
@@ -31,7 +24,6 @@ enum DeadDropMessageParser {
     private static func parseTextMessage(
         messageBytes: [UInt8],
         journalistData: JournalistData,
-        deadDropId: Int,
         dateReceived: Date
     ) -> Message? {
         if messageBytes.count != Constants.messagePaddingLen {
@@ -44,30 +36,7 @@ enum DeadDropMessageParser {
         return .incomingMessage(message: .textMessage(message: IncomingMessageData(
             sender: journalistData,
             messageText: extractedMessage,
-            dateReceived: dateReceived,
-            deadDropId: deadDropId
+            dateReceived: dateReceived
         )))
-    }
-
-    private static func parseHandoverMessage(
-        messageBytes: [UInt8],
-        journalistData: JournalistData,
-        deadDropId _: Int,
-        dateReceived: Date
-    ) -> Message? {
-        guard let endPositionOfJournalistIdentity = messageBytes.firstIndex(of: 0x00),
-              Constants.maxJournalistIdentityLen >= endPositionOfJournalistIdentity,
-              let journalistIdentityString = String(
-                  bytes: Array(messageBytes[1 ..< endPositionOfJournalistIdentity]),
-                  encoding: .utf8
-              ),
-              journalistIdentityString.count <= Constants.maxJournalistIdentityLen,
-              let handoverMessage = HandoverMessageData(
-                  sender: journalistData,
-                  timestamp: dateReceived,
-                  handoverTo: journalistIdentityString
-              ) else { return nil }
-        return .incomingMessage(message:
-            .handoverMessage(message: handoverMessage))
     }
 }

@@ -9,8 +9,6 @@ public enum Message: Codable, Equatable, Hashable, Comparable {
         switch self {
         case let .incomingMessage(message: incomingMessage):
             switch incomingMessage {
-            case let .handoverMessage(message: message):
-                return message.timestamp
             case let .textMessage(message: message):
                 return message.dateReceived
             }
@@ -107,44 +105,37 @@ extension OutboundMessageData: CustomStringConvertible {
 
 public enum IncomingMessageType: Hashable, Codable, Comparable {
     case textMessage(message: IncomingMessageData)
-    case handoverMessage(message: HandoverMessageData)
 }
 
-public struct HandoverMessageData: Hashable, Codable, Comparable {
-    public static func < (lhs: HandoverMessageData, rhs: HandoverMessageData) -> Bool {
-        return lhs.handoverTo < rhs.handoverTo &&
-            lhs.sender < rhs.sender &&
-            lhs.timestamp < rhs.timestamp
-    }
-
-    init?(sender: JournalistData, timestamp: Date, handoverTo: String) {
-        if handoverTo.count > Constants.maxJournalistIdentityLen {
-            return nil
-        }
-        self.handoverTo = handoverTo
-        self.sender = sender
-        self.timestamp = timestamp
-    }
-
-    public var sender: JournalistData
-    public var timestamp: Date
-    public var handoverTo: String
-}
-
+/// Deduplicated by holding these in a `Set`, so equality must only use data the dead-drop signature
+/// covers. The API-assigned dead-drop id is not covered and is deliberately not stored: including it
+/// would let a malicious API replay one signed dead drop under many ids to inject duplicates.
 public struct IncomingMessageData: Hashable, Codable, Comparable {
     public var sender: JournalistData
     public var messageText: String
     public var dateReceived: Date
-    public var deadDropId: Int
 
     public static func < (lhs: IncomingMessageData, rhs: IncomingMessageData) -> Bool {
         return lhs.dateReceived < rhs.dateReceived
     }
 
-    public init(sender: JournalistData, messageText: String, dateReceived: Date, deadDropId: Int = 0) {
+    /// Comparing whole seconds also keeps messages stored by earlier app versions, which carried a
+    /// sub-second component, equal to the same message decrypted today. Mirrors Android's `StoredMessage`.
+    public static func == (lhs: IncomingMessageData, rhs: IncomingMessageData) -> Bool {
+        return lhs.sender == rhs.sender &&
+            lhs.messageText == rhs.messageText &&
+            lhs.dateReceived.signedEpochSeconds == rhs.dateReceived.signedEpochSeconds
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(sender)
+        hasher.combine(messageText)
+        hasher.combine(dateReceived.signedEpochSeconds)
+    }
+
+    public init(sender: JournalistData, messageText: String, dateReceived: Date) {
         self.sender = sender
         self.messageText = messageText
         self.dateReceived = dateReceived
-        self.deadDropId = deadDropId
     }
 }
